@@ -1,0 +1,11 @@
+env/
+sandbox/
+am-mc-commands/
+test-transfers-sandbox/
+records/
+mediaconch-policies-sandbox/
+test-files/
+.python-version
+__pycache__
+behave-tutorial/
+reports/
