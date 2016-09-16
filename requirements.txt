@@ -1,0 +1,4 @@
+behave>=1.0
+lxml
+requests<3.0
+selenium>=2.0
