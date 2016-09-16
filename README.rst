@@ -59,4 +59,9 @@ To run the tests::
 
     $ behave
 
+There are also two convenience scripts for closing all transfers and closing
+all ingests via the GUI (i.e., using Selenium)::
+
+    $ python close_all_transfers.py
+    $ python close_all_ingests.py
 

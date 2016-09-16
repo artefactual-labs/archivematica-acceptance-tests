@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from features.environment import get_am_sel_cli
 
 if __name__ == "__main__":
