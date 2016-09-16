@@ -1,16 +1,7 @@
-import unittest
-from archivematicaselenium import ArchivematicaSelenium
-
-
-class CloseAllIngestsTests(ArchivematicaSelenium):
-
-    def test_remove_all_ingests(self):
-        self.remove_all_ingests()
-
-    def tearDown(self):
-        self.driver.close()
-        self.driver.quit()
-
+from features.environment import get_am_sel_cli
 
 if __name__ == "__main__":
-    unittest.main()
+    am_sel_cli = get_am_sel_cli()
+    am_sel_cli.set_up()
+    am_sel_cli.remove_all_ingests()
+    am_sel_cli.tear_down()
