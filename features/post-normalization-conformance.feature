@@ -17,7 +17,6 @@ Feature: Post-normalization conformance check
     | valid         | Completed successfully | Passed            | pass          | preforma/when-normalized-all-valid  |
     | not valid     | Failed                 | Failed            | fail          | preforma/when-normalized-none-valid |
 
-  @mp4-fpr-restore
   Scenario Outline: Isla wants to confirm that normalization to .mkv for access is successful
     Given directory <transfer_path> contains files that will all be normalized to <file_validity> .mkv
     And directory <transfer_path> contains a processing config that does normalization for access, etc.

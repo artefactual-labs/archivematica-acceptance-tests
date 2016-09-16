@@ -5,6 +5,9 @@ from behave import when, then, given
 MEDIA_CONCH_EVENT_DETAIL_PREFIX = 'program="MediaConch"'
 MEDIA_CONCH_EVENT_OUTCOME_DETAIL_NOTE_IMPLEMENTATION_CHECK_PREFIX = \
     'MediaConch implementation check result:'
+MEDIA_CONCH_EVENT_OUTCOME_DETAIL_NOTE_POLICY_CHECK_PREFIX = \
+    'MediaConch policy check result:'
+POLICIES_DIR = 'mediaconch-policies'
 
 
 ###############################################################################
@@ -126,12 +129,11 @@ def step_impl(context, event_outcome):
 # INGEST POLICY CHECK
 ###############################################################################
 
-POLICIES_DIR = 'mediaconch-policies'
 
 @given('MediaConch policy file {policy_file} is present in the local'
        ' mediaconch-policies/ directory')
 def step_impl(context, policy_file):
-    print(os.listdir('.'))
+    assert policy_file in os.listdir(POLICIES_DIR)
 
 
 @given('directory {transfer_path} contains files that, when normalized, will'
@@ -142,9 +144,7 @@ def step_impl(context, transfer_path, do_files_conform, policy_file):
 
 @when('the user uploads the policy file {policy_file}')
 def step_impl(context, policy_file):
-    policy_path_relative = os.path.join(POLICIES_DIR, policy_file)
-    here = os.path.dirname(os.path.realpath(__file__))
-    policy_path = os.path.join(here, policy_path_relative)
+    policy_path = os.path.realpath(os.path.join(POLICIES_DIR, policy_file))
     context.am_sel_cli.upload_policy(policy_path)
 
 
@@ -158,15 +158,14 @@ def step_impl(context, microservice_output):
 @then('all PREMIS policy-check-type validation events have eventOutcome ='
       ' {event_outcome}')
 def step_impl(context, event_outcome):
-    # TODO: change dashboard migration so that policy-check-type validation
-    # events are identifiable.
     for e in context.am_sel_cli.get_premis_events(context.am_sel_cli.get_mets(
             context.transfer_name,
             context.am_sel_cli.get_sip_uuid(context.transfer_name))):
         if (e['event_type'] == 'validation' and
-                e['event_detail'].startswith(MEDIA_CONCH_EVENT_DETAIL_PREFIX)):
-            print('event_outcome_detail_note: {}'.format(e['event_outcome_detail_note']))
-            print('event_outcome: {}'.format(e['event_outcome']))
+            e['event_detail'].startswith(MEDIA_CONCH_EVENT_DETAIL_PREFIX) and
+            e['event_outcome_detail_note'].startswith(
+                MEDIA_CONCH_EVENT_OUTCOME_DETAIL_NOTE_POLICY_CHECK_PREFIX)):
+            assert e['event_outcome'] == event_outcome
 
 
 ###############################################################################
