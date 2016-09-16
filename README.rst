@@ -9,12 +9,12 @@ Python behave and the Gherkin language.
 Installation
 ================================================================================
 
-Create a virualenv using Python 3 and use it::
+Create a virualenv using Python 3 and activate it::
 
     $ sudo virtualenv -p python3 env
     $ source env/bin/activate
 
-Install dependencies::
+Install the dependencies::
 
     $ pip install -r requirements.txt
 
@@ -22,13 +22,40 @@ Install dependencies::
 Configuration
 ================================================================================
 
+In order for these tests to work, they must be run against the version of
+Archivematica that they were written to target and the target Archivematica
+Storage Service must contain the transfers in test-transfers/. This section
+shows how to configure a system that meets those requirements.
+
+
 Install a Compatible Archivematica System
 --------------------------------------------------------------------------------
 
 In order for these tests to work, they must be run against the version of
-Archivematica that they were written to target. TODO: give instructions for how
-to use a specific branch of deploy-pub to install the appropriate Archivematica
-version.
+Archivematica that they were written to target. The deploy-pub ansible playbook
+set at https://github.com/jrwdunham/deploy-pub/tree/dev/issue-9478-acceptance-tests-preforma
+should allow you to install such a system. Assuming you have VirtualBox,
+Vagrant and Ansible installed, use the following instructions::
+
+    $ git clone https://github.com/jrwdunham/deploy-pub.git
+    $ cd deploy-pub
+    $ git checkout dev/issue-9478-acceptance-tests-preforma
+    $ cd playbooks/archivematica
+    $ ansible-galaxy install -f -p roles/ -r requirements.yml
+    $ vagrant up
+
+The tests also assume that you have configured your Archivematica installation
+so that it is being served at the following URL and has an administrator-level
+user with the following username and password. These values can be altered in
+features/environment.py.
+
+- URL:      http://192.168.168.192/
+- username: test
+- password: testtest
+
+
+Move the Test Transfers Over
+--------------------------------------------------------------------------------
 
 These tests require that the test transfer directories in test-transfers/ be
 present in the directory specified in
@@ -41,15 +68,6 @@ move the test transfers over is::
     $ cd /path/to/archivematica/Vagrantfile/dir/
     $ vagrant ssh
     $ vagrant@am-local:~$ mv /vagrant/src/test-transfers ~/acceptance-tests
-
-The tests also require that you have configured your Archivematica installation
-so that it is being served at the following URL and has an administrator-level
-user with the following username and password. These values can be altered in
-features/environment.py.
-
-- URL:      http://192.168.168.192/
-- username: test
-- password: testtest
 
 
 Usage
