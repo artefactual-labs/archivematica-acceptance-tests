@@ -1,12 +1,11 @@
 """Archivematica Selenium.
 
-This module contains a ``unittest.TestCase`` sub-class that provides special
+This module contains the ``ArchivematicaSelenium`` class that provides special
 methods for using Selenium to interact with the Archivematica dashboard.
 
-The intent is to sub-class ``ArchivematicaSelenium`` in order to write
-integration tests. A typical test would initiate a transfer of a specified data
-set and then make assertions about the output from one or more micro-services
-operating on that data set.
+Instances of this class can be used to write acceptance tests. A typical test
+would initiate a transfer of a specified data set and then make assertions
+about the output from one or more micro-services operating on that data set.
 
 Example usage::
 
@@ -16,7 +15,7 @@ Example usage::
             'My_Transfer')
         validation_job = self.parse_job('Validate formats', transfer_uuid)
         # Make assertions using the ``validation_job`` dict, e.g.,
-        self.assertEqual(job.get('job_output'), 'Completed successfully')
+        assert job.get('job_output') == 'Completed successfully'
 
 "Public" methods:
 
@@ -36,16 +35,23 @@ Tested using Selenium's Chrome and Firefox webdrivers.
 Dependencies:
 
     - selenium
-    - unittest
+    - lxml
 
-Test environments where this has worked:
+Test environments where this module has been tested and has worked:
 
-    1. Firefox 47.01 (*note* does not work on v. 48.0)
+    1. Ubuntu 16.04
+       Firefox 48.0
+       Selenium 2.53.6
+       Python 3.5.1
+       Archivematica dev/issue-10133-ingest-policy-check-good
+       Storage Service qa/0.x
+
+    2. Firefox 47.01 (*note* does not work on v. 48.0)
        Mac OS X 10.10.5
        Selenium 2.53.6
        Python 3.4.2
 
-    2. Chrome 52.0.2743.116 (64-bit) -- TODO: has stopped working!
+    3. Chrome 52.0.2743.116 (64-bit) -- TODO: has stopped working!
        Mac OS X 10.10.5
        Selenium 2.53.6
        Python 3.4.2
@@ -62,7 +68,6 @@ from lxml import etree
 import os
 import pprint
 import time
-import unittest
 import uuid
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -96,7 +101,7 @@ def recurse_on_stale(func):
     return wrapper
 
 
-class ArchivematicaSelenium(unittest.TestCase):
+class ArchivematicaSelenium:
     """Selenium tests for MediaConch-related functionality in Archivematica.
 
     TODOs:
@@ -160,9 +165,6 @@ class ArchivematicaSelenium(unittest.TestCase):
         return driver
 
     def set_up(self):
-        self.setUp()
-
-    def setUp(self):
         """Use the Chrome or Firefox webdriver. Has worked with
         - Chrome 52.0.2743.116 (64-bit)
         - Firefox 47.01 (*note* does not work on v. 48.0)
@@ -171,9 +173,6 @@ class ArchivematicaSelenium(unittest.TestCase):
         self.driver.maximize_window()
 
     def tear_down(self):
-        self.tearDown()
-
-    def tearDown(self):
         # Close all the $%&@#! browser windows!
         for window_handle in self.driver.window_handles:
             self.driver.switch_to.window(window_handle)
@@ -856,7 +855,7 @@ class ArchivematicaSelenium(unittest.TestCase):
         self.driver.get(url)
         transfer_name_input_id = 'transfer-name'
         self.wait_for_presence('#{}'.format(transfer_name_input_id))
-        self.assertIn("Archivematica Dashboard - Transfer", self.driver.title)
+        assert "Archivematica Dashboard - Transfer" in self.driver.title
 
     def enter_transfer_name(self, transfer_name):
         """Enter a transfer name into the text input."""
