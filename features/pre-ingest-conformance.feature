@@ -13,4 +13,4 @@ Feature: Pre-ingest conformance check
     Examples: File Validity Possibilities
     | file_validity | microservice_output    | am_action            | event_outcome | transfer_path          |
     | valid         | Completed successfully | continues processing | pass          | preforma/all-valid     |
-    | not valid     | Failed                 | continues processing | fail          | preforma/all-not-valid |
+    | not valid     | Failed                 | continues processing | fail          | preforma/none-valid |
