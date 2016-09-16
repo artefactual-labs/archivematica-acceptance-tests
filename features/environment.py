@@ -4,7 +4,7 @@ import requests
 
 # Change these to match your test environment
 AM_USERNAME = "test"
-AM_PASSWORD = "test"
+AM_PASSWORD = "testtest"
 AM_URL = "http://192.168.168.192/"
 AM_API_KEY = None
 SS_USERNAME = "test"
@@ -12,10 +12,13 @@ SS_PASSWORD = "test"
 SS_URL = "http://192.168.168.192:8000/"
 SS_API_KEY = None
 
+# Path relative to /home where transfer sources live.
+TRANSFER_SOURCE_PATH = 'vagrant/acceptance-tests'
 
-def before_all(context):
-    """Instantiate an Archivematica Selenium browser instance."""
-    context.am_sel_cli = archivematicaselenium.ArchivematicaSelenium(
+
+def get_am_sel_cli():
+    """Instantiate an ArchivematicaSelenium."""
+    return archivematicaselenium.ArchivematicaSelenium(
         AM_USERNAME,
         AM_PASSWORD,
         AM_URL,
@@ -23,9 +26,14 @@ def before_all(context):
         SS_USERNAME,
         SS_PASSWORD,
         SS_URL,
-        SS_API_KEY)
-    context.am_sel_cli.set_up()
+        SS_API_KEY
+    )
 
+def before_all(context):
+    """Instantiate an Archivematica Selenium browser instance."""
+    context.am_sel_cli = get_am_sel_cli()
+    context.am_sel_cli.set_up()
+    context.TRANSFER_SOURCE_PATH = TRANSFER_SOURCE_PATH
 
 def after_all(context):
     """Close all browser windows/Selenium drivers."""
