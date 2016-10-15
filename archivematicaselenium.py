@@ -268,11 +268,23 @@ class ArchivematicaSelenium:
     def get_preservation_planning_url(self):
         return '{}fpr/format/'.format(self.am_url)
 
+    def get_rules_url(self):
+        return '{}fpr/fprule/'.format(self.am_url)
+
+    def get_create_rule_url(self):
+        return '{}fpr/fprule/create/'.format(self.am_url)
+
     def get_normalization_rules_url(self):
         return '{}fpr/fprule/normalization/'.format(self.am_url)
 
     def get_policies_url(self):
         return '{}administration/policies/'.format(self.am_url)
+
+    def get_validation_commands_url(self):
+        return '{}fpr/fpcommand/validation/'.format(self.am_url)
+
+    def get_create_command_url(self):
+        return '{}fpr/fpcommand/create/'.format(self.am_url)
 
     def get_login_url(self):
         return '{}administration/accounts/login/'.format(self.am_url)
@@ -1118,6 +1130,116 @@ class ArchivematicaSelenium:
 
     def navigate_to_policies(self):
         self.navigate(self.get_policies_url())
+
+    def navigate_to_first_policy_check_validation_command(self):
+        """Find the first policy check validation command and navigate to it.
+        Assumes that we are at the validation commands URL and that there is at
+        least one policy check validation command in this AM. Returns a list of
+        existing policy check command descriptions.
+        """
+        policy_command_url = None
+        policy_command_descriptions = []
+        commands_table_el = self.driver.find_element_by_id(
+            'DataTables_Table_0')
+        for row_el in commands_table_el.find_elements_by_tag_name('tr'):
+            try:
+                anchor_el = row_el.find_element_by_tag_name('a')
+            except:
+                pass
+            else:
+                if anchor_el.text.strip().startswith('Check against policy '):
+                    policy_command_url = anchor_el.get_attribute('href')
+                    policy_command_descriptions.append(anchor_el.text.strip())
+        if policy_command_url:
+            self.navigate(policy_command_url)
+            return policy_command_descriptions
+        else:
+            return []
+
+    def ensure_fpr_policy_check_command(self, policy_file):
+        """Ensure there is an FPR validation command that checks a file against
+        the MediaConch policy ``policy_file``.
+        """
+        self.navigate(self.get_validation_commands_url())
+        existing_policy_command_descriptions = \
+            self.navigate_to_first_policy_check_validation_command()
+        description = self.get_policy_command_description(policy_file)
+        if description in existing_policy_command_descriptions:
+            # This policy command already exists; no need to re-create it.
+            return
+        policy_command = self.get_policy_command(policy_file)
+        self.save_policy_check_command(policy_command, description)
+
+    def get_policy_command(self, policy_file):
+        """Return a string representing a policy check validation command that
+        references the policy file ``policy_file``. Assumes that we are
+        viewing an existing validation-via-mediaconch-policy command.
+        """
+        # Get the text of the command.
+        policy_command = None
+        next_el = False
+        for el in self.driver.find_element_by_tag_name('dl')\
+                             .find_elements_by_css_selector('*'):
+            if next_el:
+                policy_command = el.find_element_by_tag_name('pre')\
+                                        .text.strip()
+                break
+            if el.text.strip() == 'Command':
+                next_el = True
+        # Insert our policy file name into the command text.
+        lines = []
+        for line in policy_command.splitlines():
+            if line.strip().startswith('policy_filename = '):
+                lines.append('    policy_filename = \'{}\''.format(policy_file))
+            else:
+                lines.append(line)
+        return '\n'.join(lines)
+
+    def get_policy_command_description(self, policy_file):
+        return 'Check against policy {} using MediaConch'.format(policy_file)
+
+    def save_policy_check_command(self, policy_command, description):
+        """Create and save a new FPR command using the string
+        ``policy_command``."""
+        self.navigate(self.get_create_command_url())
+        self.driver.find_element_by_id('id_tool').send_keys('MediaConch')
+        self.driver.find_element_by_id('id_description').send_keys(description)
+        self.driver.find_element_by_id('id_command').send_keys(policy_command)
+        self.driver.find_element_by_id('id_script_type').send_keys('Python')
+        self.driver.find_element_by_id('id_command_usage').send_keys(
+            'Validation')
+        self.driver.find_element_by_css_selector('input[type=submit]').click()
+
+    def ensure_fpr_rule(self, purpose, format, command_description):
+        """Ensure that there is a new FPR rule with the purpose, format and
+        command description given in the params.
+        Note that the ``format`` param is assumed to be in the format that the
+        /fpr/fprule/create/ expects, i.e., a colon-delimited triple like
+        'Audio: Broadcast WAVE: Broadcast WAVE 1'.
+        """
+        if self.fpr_rule_already_exists(purpose, format, command_description):
+            return
+        self.navigate(self.get_create_rule_url())
+        self.driver.find_element_by_id('id_f-purpose').send_keys(purpose)
+        self.driver.find_element_by_id('id_f-format').send_keys(format)
+        self.driver.find_element_by_id('id_f-command').send_keys(
+            command_description)
+        self.driver.find_element_by_css_selector('input[type=submit]').click()
+
+    def fpr_rule_already_exists(self, purpose, format, command_description):
+        """Return ``True`` if an FPR rule already exists with the purpose,
+        format and command description given in the params; ``False`` otherwise.
+        """
+        self.navigate(self.get_rules_url())
+        terse_format = format.split(':')[2].strip()
+        search_term = '{} {} {}'.format(purpose, terse_format,
+                                        command_description)
+        self.search_rules(search_term)
+        info_el = self.driver.find_element_by_id('DataTables_Table_0_info')
+        if info_el.text.strip().startswith('Showing 0 to 0 of 0 entries'):
+            return False
+        return True
+
 
     # Wait/attempt count vars
     # =========================================================================

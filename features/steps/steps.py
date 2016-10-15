@@ -1,4 +1,5 @@
 import os
+import pprint
 
 from behave import when, then, given
 
@@ -66,6 +67,14 @@ def step_impl(context, transfer_path):
     AIP without storing it
     """
     pass
+
+
+# MKV-to-MKV (!) just for testing policy checks on access derivatives.
+@when('the user edits the FPR rule to transcode .mkv files to .mkv for access')
+def step_impl(context):
+    context.am_sel_cli.change_normalization_rule_command(
+        'Access Generic MKV',
+        'Transcoding to mkv with ffmpeg')
 
 
 @when('the user edits the FPR rule to transcode .mov files to .mkv for access')
@@ -142,10 +151,35 @@ def step_impl(context, transfer_path, do_files_conform, policy_file):
     pass
 
 
+@given('directory {transfer_path}/manualNormalization/preservation/ contains a'
+       ' file manually normalized for preservation that will {do_files_conform}'
+       ' to {policy_file}')
+def step_impl(context, transfer_path, do_files_conform, policy_file):
+    pass
+
+
 @when('the user uploads the policy file {policy_file}')
 def step_impl(context, policy_file):
-    policy_path = os.path.realpath(os.path.join(POLICIES_DIR, policy_file))
+    policy_path = get_policy_path(policy_file)
     context.am_sel_cli.upload_policy(policy_path)
+
+
+@when('the user ensures there is an FPR command that uses policy file'
+      ' {policy_file}')
+def step_impl(context, policy_file):
+    context.am_sel_cli.ensure_fpr_policy_check_command(policy_file)
+
+
+# TODO: this step could be generalized to support any purpose/format/command
+# triple.
+@when('the user ensures there is an FPR rule with purpose {purpose} that'
+      ' validates Generic MKV files against policy file {policy_file}')
+def step_impl(context, purpose, policy_file):
+    context.am_sel_cli.ensure_fpr_rule(
+        purpose,
+        'Video: Matroska: Generic MKV',
+        context.am_sel_cli.get_policy_command_description(policy_file)
+    )
 
 
 @then('policy checks for preservation derivatives micro-service output is'
@@ -153,6 +187,28 @@ def step_impl(context, policy_file):
 def step_impl(context, microservice_output):
     name = 'Policy checks for preservation derivatives'
     ingest_ms_output_is(name, microservice_output, context)
+
+
+@then('policy checks for access derivatives micro-service output is'
+      ' {microservice_output}')
+def step_impl(context, microservice_output):
+    name = 'Policy checks for access derivatives'
+    ingest_ms_output_is(name, microservice_output, context)
+
+
+@then('all policy check for access derivatives tasks indicate {event_outcome}')
+def step_impl(context, event_outcome):
+    policy_check_tasks = [t for t in context.job['tasks'].values() if
+                          t['stdout'].startswith(
+                              'Running Check against policy ')]
+    assert len(policy_check_tasks) > 0
+    if event_outcome == 'pass':
+        for task in policy_check_tasks:
+            assert 'All policy checks passed:' in task['stdout']
+            assert task['exit_code'] == '0'
+    else:
+        for task in policy_check_tasks:
+            assert '"eventOutcomeInformation": "fail"' in task['stdout']
 
 
 @then('all PREMIS policy-check-type validation events have eventOutcome ='
@@ -196,3 +252,7 @@ def all_normalization_report_columns_are(column, expected_value, context):
 def transfer_path2name(transfer_path):
     """Return a transfer name, given a transfer path."""
     return os.path.split(transfer_path.replace('-', '_'))[1]
+
+
+def get_policy_path(policy_file):
+    return os.path.realpath(os.path.join(POLICIES_DIR, policy_file))
