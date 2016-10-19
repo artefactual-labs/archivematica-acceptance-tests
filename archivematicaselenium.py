@@ -1360,15 +1360,16 @@ class ArchivematicaSelenium:
             .send_keys(ss_user_api_key)
         self.driver.find_element_by_css_selector(
             'input[name=use_default]').click()
-        block = WebDriverWait(self.driver, 20)
-        block.until(EC.presence_of_element_located(
-            (By.XPATH, SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES)))
 
     def get_ss_user_api_key(self):
         self.driver.get(self.get_ss_login_url())
         self.driver.find_element_by_id('id_username').send_keys(self.ss_username)
         self.driver.find_element_by_id('id_password').send_keys(self.ss_password)
         self.driver.find_element_by_css_selector('input[value=login]').click()
+        self.driver.get(self.get_default_ss_user_edit_url())
+        block = WebDriverWait(self.driver, 20)
+        block.until(EC.presence_of_element_located(
+            (By.CSS_SELECTOR, 'code')))
         return self.driver.find_element_by_tag_name('code').text.strip()
 
     def create_first_user(self):
