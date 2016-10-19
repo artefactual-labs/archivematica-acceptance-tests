@@ -67,6 +67,7 @@ import json
 from lxml import etree
 import os
 import pprint
+import sys
 import time
 import uuid
 from selenium import webdriver
@@ -86,6 +87,14 @@ SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER = 'button.pull-right[type=submit]'
 SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES = \
     'button[data-target="#transfer_browse_tree"]'
 SELECTOR_BUTTON_START_TRANSFER = 'button[ng-click="vm.transfer.start()"]'
+
+DEFAULT_AM_USERNAME = 'test',
+DEFAULT_AM_PASSWORD = 'testtest',
+DEFAULT_AM_URL = 'http://192.168.168.192/',
+DEFAULT_SS_USERNAME = 'test',
+DEFAULT_SS_PASSWORD = 'test',
+DEFAULT_SS_URL = 'http://192.168.168.192:8000/',
+
 
 
 def recurse_on_stale(func):
@@ -119,13 +128,13 @@ class ArchivematicaSelenium:
     timeout = 5
 
     def __init__(self,
-             am_username='test',
-             am_password='test',
-             am_url='http://192.168.168.192/',
+             am_username=DEFAULT_AM_USERNAME,
+             am_password=DEFAULT_AM_PASSWORD,
+             am_url=DEFAULT_AM_URL,
              am_api_key=None,
-             ss_username='test',
-             ss_password='test',
-             ss_url='http://192.168.168.192:8000/',
+             ss_username=DEFAULT_SS_USERNAME,
+             ss_password=DEFAULT_SS_PASSWORD,
+             ss_url=DEFAULT_SS_URL,
              ss_api_key=None):
         self.am_username = am_username
         self.am_password = am_password
@@ -259,8 +268,20 @@ class ArchivematicaSelenium:
     # URL getters
     # =========================================================================
 
+    def get_ss_login_url(self):
+        return '{}login/'.format(self.ss_url)
+
+    def get_default_ss_user_edit_url(self):
+        return '{}administration/users/1/edit/'.format(self.ss_url)
+
+    def get_ss_users_url(self):
+        return '{}administration/users/'.format(self.ss_url)
+
     def get_transfer_url(self):
         return '{}transfer/'.format(self.am_url)
+
+    def get_storage_setup_url(self):
+        return '{}installer/storagesetup/'.format(self.am_url)
 
     def get_ingest_url(self):
         return '{}ingest/'.format(self.am_url)
@@ -922,17 +943,26 @@ class ArchivematicaSelenium:
 
     def get_xpath_matches_folder_text(self, folder_text):
         """Return the XPath to match a folder in the file browser whose name
-        contains the text ``folder_text``.
-        """
+        starts with the text ``folder_text`` and where the substring after
+        ``folder_text`` starts with "(". Yay XPath contortionism!
+
+        Previously returned XPath:
+
         return ("div[contains(@class, 'tree-label') and"
                 " descendant::span[contains(text(), '{}')]]"
                 .format(folder_text))
+        """
+        return ("div[contains(@class, 'tree-label') and"
+           " descendant::span[starts-with(normalize-space(text()), '{}') and"
+           " starts-with(normalize-space(substring-after(normalize-space(text()),"
+           " '{}')), '(')]]".format(folder_text, folder_text))
 
     # This is used to join folder-matching XPaths. So that
     # 'vagrant/archivematica-sampledata' can be matched by getting an XPath
     # that matches each folder name and joins them according to the DOM structure
     # of the file browser.
     treeitem_next_sibling = '/following-sibling::treeitem/ul/li/'
+
 
     def _navigate_to_transfer_directory_and_click(self, path):
         """Click on each folder icon in ``path`` from the root on up, until we
@@ -1107,7 +1137,10 @@ class ArchivematicaSelenium:
         """Navigate to ``url``; login and try again, if redirected."""
         self.driver.get(url)
         if self.driver.current_url != url:
-            self.login()
+            if self.driver.current_url.endswith('/installer/welcome/'):
+                self.setup_new_install()
+            else:
+                self.login()
         self.driver.get(url)
 
     def change_normalization_rule_command(self, search_term, command_name):
@@ -1218,6 +1251,7 @@ class ArchivematicaSelenium:
         'Audio: Broadcast WAVE: Broadcast WAVE 1'.
         """
         if self.fpr_rule_already_exists(purpose, format, command_description):
+            #self.ensure_fpr_rule_enabled(purpose, format, command_description)
             return
         self.navigate(self.get_create_rule_url())
         self.driver.find_element_by_id('id_f-purpose').send_keys(purpose)
@@ -1231,14 +1265,30 @@ class ArchivematicaSelenium:
         format and command description given in the params; ``False`` otherwise.
         """
         self.navigate(self.get_rules_url())
-        terse_format = format.split(':')[2].strip()
-        search_term = '{} {} {}'.format(purpose, terse_format,
-                                        command_description)
-        self.search_rules(search_term)
+        self.search_for_fpr_rule(purpose, format, command_description)
         info_el = self.driver.find_element_by_id('DataTables_Table_0_info')
         if info_el.text.strip().startswith('Showing 0 to 0 of 0 entries'):
             return False
         return True
+
+    def search_for_fpr_rule(self, purpose, format, command_description):
+        """Search for an FPR rule with the supplied purpose, format and command
+        description. Uses the FPR asynchronous search input.
+        """
+        terse_format = format.split(':')[2].strip()
+        search_term = '{} {} {}'.format(purpose, terse_format,
+                                        command_description)
+        self.search_rules(search_term)
+
+    def ensure_fpr_rule_enabled(purpose, format, command_description):
+        self.navigate(self.get_rules_url())
+        self.search_for_fpr_rule(purpose, format, command_description)
+        info_el = self.driver.find_element_by_id('DataTables_Table_0_info')
+        if info_el.text.strip().startswith('Showing 0 to 0 of 0 entries'):
+            return
+        # TODO: click the "Enable" link. But we have to make sure there is only
+        # one matching rule that needs enabling. Not sure at this point whether
+        # this action is needed for testing.
 
 
     # Wait/attempt count vars
@@ -1299,21 +1349,48 @@ class ArchivematicaSelenium:
             #       " element matching selector {} took too much"
             #       " time!".format(crucial_element_css_selector))
 
+    def setup_new_install(self):
+        """This AM instance has just been created. We need to create the first
+        user and register it with its storage service.
+        """
+        ss_user_api_key = self.get_ss_user_api_key()
+        self.create_first_user()
+        self.wait_for_presence('#id_storage_service_apikey', 100)
+        self.driver.find_element_by_id('id_storage_service_apikey')\
+            .send_keys(ss_user_api_key)
+        self.driver.find_element_by_css_selector(
+            'input[name=use_default]').click()
+        block = WebDriverWait(self.driver, 20)
+        block.until(EC.presence_of_element_located(
+            (By.XPATH, SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES)))
+
+    def get_ss_user_api_key(self):
+        self.driver.get(self.get_ss_login_url())
+        self.driver.find_element_by_id('id_username').send_keys(self.ss_username)
+        self.driver.find_element_by_id('id_password').send_keys(self.ss_password)
+        self.driver.find_element_by_css_selector('input[value=login]').click()
+        return self.driver.find_element_by_tag_name('code').text.strip()
+
     def create_first_user(self):
         """Create a test user via the /installer/welcome/ page interface."""
         self.driver.get(self.get_installer_welcome_url())
         self.wait_for_presence('#id_org_name')
         self.driver.find_element_by_id('id_org_name').send_keys(
-            'Fake Org Inc.')
+            DEFAULT_AM_USERNAME)
         self.driver.find_element_by_id('id_org_identifier')\
-            .send_keys('fake-org-inc')
-        self.driver.find_element_by_id('id_username').send_keys('test')
-        self.driver.find_element_by_id('id_first_name').send_keys('Test')
-        self.driver.find_element_by_id('id_last_name').send_keys('McTest')
+            .send_keys(DEFAULT_AM_USERNAME)
+        self.driver.find_element_by_id('id_username').send_keys(DEFAULT_AM_USERNAME)
+        self.driver.find_element_by_id('id_first_name').send_keys(DEFAULT_AM_USERNAME)
+        self.driver.find_element_by_id('id_last_name').send_keys(DEFAULT_AM_USERNAME)
         self.driver.find_element_by_id('id_email').send_keys('test@gmail.com')
-        self.driver.find_element_by_id('id_password1').send_keys('test')
-        self.driver.find_element_by_id('id_password2').send_keys('test')
+        self.driver.find_element_by_id('id_password1').send_keys(DEFAULT_AM_PASSWORD)
+        self.driver.find_element_by_id('id_password2').send_keys(DEFAULT_AM_PASSWORD)
         self.driver.find_element_by_tag_name('button').click()
+        continue_button_selector = 'input[value=Continue]'
+        self.wait_for_presence(continue_button_selector, 100)
+        continue_button_el = self.driver.find_element_by_css_selector(
+            continue_button_selector)
+        continue_button_el.click()
 
     def get_premis_events(self, mets):
         """Return all PREMIS events in ``mets`` (lxml.etree parse) as a list of
