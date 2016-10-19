@@ -158,6 +158,13 @@ def step_impl(context, transfer_path, do_files_conform, policy_file):
     pass
 
 
+@given('directory {transfer_path}/manualNormalization/access/ contains a'
+       ' file manually normalized for access that will {do_files_conform}'
+       ' to {policy_file}')
+def step_impl(context, transfer_path, do_files_conform, policy_file):
+    pass
+
+
 @when('the user uploads the policy file {policy_file}')
 def step_impl(context, policy_file):
     policy_path = get_policy_path(policy_file)
