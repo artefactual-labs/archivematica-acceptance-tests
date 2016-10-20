@@ -5,7 +5,6 @@ Feature: Ingest policy check
   normalization or may have been predefined by the user prior to
   transfer.
 
-  @testing
   Scenario Outline: Isla has access derivatives and she needs to know whether they conform to her access policy
     Given MediaConch policy file <policy_file> is present in the local mediaconch-policies/ directory
     And directory <transfer_path> contains files that, when normalized, will all <do_files_conform> to <policy_file>
@@ -24,7 +23,6 @@ Feature: Ingest policy check
     | conform          | Completed successfully | pass           | successful          | preforma/all-conform-policy-norm-acc   | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Access Derivatives against a Policy |
     | not conform      | Failed                 | fail           | failed              | preforma/none-conform-policy-norm-acc  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Access Derivatives against a Policy |
 
-  @testing
   Scenario Outline: Isla has preservation derivatives and she needs to know whether they conform to her preservation policy
     Given MediaConch policy file <policy_file> is present in the local mediaconch-policies/ directory
     And directory <transfer_path> contains files that, when normalized, will all <do_files_conform> to <policy_file>
@@ -43,7 +41,6 @@ Feature: Ingest policy check
     | conform          | Completed successfully | pass           | successful          | preforma/all-conform-policy  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
     | not conform      | Failed                 | fail           | failed              | preforma/none-conform-policy | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
 
-  @testing
   Scenario Outline: Isla has manually normalized preservation derivatives and she needs to know whether they conform to her preservation policy
     Given MediaConch policy file <policy_file> is present in the local mediaconch-policies/ directory
     And directory <transfer_path>/manualNormalization/preservation/ contains a file manually normalized for preservation that will <do_files_conform> to <policy_file>
@@ -62,7 +59,6 @@ Feature: Ingest policy check
     | conform          | Completed successfully | pass           | successful          | preforma/manually-normalized-preservation-all-conform-policy   | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
     | not conform      | Failed                 | fail           | failed              | preforma/manually-normalized-preservation-none-conform-policy  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
 
-  @testing
   Scenario Outline: Isla has manually normalized access derivatives and she needs to know whether they conform to her access policy
     Given MediaConch policy file <policy_file> is present in the local mediaconch-policies/ directory
     And directory <transfer_path>/manualNormalization/access/ contains a file manually normalized for access that will <do_files_conform> to <policy_file>
