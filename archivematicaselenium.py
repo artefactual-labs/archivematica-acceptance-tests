@@ -496,7 +496,7 @@ class ArchivematicaSelenium:
         <table> as a dict with the following format::
 
             >>> {
-                    '<UUID>': {
+                    '<task_uuid>': {
                         'task_uuid': '...',
                         'file_uuid': '...',
                         'file_name': '...',
@@ -507,7 +507,7 @@ class ArchivematicaSelenium:
                         'stdout': '...',
                         'stderr': '...'
                     },
-                    '<UUID>': { ... }
+                    '<task_uuid>': { ... }
                 }
         """
         group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
@@ -544,7 +544,7 @@ class ArchivematicaSelenium:
             row_type = self.get_tasks_row_type(row_elem)
             if row_type == 'header':
                 if row_dict:
-                    table_dict['tasks'][row_dict['file_uuid']] = row_dict
+                    table_dict['tasks'][row_dict['task_uuid']] = row_dict
                 row_dict = self.process_task_header_row(row_elem, {})
             elif row_type == 'command':
                 row_dict = self.process_task_command_row(row_elem, row_dict)
@@ -552,7 +552,7 @@ class ArchivematicaSelenium:
                 row_dict = self.process_task_stdout_row(row_elem, row_dict)
             else:
                 row_dict = self.process_task_stderr_row(row_elem, row_dict)
-        table_dict['tasks'][row_dict['file_uuid']] = row_dict
+        table_dict['tasks'][row_dict['task_uuid']] = row_dict
         next_tasks_url = None
         for link_button in self.driver.find_elements_by_css_selector('a.btn'):
             if link_button.text.strip() == 'Next Page':
