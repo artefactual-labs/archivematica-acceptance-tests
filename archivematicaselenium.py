@@ -1237,7 +1237,14 @@ class ArchivematicaSelenium:
         self.navigate(self.get_create_command_url())
         self.driver.find_element_by_id('id_tool').send_keys('MediaConch')
         self.driver.find_element_by_id('id_description').send_keys(description)
+
         self.driver.find_element_by_id('id_command').send_keys(policy_command)
+        # TODO: the above is quite slow. It should be possible to do this using
+        # ``execute_script`` and some JavaScript but converting a Python module
+        # into a valid JavaScript string literal seems more trouble than it's
+        # worth right now... Something like the following:
+        # self.driver.execute_script('document.getElementById("id_command").value = "{}";'.format( policy_command.replace('"', '\\"'))
+
         self.driver.find_element_by_id('id_script_type').send_keys('Python')
         self.driver.find_element_by_id('id_command_usage').send_keys(
             'Validation')
