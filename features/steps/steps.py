@@ -124,6 +124,7 @@ def step_impl(context, validation_result):
 @then('all PREMIS implementation-check-type validation events have'
       ' eventOutcome = {event_outcome}')
 def step_impl(context, event_outcome):
+    events = []
     for e in context.am_sel_cli.get_premis_events(context.am_sel_cli.get_mets(
             context.transfer_name,
             context.am_sel_cli.get_sip_uuid(context.transfer_name))):
@@ -131,7 +132,10 @@ def step_impl(context, event_outcome):
             e['event_detail'].startswith(MEDIA_CONCH_EVENT_DETAIL_PREFIX) and
             e['event_outcome_detail_note'].startswith(
                 MEDIA_CONCH_EVENT_OUTCOME_DETAIL_NOTE_IMPLEMENTATION_CHECK_PREFIX)):
-            assert e['event_outcome'] == event_outcome
+            events.append(e)
+    assert len(events) > 0
+    for e in events:
+        assert e['event_outcome'] == event_outcome
 
 
 ###############################################################################
@@ -221,6 +225,7 @@ def step_impl(context, event_outcome):
 @then('all PREMIS policy-check-type validation events have eventOutcome ='
       ' {event_outcome}')
 def step_impl(context, event_outcome):
+    events = []
     for e in context.am_sel_cli.get_premis_events(context.am_sel_cli.get_mets(
             context.transfer_name,
             context.am_sel_cli.get_sip_uuid(context.transfer_name))):
@@ -228,7 +233,10 @@ def step_impl(context, event_outcome):
             e['event_detail'].startswith(MEDIA_CONCH_EVENT_DETAIL_PREFIX) and
             e['event_outcome_detail_note'].startswith(
                 MEDIA_CONCH_EVENT_OUTCOME_DETAIL_NOTE_POLICY_CHECK_PREFIX)):
-            assert e['event_outcome'] == event_outcome
+            events.append(e)
+    assert len(events) > 0
+    for e in events:
+        assert e['event_outcome'] == event_outcome
 
 
 ###############################################################################
