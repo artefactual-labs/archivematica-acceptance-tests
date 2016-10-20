@@ -124,6 +124,9 @@ def squash(string):
     """
     return string.strip().lower().replace(' ', '')
 
+class ArchivematicaSeleniumException(Exception):
+    pass
+
 
 def recurse_on_stale(func):
     """Decorator that re-runs a method if it triggers a
@@ -303,6 +306,10 @@ class ArchivematicaSelenium:
 
     def get_ss_login_url(self):
         return '{}login/'.format(self.ss_url)
+
+    def get_edit_default_processing_config_url(self):
+        return '{}administration/processing/edit/default/'.format(
+            self.am_url)
 
     def get_default_ss_user_edit_url(self):
         return '{}administration/users/1/edit/'.format(self.ss_url)
@@ -1666,6 +1673,213 @@ class ArchivematicaSelenium:
         # TODO: click the "Enable" link. But we have to make sure there is only
         # one matching rule that needs enabling. Not sure at this point whether
         # this action is needed for testing.
+
+    # =========================================================================
+    # Processing Config
+    # =========================================================================
+
+    # Maps processing config decision labels to the HTML ids of the
+    # <select>/<input> elements that control those decisions in the processing
+    # config edit interface.
+    pc_decision2id = {
+        'Send transfer to quarantine':
+            'id_755b4177-c587-41a7-8c52-015277568302',
+        'Remove from quarantine after (days)':
+            'id_19adb668-b19a-4fcb-8938-f49d7485eaf3',
+        'Generate transfer structure report':
+            'id_56eebd45-5600-4768-a8c2-ec0114555a3d',
+        'Select file format identification command (Transfer)':
+            'id_f09847c2-ee51-429a-9478-a860477f6b8d',
+        'Extract packages':
+            'id_dec97e3c-5598-4b99-b26e-f87a435a6b7f',
+        'Delete packages after extraction':
+            'id_f19926dd-8fb5-4c79-8ade-c83f61f55b40',
+        'Examine contents':
+            'id_accea2bf-ba74-4a3a-bb97-614775c74459',
+        'Create SIP(s)':
+            'id_bb194013-597c-4e4a-8493-b36d190f8717',
+        'Select file format identification command (Ingest)':
+            'id_7a024896-c4f7-4808-a240-44c87c762bc5',
+        'Normalize':
+            'id_cb8e5706-e73f-472f-ad9b-d1236af8095f',
+        'Approve normalization':
+            'id_de909a42-c5b5-46e1-9985-c031b50e9d30',
+        'Reminder: add metadata if desired':
+            'id_eeb23509-57e2-4529-8857-9d62525db048',
+        'Transcribe files (OCR)':
+            'id_7079be6d-3a25-41e6-a481-cee5f352fe6e',
+        'Select file format identification command (Submission documentation & metadata)':
+            'id_087d27be-c719-47d8-9bbb-9a7d8b609c44',
+        'Select compression algorithm':
+            'id_01d64f58-8295-4b7b-9cab-8f1b153a504f',
+        'Select compression level':
+            'id_01c651cb-c174-4ba4-b985-1d87a44d6754',
+        'Store AIP':
+            'id_2d32235c-02d4-4686-88a6-96f4d6c7b1c3',
+        'Store AIP location':
+            'id_b320ce81-9982-408a-9502-097d0daa48fa',
+        'Store DIP location':
+            'id_b7a83da6-ed5a-47f7-a643-1e9f9f46e364'
+    }
+
+    def save_default_processing_config(self):
+        """Click the "Save" button in the default processing config edit
+        interface.
+        """
+        edit_default_processing_config_url = \
+            self.get_edit_default_processing_config_url()
+        if self.driver.current_url != edit_default_processing_config_url:
+            self.navigate(edit_default_processing_config_url)
+        self.driver.find_element_by_css_selector('input[value=Save]').click()
+
+    def set_processing_config_decision(self,
+            decision_id=None,  # 'id_<UUID>' or just '<UUID>'
+            decision_label=None,  # e.g., 'Select compression algorithm'
+            choice_value_attr=None,  # '<UUID>'
+            choice_value=None,  # e.g., '7z using bzip2'
+            choice_index=None):  # e.g., 0
+        """Set the (default) processing config decision, identified via
+        ``decision_id`` or ``decision_label``) to the value/choice
+        identified via ``choice_*``.
+
+        The idea is for this method to be flexible: users can supply
+        decision/choice strings and hope we identify them correctly, or
+        they can use UUID-based decision ids and choice names to be
+        explicit.
+        """
+        # Make sure we have the required arguments
+        if decision_id is None and decision_label is None:
+            raise ArchivematicaSeleniumException(
+                'You must provide a decision id or a decision label when'
+                ' setting a processing config decision')
+        if (choice_value_attr is None and
+                choice_value is None and
+                choice_index is None):
+            raise ArchivematicaSeleniumException(
+                'You must provide a choice value attribute, a choice value'
+                ' (text) or a choice index when setting a processing config'
+                ' decision')
+        # Make sure we are editing the default processing config and
+        # navigate there if not.
+        edit_default_processing_config_url = \
+            self.get_edit_default_processing_config_url()
+        if self.driver.current_url != edit_default_processing_config_url:
+            self.navigate(edit_default_processing_config_url)
+        # Get a decision_id value, something of the form 'id_<UUID>'
+        if decision_id is None:
+            decision_id = self.pc_decision2id.get(decision_label)
+            if decision_id is None:
+                for label, id_ in self.pc_decision2id.items():
+                    if label.lower().startswith(decision_label.lower()):
+                        decision_id = id_
+                        break
+            if decision_id is None:
+                for label, id_ in self.pc_decision2id.items():
+                    if decision_label.lower() in label.lower():
+                        decision_id = id_
+                        break
+            if decision_id is None:
+                raise ArchivematicaSeleniumException(
+                    'Unable to determine a decision id given input'
+                    ' parameters')
+        else:
+            if not decision_id.startswith('id_'):
+                decision_id = 'id_' + decision_id
+        decision_el = self.driver.find_element_by_id(decision_id)
+        if decision_el.tag_name == 'select':
+            decision_select = Select(decision_el)
+            if choice_value_attr is not None:
+                decision_select.select_by_value(choice_value_attr)
+            elif choice_index is not None:
+                decision_select.select_by_index(choice_index)
+            else:
+                decision_select.select_by_visible_text(choice_value)
+        else:
+            # Assume it is <input[type=text]>
+            decision_el.clear()
+            decision_el.send_keys(choice_value)
+
+    def ensure_default_processing_config_in_default_state(self):
+        """Make sure that the default processing config is in its default
+        state.
+
+        The following JavaScript in the browser console will summarize the
+        needed details of the default state of the default processing config::
+
+            $('table tr').each(function(){
+                $(this).find('td').each(function(){
+                    var label = $(this).find('label');
+                    var select = $(this).find('select');
+                    if (label.length>0) {
+                        console.log(label.text());
+                    } else if (select.length>0) {
+                        console.log(select.attr('id'));
+                        console.log(select.find(":selected").text());
+                        console.log(select.find(":selected").attr('value'));
+                    }
+                })
+            });
+        """
+        self.set_processing_config_decision(
+            decision_label='Send transfer to quarantine',
+            choice_value='No')
+        self.set_processing_config_decision(
+            decision_label='Remove from quarantine after (days)',
+            choice_value='28')
+        self.set_processing_config_decision(
+            decision_label='Generate transfer structure report',
+            choice_value='No')
+        self.set_processing_config_decision(
+            decision_label=('Select file format identification command'
+                            ' (Transfer)'),
+            choice_value='None')
+        self.set_processing_config_decision(
+            decision_label='Extract packages',
+            choice_value='Yes')
+        self.set_processing_config_decision(
+            decision_label='Delete packages after extraction',
+            choice_value='Yes')
+        self.set_processing_config_decision(
+            decision_label='Examine contents',
+            choice_value='Skip examine contents')
+        self.set_processing_config_decision(
+            decision_label='Create SIP(s)',
+            choice_value='None')
+        self.set_processing_config_decision(
+            decision_label='Select file format identification command (Ingest)',
+            choice_value='Use existing data')
+        self.set_processing_config_decision(
+            decision_label='Normalize',
+            choice_value='None')
+        self.set_processing_config_decision(
+            decision_label='Approve normalization',
+            choice_value='None')
+        self.set_processing_config_decision(
+            decision_label='Reminder: add metadata if desired',
+            choice_value='Continue')
+        self.set_processing_config_decision(
+            decision_label='Transcribe files (OCR)',
+            choice_value='No')
+        self.set_processing_config_decision(
+            decision_label=('Select file format identification command'
+                            ' (Submission documentation & metadata)'),
+            choice_value='None')
+        self.set_processing_config_decision(
+            decision_label='Select compression algorithm',
+            choice_value='7z using bzip2')
+        self.set_processing_config_decision(
+            decision_label='Select compression level',
+            choice_value='5 - normal compression mode')
+        self.set_processing_config_decision(
+            decision_label='Store AIP',
+            choice_value='None')
+        self.set_processing_config_decision(
+            decision_label='Store AIP location',
+            choice_value='None')
+        self.set_processing_config_decision(
+            decision_label='Store DIP location',
+            choice_value='None')
+        self.save_default_processing_config()
 
     # Wait/attempt count vars
     # =========================================================================

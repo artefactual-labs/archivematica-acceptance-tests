@@ -117,6 +117,24 @@ def step_impl(context, microservice_name, microservice_output, unit_type):
 
 
 ###############################################################################
+# FEATURE: Metadata-only AIP Re-ingest
+###############################################################################
+
+@given('that the user has ensured that the default processing config is in its'
+       ' default state')
+def step_impl(context):
+    context.am_sel_cli.ensure_default_processing_config_in_default_state()
+
+
+@given('the reminder to add metadata is enabled')
+def step_impl(context):
+    context.am_sel_cli.set_processing_config_decision(
+        decision_label='Reminder: add metadata if desired',
+        choice_value='None')
+    context.am_sel_cli.save_default_processing_config()
+
+
+###############################################################################
 # FEATURE: PRE-INGEST CONFORMANCE CHECK
 ###############################################################################
 
