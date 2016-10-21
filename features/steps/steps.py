@@ -7,7 +7,7 @@ MEDIA_CONCH_EVENT_DETAIL_PREFIX = 'program="MediaConch"'
 MEDIA_CONCH_EVENT_OUTCOME_DETAIL_NOTE_IMPLEMENTATION_CHECK_PREFIX = \
     'MediaConch implementation check result:'
 MEDIA_CONCH_EVENT_OUTCOME_DETAIL_NOTE_POLICY_CHECK_PREFIX = \
-    'MediaConch policy check result:'
+    'MediaConch policy check result'
 POLICIES_DIR = 'mediaconch-policies'
 
 
