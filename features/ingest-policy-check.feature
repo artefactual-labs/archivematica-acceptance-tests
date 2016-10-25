@@ -14,9 +14,11 @@ Feature: Ingest policy check
     And the user ensures there is an FPR rule with purpose <purpose> that validates Generic MKV files against policy file <policy_file>
     And the user edits the FPR rule to transcode .mkv files to .mkv for access
     And a transfer is initiated on directory <transfer_path>
+    And Processing Configuration has been set to Check for policies = yes
     Then policy checks for access derivatives micro-service output is <microservice_output>
     # If you don't do a test like this, the above assertion may be vacuously true.
     And all policy check for access derivatives tasks indicate <event_outcome>
+    And Archivematica writes full MediaConch output to log files stored in AIP
 
     Examples: Policy Check Outcomes
     | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                          | policy_file                       | purpose                                          |
@@ -31,10 +33,12 @@ Feature: Ingest policy check
     And the user ensures there is an FPR command that uses policy file <policy_file>
     And the user ensures there is an FPR rule with purpose <purpose> that validates Generic MKV files against policy file <policy_file>
     And a transfer is initiated on directory <transfer_path>
+    And Processing Configuration has been set to Check for policies = yes
     Then policy checks for preservation derivatives micro-service output is <microservice_output>
     And all PREMIS policy-check-type validation events have eventOutcome = <event_outcome>
     # TODO:
     # And Archivematica outputs a <verification_result> verification in the normalization report
+    And Archivematica writes full MediaConch output to log files stored in AIP
 
     Examples: Policy Check Outcomes
     | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                | policy_file                       | purpose                                                 |
@@ -49,10 +53,12 @@ Feature: Ingest policy check
     And the user ensures there is an FPR command that uses policy file <policy_file>
     And the user ensures there is an FPR rule with purpose <purpose> that validates Generic MKV files against policy file <policy_file>
     And a transfer is initiated on directory <transfer_path>
+    And Processing Configuration has been set to Check for policies = yes
     Then policy checks for preservation derivatives micro-service output is <microservice_output>
     And all PREMIS policy-check-type validation events have eventOutcome = <event_outcome>
     # TODO:
     # And Archivematica outputs a <verification_result> verification in the normalization report
+    And Archivematica writes full MediaConch output to log files stored in AIP
 
     Examples: Policy Check Outcomes
     | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                                                  | policy_file                       | purpose                                                 |
@@ -67,8 +73,10 @@ Feature: Ingest policy check
     And the user ensures there is an FPR command that uses policy file <policy_file>
     And the user ensures there is an FPR rule with purpose <purpose> that validates Generic MKV files against policy file <policy_file>
     And a transfer is initiated on directory <transfer_path>
+    And Processing Configuration has been set to Check for policies = yes
     Then policy checks for access derivatives micro-service output is <microservice_output>
     And all policy check for access derivatives tasks indicate <event_outcome>
+    And Archivematica writes full MediaConch output to log files stored in AIP
 
     Examples: Policy Check Outcomes
     | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                                            | policy_file                       | purpose                                           |
