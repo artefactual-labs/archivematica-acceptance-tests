@@ -11,6 +11,7 @@ Feature: Post-normalization conformance check
     Then validate preservation derivatives micro-service output is <microservice_output>
     And all preservation conformance checks in the normalization report have value <validation_result>
     And all PREMIS implementation-check-type validation events have eventOutcome = <event_outcome>
+    And Archivematica writes full MediaConch output to log files stored in AIP
 
     Examples: Normalized for Preservation File Validity Possibilities
     | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                       |
@@ -24,6 +25,7 @@ Feature: Post-normalization conformance check
     And a transfer is initiated on directory <transfer_path>
     Then validate access derivatives micro-service output is <microservice_output>
     And all access conformance checks in the normalization report have value <validation_result>
+    And Archivematica writes full MediaConch output to log files stored in AIP
 
     Examples: Normalized for Access File Validity Possibilities
     | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                              |
