@@ -9,6 +9,7 @@ Feature: Pre-ingest conformance check
     Then validation micro-service output is <microservice_output>
     And Archivematica <am_action>
     And all PREMIS implementation-check-type validation events have eventOutcome = <event_outcome>
+    And Archivematica writes full MediaConch output to logfiles stored in the AIP
 
     Examples: File Validity Possibilities
     | file_validity | microservice_output    | am_action            | event_outcome | transfer_path          |
