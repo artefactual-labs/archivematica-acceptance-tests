@@ -5,6 +5,7 @@ test-transfers-sandbox/
 records/
 mediaconch-policies-sandbox/
 test-files/
+.amsc-tmp/
 .python-version
 __pycache__
 behave-tutorial/

@@ -67,11 +67,15 @@ import json
 from lxml import etree
 import os
 import pprint
+import requests
+import shlex
+import shutil
 import sys
+import subprocess
 import time
 import uuid
 from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -95,6 +99,19 @@ DEFAULT_SS_USERNAME = 'test',
 DEFAULT_SS_PASSWORD = 'test',
 DEFAULT_SS_URL = 'http://192.168.168.192:8000/',
 
+JOB_OUTPUTS_COMPLETE = (
+    'Failed',
+    'Completed successfully',
+    'Awaiting decision')
+TMP_DIR_NAME = '.amsc-tmp'
+
+
+def squash(string):
+    """Simple function that makes it easy to compare two strings for
+    equality even if they have incidental (for our purposes) formatting
+    differences.
+    """
+    return string.strip().lower().replace(' ', '')
 
 
 def recurse_on_stale(func):
@@ -108,6 +125,10 @@ def recurse_on_stale(func):
         except StaleElementReferenceException:
             return wrapper(*args, **kwargs)
     return wrapper
+
+
+class ArchivematicaSeleniumError(Exception):
+    pass
 
 
 class ArchivematicaSelenium:
@@ -143,8 +164,8 @@ class ArchivematicaSelenium:
         self.ss_username = ss_username
         self.ss_password = ss_password
         self.ss_url = ss_url
-        self.ss_api_key = ss_api_key
-
+        self._ss_api_key = ss_api_key
+        self._tmp_path = None
 
     # =========================================================================
     # Test Infrastructure.
@@ -186,6 +207,7 @@ class ArchivematicaSelenium:
         for window_handle in self.driver.window_handles:
             self.driver.switch_to.window(window_handle)
             self.driver.close()
+        self.clear_tmp_dir()
         for driver in self.all_drivers:
             try:
                 driver.close()
@@ -314,7 +336,8 @@ class ArchivematicaSelenium:
         return '{}tasks/{}/'.format(self.am_url, job_uuid)
 
     def get_normalization_report_url(self, sip_uuid):
-        return '{}ingest/normalization-report/{}/'.format(self.am_url, sip_uuid)
+        return '{}ingest/normalization-report/{}/'.format(
+            self.am_url, sip_uuid)
 
     def get_installer_welcome_url(self):
         return '{}installer/welcome/'.format(self.am_url)
@@ -385,17 +408,12 @@ class ArchivematicaSelenium:
         if not sip_uuid:
             sip_uuid = self.get_sip_uuid(transfer_name)
         ingest_url = self.get_ingest_url()
-        self.driver.get(ingest_url)
-        if self.driver.current_url != ingest_url:
-            self.login()
-        self.driver.get(ingest_url)
+        self.navigate(ingest_url)
         # Wait for the "Store AIP" micro-service.
         self.expose_job('Store AIP  (review)', sip_uuid, 'ingest')
-        aip_preview_url = '{}/ingest/preview/aip/{}'.format(self.am_url, sip_uuid)
-        self.driver.get(aip_preview_url)
-        if self.driver.current_url != aip_preview_url:
-            self.login()
-        self.driver.get(aip_preview_url)
+        aip_preview_url = '{}/ingest/preview/aip/{}'.format(
+            self.am_url, sip_uuid)
+        self.navigate(aip_preview_url)
         mets_path = 'storeAIP/{}-{}/METS.{}.xml'.format(
             transfer_name, sip_uuid, sip_uuid)
         self.navigate_to_aip_directory_and_click(mets_path)
@@ -469,13 +487,11 @@ class ArchivematicaSelenium:
         """
         # Navigate to the Transfers or Ingest tab, depending on ``unit_type``
         # (if we're not there already)
-        if unit_type == 'transfer':
-            unit_url = self.get_transfer_url()
-        else:
+        unit_url = self.get_transfer_url()
+        if unit_type != 'transfer':
             unit_url = self.get_ingest_url()
-        if self.driver.current_url != unit_url:
-            self.driver.get(unit_url)
-        group_name = self.micro_services2groups[ms_name]
+        self.navigate(unit_url)
+        group_name = self.micro_service2group(ms_name)
         # If not visible, click the micro-service group to expand it.
         self.wait_for_transfer_micro_service_group(group_name, transfer_uuid)
         is_visible = self.get_transfer_micro_service_group_elem(
@@ -488,6 +504,119 @@ class ArchivematicaSelenium:
         self.wait_for_microservice_visibility(
             ms_name, group_name, transfer_uuid)
         return group_name
+
+    def await_job_completion(self, ms_name, transfer_uuid,
+                             unit_type='transfer'):
+        """Wait for the job representing the execution of micro-service
+        ``ms_name`` on the unit with UUID ``transfer_uuid`` to complete.
+        """
+        group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
+        job_uuid, job_output = self.get_job_uuid(
+            ms_name, group_name, transfer_uuid)
+        return job_uuid, job_output
+
+    def await_decision_point(self, ms_name, transfer_uuid,
+                             unit_type='transfer'):
+        """Wait for the decision point job for micro-service ``ms_name`` to
+        appear.
+        """
+        group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
+        job_uuid, job_output = self.get_job_uuid(
+            ms_name, group_name, transfer_uuid,
+            job_outputs=('Awaiting decision',))
+        return job_uuid, job_output
+
+    @property
+    def tmp_path(self):
+        if not self._tmp_path:
+            here = os.path.dirname(os.path.abspath(__file__))
+            self._tmp_path = os.path.join(here, TMP_DIR_NAME)
+            if not os.path.isdir(self._tmp_path):
+                os.makedirs(self._tmp_path)
+        return self._tmp_path
+
+    def clear_tmp_dir(self):
+        for thing in os.listdir(self.tmp_path):
+            thing_path = os.path.join(self.tmp_path, thing)
+            try:
+                if os.path.isfile(thing_path):
+                    os.unlink(thing_path)
+                elif os.path.isdir(thing_path):
+                    shutil.rmtree(thing_path)
+            except Exception as e:
+                print(e)
+
+    def download_aip(self, transfer_name, sip_uuid):
+        """Use the AM SS to download the completed AIP.
+        Calls http://localhost:8000/api/v2/file/<SIP-UUID>/download/\
+                  ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
+        """
+        payload = {'username': self.ss_username, 'api_key': self.ss_api_key}
+        url = '{}api/v2/file/{}/download/'.format(self.ss_url, sip_uuid)
+        aip_name = '{}-{}.7z'.format(transfer_name, sip_uuid)
+        aip_path = os.path.join(self.tmp_path, aip_name)
+        with open(aip_path, 'wb') as f:
+            r = requests.get(url, params=payload, stream=True)
+            if r.ok:
+                for block in r.iter_content(1024):
+                    f.write(block)
+                return aip_path
+            else:
+                print(r.status_code)
+                raise ArchivematicaSeleniumError(
+                    'Unable to download AIP {}'.format(sip_uuid))
+
+    def decompress_aip(self, aip_path):
+        aip_dir_path, _ = os.path.splitext(aip_path)
+        try:
+            devnull = getattr(subprocess, 'DEVNULL')
+        except AttributeError:
+            devnull = open(os.devnull, 'wb')
+        p = subprocess.Popen(
+            shlex.split('7z x {} -aoa'.format(aip_path)),
+            cwd=self.tmp_path,
+            stdout=devnull,
+            stderr=subprocess.STDOUT)
+        p.wait()
+        assert p.returncode == 0
+        assert os.path.isdir(aip_dir_path)
+        return aip_dir_path
+
+    @recurse_on_stale
+    def make_choice(self, choice_text, decision_point, uuid_val,
+                    unit_type='transfer'):
+        """Make the choice matching the text ``choice_text`` at decision point
+        (i.e., microservice) job matching ``decision_point``.
+        """
+        group_name = self.expose_job(
+            decision_point, uuid_val, unit_type=unit_type)
+        ms_group_elem = self.get_transfer_micro_service_group_elem(
+            group_name, uuid_val)
+        action_div_el = None
+        for job_elem in ms_group_elem.find_elements_by_css_selector('div.job'):
+            for span_elem in job_elem.find_elements_by_css_selector(
+                    'div.job-detail-microservice span'):
+                if squash(span_elem.text) == squash(decision_point):
+                    action_div_el = job_elem.find_element_by_css_selector(
+                        'div.job-detail-actions')
+                    break
+            if action_div_el:
+                break
+        if action_div_el:
+            select_el = action_div_el.find_element_by_css_selector('select')
+            index = None
+            for i, option_el in enumerate(
+                    select_el.find_elements_by_tag_name('option')):
+                if squash(choice_text) in squash(option_el.text):
+                    index = i
+            if index is not None:
+                Select(select_el).select_by_index(index)
+            else:
+                raise Exception('Unable to select choice'
+                                ' "{}"'.format(choice_text))
+        else:
+            raise Exception('Unable to find decision point {}'.format(
+                decision_point))
 
     def parse_job(self, ms_name, transfer_uuid, unit_type='transfer'):
         """Parse the job representing the execution of the micro-service named
@@ -521,17 +650,25 @@ class ArchivematicaSelenium:
         # exit codes sometimes show up.
         time.sleep(1)
 
-        # Open the tasks in a new browser window with a new
-        # Selenium driver; then parse the table there.
+        # Getting the Job UUID also means waiting for the job to terminate.
         job_uuid, job_output = self.get_job_uuid(ms_name, group_name,
                                                  transfer_uuid)
 
+        # Open the tasks in a new browser window with a new
+        # Selenium driver; then parse the table there.
         table_dict = {'job_output': job_output, 'tasks': {}}
         tasks_url = self.get_tasks_url(job_uuid)
         table_dict = self.parse_tasks_table(tasks_url, table_dict)
         return table_dict
 
     def parse_tasks_table(self, tasks_url, table_dict):
+        old_driver = self.driver
+        table_dict = self._parse_tasks_table(tasks_url, table_dict)
+        self.driver = old_driver
+        return table_dict
+
+    def _parse_tasks_table(self, tasks_url, table_dict):
+        old_driver = self.driver
         self.driver = self.get_driver()
         if self.driver.current_url != tasks_url:
             self.login()
@@ -560,7 +697,7 @@ class ArchivematicaSelenium:
                     self.am_url, link_button.get_attribute('href'))
         self.driver.close()
         if next_tasks_url:
-            table_dict = self.parse_tasks_table(next_tasks_url, table_dict)
+            table_dict = self._parse_tasks_table(next_tasks_url, table_dict)
         return table_dict
 
     def get_task_by_file_name(self, file_name, tasks):
@@ -634,20 +771,181 @@ class ArchivematicaSelenium:
     # This should map all micro-service names (i.e., descriptions) to their
     # groups, just so tests don't need to specify both.
     # TODO: complete the mapping.
+    # WARNING: some micro-services map to multiple groups. This will currently
+    # break operations that require waiting for one of those micro-services,
+    # performing an action on one of them, etc.
+    # The following JavaScript at the console will create an object mapping all
+    # (run) micro-service names to their micro-service group names.
+    """
+    var map_ = {};
+    $('div.sip').first().find('div.microservicegroup').each(function(){
+        var group = $(this).find(
+            'span.microservice-group-name').text().replace(
+            'Micro-service: ', '');
+        var children = $(this).children();
+        if (!$(children[1]).is(':visible')) { children[0].click() }
+        $(children[1]).find('div.job').each(function(){
+            var ms = $(this).find(
+                'div.job-detail-microservice span[title]').text();
+            if (map_.hasOwnProperty(ms)) {
+                console.log(
+                    ms + ' is a DUPLICATE!: ' + group + ' and ' + map_[ms]);
+            } else {
+                map_[ms] = group;
+            }
+        });
+    });
+    console.log(JSON.stringify(map_, undefined, 2));
+    """
     micro_services2groups = {
-        'Approve normalization': 'Normalize',
-        'Move to processing directory': 'Verify transfer compliance',
-        'Policy checks for access derivatives':
-            'Policy checks for derivatives',
-        'Policy checks for preservation derivatives':
-            'Policy checks for derivatives',
-        'Remove the processing directory': 'Store AIP',
-        'Store AIP': 'Store AIP',
-        'Store AIP  (review)': 'Store AIP',
-        'Validate formats': 'Validation',
-        'Validate access derivatives': 'Normalize',
-        'Validate preservation derivatives': 'Normalize'
+        'Add processed structMap to METS.xml document': ('Update METS.xml document',),
+        'Approve normalization': ('Normalize',),
+        'Approve standard transfer': ('Approve transfer',),
+        'Assign checksums and file sizes to metadata': ('Process metadata directory',),
+        'Assign checksums and file sizes to objects': ('Assign file UUIDs and checksums',),
+        'Assign checksums and file sizes to submissionDocumentation': ('Process submission documentation',),
+        'Assign file UUIDs to metadata': ('Process metadata directory',),
+        'Assign file UUIDs to objects': ('Assign file UUIDs and checksums',),
+        'Assign file UUIDs to submission documentation': ('Process submission documentation',),
+        'Attempt restructure for compliance': ('Verify transfer compliance',),
+        'Characterize and extract metadata': ('Characterize and extract metadata',),
+        'Characterize and extract metadata on metadata files': ('Process metadata directory',),
+        'Characterize and extract metadata on submission documentation': ('Process submission documentation',),
+        'Check for Access directory': ('Normalize',),
+        'Check for Service directory': ('Normalize',),
+        'Check for manual normalized files': ('Process manually normalized files',),
+        'Check for specialized processing': ('Examine contents',),
+        'Check for submission documentation': ('Process submission documentation',),
+        'Check if AIP is a file or directory': ('Prepare AIP',),
+        'Check if DIP should be generated': ('Prepare AIP',),
+        'Check if SIP is from Maildir Transfer': ('Rename SIP directory with SIP UUID',),
+        'Check transfer directory for objects': ('Create SIP from Transfer',),
+        'Compress AIP': ('Prepare AIP',),
+        'Copy submission documentation': ('Prepare AIP',),
+        'Copy transfer submission documentation': ('Process submission documentation',),
+        'Copy transfers metadata and logs': ('Process metadata directory',),
+        'Create AIP Pointer File': ('Prepare AIP',),
+        'Create SIP from transfer objects': ('Create SIP from Transfer',),
+        'Create SIP(s)': ('Create SIP from Transfer',),
+        'Create thumbnails directory': ('Normalize',),
+        'Create transfer metadata XML': ('Complete transfer',),
+        'Designate to process as a standard transfer': ('Quarantine',),
+        'Determine if transfer contains packages': ('Extract packages',),
+        'Determine which files to identify': ('Identify file format',),
+        'Examine contents?': ('Examine contents',),
+        'Find type to process as': ('Quarantine',),
+        'Generate METS.xml document': ('Generate METS.xml document', 'Generate AIP METS'),
+        'Generate transfer structure report': ('Generate transfer structure report',),
+        'Grant normalization options for no pre-existing DIP': ('Normalize',),
+        'Identify file format': (
+            'Identify file format',
+            'Normalize',
+            'Process submission documentation'),
+        'Identify file format of metadata files': ('Process metadata directory',),
+        'Identify manually normalized files': ('Normalize',),
+        'Include default SIP processingMCP.xml': ('Include default SIP processingMCP.xml',),
+        'Include default Transfer processingMCP.xml': ('Include default Transfer processingMCP.xml',),
+        'Load Dublin Core metadata from disk': ('Clean up names',),
+        'Load labels from metadata/file_labels.csv': ('Characterize and extract metadata',),
+        'Load options to create SIPs': ('Create SIP from Transfer',),
+        'Move metadata to objects directory': ('Process metadata directory',),
+        'Move submission documentation into objects directory': ('Process submission documentation',),
+        'Move to SIP creation directory for completed transfers': ('Create SIP from Transfer', 'Complete transfer'),
+        'Move to approve normalization directory': ('Normalize',),
+        'Move to compressionAIPDecisions directory': ('Prepare AIP',),
+        'Move to examine contents': ('Examine contents',),
+        'Move to extract packages': ('Extract packages',),
+        'Move to generate transfer tree': ('Generate transfer structure report',),
+        'Move to metadata reminder': ('Add final metadata',),
+        'Move to processing directory': (
+            'Verify transfer compliance',
+            'Generate transfer structure report',
+            'Scan for viruses',
+            'Create SIP from Transfer',
+            'Verify SIP compliance',
+            'Normalize'),
+        'Move to select file ID tool': ('Identify file format', 'Normalize'),
+        'Move to the store AIP approval directory': ('Store AIP',),
+        'Move to workFlowDecisions-quarantineSIP directory': ('Quarantine',),
+        'Normalization report': ('Normalize',),
+        'Normalize': ('Normalize',),
+        'Normalize for preservation': ('Normalize',),
+        'Normalize for thumbnails': ('Normalize',),
+        'Policy checks for access derivatives': ('Policy checks for derivatives',),
+        'Policy checks for preservation derivatives': ('Policy checks for derivatives',),
+        'Prepare AIP': ('Prepare AIP',),
+        'Process JSON metadata': ('Process metadata directory',),
+        'Process transfer JSON metadata': ('Reformat metadata files',),
+        'Reminder: add metadata if desired': ('Add final metadata',),
+        'Remove cache files': ('Remove cache files',),
+        'Remove empty manual normalization directories': ('Process metadata directory',),
+        'Remove files without linking information (failed normalization artifacts etc.)': (
+                'Process submission documentation',
+                'Normalize'),
+        'Remove hidden files and directories': ('Verify transfer compliance',),
+        'Remove the processing directory': ('Store AIP',),
+        'Remove unneeded files': ('Verify transfer compliance',),
+        'Removed bagged files': ('Prepare AIP',),
+        'Rename SIP directory with SIP UUID': ('Rename SIP directory with SIP UUID',),
+        'Rename with transfer UUID': ('Rename with transfer UUID',),
+        'Resume after normalization file identification tool selected.': ('Normalize',),
+        'Retrieve AIP Storage Locations': ('Store AIP',),
+        'Sanitize SIP name': ('Clean up names',),
+        'Sanitize Transfer name': ('Clean up names',),
+        'Sanitize file and directory names in metadata': ('Process metadata directory',),
+        'Sanitize file and directory names in submission documentation': ('Process submission documentation',),
+        "Sanitize object's file and directory names": ('Clean up names',),
+        'Scan for viruses': ('Scan for viruses',),
+        'Scan for viruses in metadata': ('Process metadata directory',),
+        'Scan for viruses in submission documentation': ('Process submission documentation',),
+        'Select compression algorithm': ('Prepare AIP',),
+        'Select compression level': ('Prepare AIP',),
+        'Select file format identification command': ('Identify file format', 'Process submission documentation'),
+        'Select pre-normalize file format identification command': ('Normalize',),
+        'Serialize Dublin Core metadata to disk': ('Create SIP from Transfer',),
+        'Set bag file permissions': ('Prepare AIP',),
+        'Set file permissions': (
+            'Assign file UUIDs and checksums',
+            'Normalize',
+            'Add final metadata',
+            'Clean up names',
+            'Verify transfer compliance',
+            'Verify SIP compliance',
+            'Prepare AIP'),
+        'Set remove preservation and access normalized files to renormalize link.': ('Normalize',),
+        'Set transfer type: Standard': ('Verify transfer compliance',),
+        'Store AIP': ('Store AIP',),
+        'Store AIP  (review)': ('Store AIP',),
+        'Store AIP location': ('Store AIP',),
+        'Transcribe': ('Transcribe SIP contents',),
+        'Transcribe SIP contents': ('Transcribe SIP contents',),
+        'Validate formats': ('Validation',),
+        'Validate access derivatives': ('Normalize',),
+        'Validate preservation derivatives': ('Normalize',),
+        'Verify SIP compliance': ('Verify SIP compliance',),
+        'Verify checksums generated on ingest': ('Verify checksums',),
+        'Verify metadata directory checksums': ('Verify transfer checksums',),
+        'Verify mets_structmap.xml compliance': ('Verify transfer compliance', 'Verify transfer compliance'),
+        'Verify transfer compliance': ('Verify transfer compliance',),
+        'Workflow decision - send transfer to quarantine': ('Quarantine',)
     }
+
+    def micro_service2group(self, micro_service):
+        map_ = self.micro_services2groups
+        groups = None
+        try:
+            groups = map_[micro_service]
+        except KeyError:
+            for k, v in map_.items():
+                if squash(k) == squash(micro_service):
+                    groups = v
+                    break
+            if not groups:
+                raise
+        if len(groups) != 1:
+            print('WARNING: the micro-service {} belongs to multiple'
+                  ' micro-service groups'.format(micro_service))
+        return groups[0]
 
     def parse_normalization_report(self, sip_uuid):
         """Wait for the "Approve normalization" job to appear and then open the
@@ -692,14 +990,15 @@ class ArchivematicaSelenium:
         for job_elem in ms_group_elem.find_elements_by_css_selector('div.job'):
             for span_elem in job_elem.find_elements_by_css_selector(
                     'div.job-detail-microservice span'):
-                if span_elem.text.strip() == ms_name:
+                if squash(span_elem.text) == squash(ms_name):
                     return
         time.sleep(0.25)
         self.wait_for_microservice_visibility(ms_name, group_name,
                                               transfer_uuid)
 
     @recurse_on_stale
-    def get_job_uuid(self, ms_name, group_name, transfer_uuid):
+    def get_job_uuid(self, ms_name, group_name, transfer_uuid,
+                     job_outputs=JOB_OUTPUTS_COMPLETE):
         """Get the UUID of the Job model representing the execution of
         micro-service ``ms_name`` in transfer ``transfer_uuid``.
         """
@@ -708,15 +1007,13 @@ class ArchivematicaSelenium:
         for job_elem in ms_group_elem.find_elements_by_css_selector('div.job'):
             for span_elem in job_elem.find_elements_by_css_selector(
                     'div.job-detail-microservice span'):
-                if span_elem.text.strip() == ms_name:
+                if squash(span_elem.text) == squash(ms_name):
                     job_output = job_elem.find_element_by_css_selector(
                         'div.job-detail-currentstep span').text.strip()
-                    if job_output in ('Failed', 'Completed successfully'):
+                    if job_output in job_outputs:
                         return (span_elem.get_attribute('title').strip(),
                                 job_output)
                     else:
-                        # print('Job is in in-progress state {}; waiting'
-                        #       ' ...'.format(job_output))
                         time.sleep(0.5)
                         return self.get_job_uuid(ms_name, group_name,
                                                  transfer_uuid)
@@ -959,10 +1256,9 @@ class ArchivematicaSelenium:
 
     # This is used to join folder-matching XPaths. So that
     # 'vagrant/archivematica-sampledata' can be matched by getting an XPath
-    # that matches each folder name and joins them according to the DOM structure
-    # of the file browser.
+    # that matches each folder name and joins them according to the DOM
+    # structure of the file browser.
     treeitem_next_sibling = '/following-sibling::treeitem/ul/li/'
-
 
     def _navigate_to_transfer_directory_and_click(self, path):
         """Click on each folder icon in ``path`` from the root on up, until we
@@ -1031,7 +1327,9 @@ class ArchivematicaSelenium:
         self.click_folder_old_browser(file_id, True)
 
     def folder_label2icon_xpath(self, folder_label_xpath):
-        """Given XPATH for TS folder label, return XPATH for its folder icon."""
+        """Given XPATH for TS folder label, return XPATH for its folder
+        icon.
+        """
         return "{}/preceding-sibling::i[@class='tree-branch-head']".format(
             folder_label_xpath)
 
@@ -1135,7 +1433,11 @@ class ArchivematicaSelenium:
 
     def navigate(self, url):
         """Navigate to ``url``; login and try again, if redirected."""
+        if self.driver.current_url == url:
+            return
         self.driver.get(url)
+        if self.driver.current_url == url:
+            return
         if self.driver.current_url != url:
             if self.driver.current_url.endswith('/installer/welcome/'):
                 self.setup_new_install()
@@ -1258,7 +1560,7 @@ class ArchivematicaSelenium:
         'Audio: Broadcast WAVE: Broadcast WAVE 1'.
         """
         if self.fpr_rule_already_exists(purpose, format, command_description):
-            #self.ensure_fpr_rule_enabled(purpose, format, command_description)
+            # self.ensure_fpr_rule_enabled(purpose, format, command_description)
             return
         self.navigate(self.get_create_rule_url())
         self.driver.find_element_by_id('id_f-purpose').send_keys(purpose)
@@ -1296,7 +1598,6 @@ class ArchivematicaSelenium:
         # TODO: click the "Enable" link. But we have to make sure there is only
         # one matching rule that needs enabling. Not sure at this point whether
         # this action is needed for testing.
-
 
     # Wait/attempt count vars
     # =========================================================================
@@ -1360,24 +1661,27 @@ class ArchivematicaSelenium:
         """This AM instance has just been created. We need to create the first
         user and register it with its storage service.
         """
-        ss_user_api_key = self.get_ss_user_api_key()
         self.create_first_user()
         self.wait_for_presence('#id_storage_service_apikey', 100)
         self.driver.find_element_by_id('id_storage_service_apikey')\
-            .send_keys(ss_user_api_key)
+            .send_keys(self.ss_api_key)
         self.driver.find_element_by_css_selector(
             'input[name=use_default]').click()
 
-    def get_ss_user_api_key(self):
-        self.driver.get(self.get_ss_login_url())
-        self.driver.find_element_by_id('id_username').send_keys(self.ss_username)
-        self.driver.find_element_by_id('id_password').send_keys(self.ss_password)
-        self.driver.find_element_by_css_selector('input[value=login]').click()
-        self.driver.get(self.get_default_ss_user_edit_url())
-        block = WebDriverWait(self.driver, 20)
-        block.until(EC.presence_of_element_located(
-            (By.CSS_SELECTOR, 'code')))
-        return self.driver.find_element_by_tag_name('code').text.strip()
+    @property
+    def ss_api_key(self):
+        if not self._ss_api_key:
+            self.driver.get(self.get_ss_login_url())
+            self.driver.find_element_by_id('id_username').send_keys(self.ss_username)
+            self.driver.find_element_by_id('id_password').send_keys(self.ss_password)
+            self.driver.find_element_by_css_selector('input[value=login]').click()
+            self.driver.get(self.get_default_ss_user_edit_url())
+            block = WebDriverWait(self.driver, 20)
+            block.until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'code')))
+            self._ss_api_key = self.driver.find_element_by_tag_name(
+                'code').text.strip()
+        return self._ss_api_key
 
     def create_first_user(self):
         """Create a test user via the /installer/welcome/ page interface."""

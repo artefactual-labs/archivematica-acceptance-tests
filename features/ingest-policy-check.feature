@@ -23,6 +23,7 @@ Feature: Ingest policy check
     | conform          | Completed successfully | pass           | successful          | preforma/all-conform-policy-norm-acc   | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Access Derivatives against a Policy |
     | not conform      | Failed                 | fail           | failed              | preforma/none-conform-policy-norm-acc  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Access Derivatives against a Policy |
 
+  @testing
   Scenario Outline: Isla has preservation derivatives and she needs to know whether they conform to her preservation policy
     Given MediaConch policy file <policy_file> is present in the local mediaconch-policies/ directory
     And directory <transfer_path> contains files that, when normalized, will all <do_files_conform> to <policy_file>
@@ -31,8 +32,16 @@ Feature: Ingest policy check
     And the user ensures there is an FPR command that uses policy file <policy_file>
     And the user ensures there is an FPR rule with purpose <purpose> that validates Generic MKV files against policy file <policy_file>
     And a transfer is initiated on directory <transfer_path>
-    Then policy checks for preservation derivatives micro-service output is <microservice_output>
-    And all PREMIS policy-check-type validation events have eventOutcome = <event_outcome>
+    And the user waits for the "Policy checks for preservation derivatives" micro-service to complete during ingest
+    Then the "Policy checks for preservation derivatives" micro-service output is "<microservice_output>" during ingest
+    When the user waits for the "Store AIP (review)" decision point to appear during ingest
+    Then all PREMIS policy-check-type validation events have eventOutcome = <event_outcome>
+    When the user chooses "Store AIP" at decision point "Store AIP (review)" during ingest
+    And the user waits for the "Store AIP location" decision point to appear during ingest
+    And the user chooses "Store AIP in standard Archivematica Directory" at decision point "Store AIP location" during ingest
+    And the user downloads the AIP
+    And the user decompresses the AIP
+    Then the logs directory of the AIP contains a copy of the MediaConch policy file <policy_file>
     # TODO:
     # And Archivematica outputs a <verification_result> verification in the normalization report
 
