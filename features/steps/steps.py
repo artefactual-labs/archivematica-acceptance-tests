@@ -42,11 +42,19 @@ def step_impl(context, choice, decision_point, unit_type):
     context.am_sel_cli.make_choice(
         choice, decision_point, uuid_val, unit_type=unit_type)
 
+@when('the user waits for the AIP to appear in archival storage')
+def step_impl(context):
+    uuid_val = get_uuid_val(context, 'sip')
+    context.am_sel_cli.wait_for_aip_in_archival_storage(uuid_val)
+
 
 @when('the user downloads the AIP')
 def step_impl(context):
     uuid_val = get_uuid_val(context, 'sip')
     transfer_name = context.scenario.transfer_name
+    #uuid_val = 'd0eaa220-a328-4559-83d8-fb2dea6538b5'
+    #transfer_name = 'all_conform_policy_1477433177'
+    print('downloading aip {} for transfer named {}'.format(uuid_val, transfer_name))
     context.scenario.aip_path = context.am_sel_cli.download_aip(
         transfer_name, uuid_val)
 
@@ -57,15 +65,45 @@ def step_impl(context):
         context.scenario.aip_path)
 
 
-@then('the logs directory of the AIP contains a copy of the MediaConch policy'
+@then('the logs directory of the AIP {contains} a copy of the MediaConch policy'
       ' file {policy_file}')
-def step_impl(context, policy_file):
+def step_impl(context, contains, policy_file):
     aip_path = context.scenario.aip_path
     original_policy_path = os.path.join(POLICIES_DIR, policy_file)
-    aip_policy_path = os.path.join(aip_path, 'data', 'logs', policy_file)
-    assert os.path.isfile(original_policy_path)
-    assert os.path.isfile(aip_policy_path)
-    assert filecmp.cmp(original_policy_path, aip_policy_path)
+    policy_file_no_ext, _ = os.path.splitext(policy_file)
+    aip_policy_path = os.path.join(aip_path, 'data', 'logs', 'policyChecks',
+                                   policy_file_no_ext, policy_file)
+    if contains in ('contains', 'does contain'):
+        assert os.path.isfile(original_policy_path)
+        assert os.path.isfile(aip_policy_path), ('There is no MediaConch policy'
+            ' file in the AIP at {}!'.format(aip_policy_path))
+        assert filecmp.cmp(original_policy_path, aip_policy_path)
+    else:
+        assert not os.path.isfile(aip_policy_path), ('There is a MediaConch policy'
+            ' file in the AIP at {} but there shouldn\'t be!'.format(
+                aip_policy_path))
+
+
+@then('the logs directory of the AIP contains a MediaConch policy check output'
+      ' file for each policy file tested against {policy_file}')
+def step_impl(context, policy_file):
+    policy_file_no_ext, _ = os.path.splitext(policy_file)
+    aip_path = context.scenario.aip_path
+    assert policy_file_no_ext, 'policy_file_no_ext is falsey!'
+    aip_policy_outputs_path = os.path.join(
+        aip_path, 'data', 'logs', 'policyChecks', policy_file_no_ext)
+    assert os.path.isdir(aip_policy_outputs_path)
+    contents = os.listdir(aip_policy_outputs_path)
+    assert len(contents) > 0
+    file_paths = [x for x in [os.path.join(aip_policy_outputs_path, y) for y in
+                  contents] if os.path.isfile(x)]
+    assert len(file_paths) > 0, ('There are no files in dir'
+        ' {}!'.format(aip_policy_outputs_path))
+    from lxml import etree
+    for fp in file_paths:
+        with open(fp) as f:
+            doc = etree.parse(f)
+            assert doc.getroot().tag == '{https://mediaarea.net/mediaconch}MediaConch'
 
 
 @then('the "{microservice_name}" micro-service output is'

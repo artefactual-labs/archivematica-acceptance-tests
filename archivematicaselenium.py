@@ -64,6 +64,7 @@ become visible. See ``navigate_to_transfer_directory_and_click``.
 """
 
 import json
+import logging
 from lxml import etree
 import os
 import pprint
@@ -83,6 +84,16 @@ from selenium.common.exceptions import (
     TimeoutException, WebDriverException, StaleElementReferenceException,
     NoSuchElementException, MoveTargetOutOfBoundsException)
 from selenium.webdriver.common.action_chains import ActionChains
+
+logger = logging.getLogger(__file__)
+log_filename, _ = os.path.splitext(os.path.basename(__file__))
+log_filename = log_filename + '.log'
+log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), log_filename)
+handler = logging.FileHandler(log_path)
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)
 
 # Assuming we don't switch JS frameworks :), DOM selectors should be constants.
 SELECTOR_INPUT_TRANSFER_NAME = 'input[ng-model="vm.transfer.name"]'
@@ -310,6 +321,9 @@ class ArchivematicaSelenium:
 
     def get_preservation_planning_url(self):
         return '{}fpr/format/'.format(self.am_url)
+
+    def get_archival_storage_url(self):
+        return '{}archival-storage/'.format(self.am_url)
 
     def get_rules_url(self):
         return '{}fpr/fprule/'.format(self.am_url)
@@ -546,23 +560,68 @@ class ArchivematicaSelenium:
             except Exception as e:
                 print(e)
 
+    def wait_for_aip_in_archival_storage(self, aip_uuid):
+        """Wait for the AIP with UUID ``aip_uuid`` to appear in the Archival
+        storage tab.
+        """
+        max_seconds = 120
+        seconds = 0
+        while True:
+            self.navigate(self.get_archival_storage_url(), reload=True)
+            self.driver.find_element_by_css_selector(
+                'input[title="search query"]').send_keys(aip_uuid)
+            Select(self.driver.find_element_by_css_selector(
+                'select[title="field name"]')).select_by_visible_text(
+                    'AIP UUID')
+            Select(self.driver.find_element_by_css_selector(
+                'select[title="query type"]')).select_by_visible_text(
+                    'Phrase')
+            self.driver.find_element_by_id('search_submit').click()
+            summary_el = self.driver.find_element_by_css_selector(
+                'div.search-summary')
+            if 'No results, please try another search.' in summary_el.text:
+                seconds += 1
+                if seconds > max_seconds:
+                    break
+                time.sleep(1)
+            else:
+                time.sleep(1)  # Sleep a little longer, for good measure
+                break
+
+    def save_download(self, request, file_path):
+        with open(file_path, 'wb') as f:
+            for block in request.iter_content(1024):
+                f.write(block)
+
     def download_aip(self, transfer_name, sip_uuid):
         """Use the AM SS to download the completed AIP.
         Calls http://localhost:8000/api/v2/file/<SIP-UUID>/download/\
                   ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
         """
         payload = {'username': self.ss_username, 'api_key': self.ss_api_key}
+        logger.debug('payload for downloading aip {}'.format(payload))
         url = '{}api/v2/file/{}/download/'.format(self.ss_url, sip_uuid)
         aip_name = '{}-{}.7z'.format(transfer_name, sip_uuid)
         aip_path = os.path.join(self.tmp_path, aip_name)
-        with open(aip_path, 'wb') as f:
+        max_attempts = 20
+        attempt = 0
+        while True:
             r = requests.get(url, params=payload, stream=True)
             if r.ok:
-                for block in r.iter_content(1024):
-                    f.write(block)
+                self.save_download(r, aip_path)
                 return aip_path
+            elif r.status_code in (404, 500) and attempt < max_attempts:
+                logger.warning(
+                    'Trying again to download AIP {} via GET request to URL {};'
+                    ' SS returned status code {} and message {}'.format(
+                        sip_uuid, url, r.status_code, r.text))
+                attempt += 1
+                time.sleep(1)
             else:
-                print(r.status_code)
+                logger.warning('Unable to download AIP {} via GET request to'
+                               ' URL {}; SS returned status code {} and message'
+                               ' {}'.format(sip_uuid, url, r.status_code,
+                                   r.text))
                 raise ArchivematicaSeleniumError(
                     'Unable to download AIP {}'.format(sip_uuid))
 
@@ -579,7 +638,8 @@ class ArchivematicaSelenium:
             stderr=subprocess.STDOUT)
         p.wait()
         assert p.returncode == 0
-        assert os.path.isdir(aip_dir_path)
+        assert os.path.isdir(aip_dir_path), ('Failed to create dir {} from'
+            ' compressed AIP at {}'.format(aip_dir_path, aip_path))
         return aip_dir_path
 
     @recurse_on_stale
@@ -603,7 +663,12 @@ class ArchivematicaSelenium:
             if action_div_el:
                 break
         if action_div_el:
-            select_el = action_div_el.find_element_by_css_selector('select')
+            try:
+                select_el = action_div_el.find_element_by_css_selector('select')
+            except NoSuchElementException:
+                time.sleep(0.5)
+                self.make_choice(choice_text, decision_point, uuid_val,
+                                 unit_type=unit_type)
             index = None
             for i, option_el in enumerate(
                     select_el.find_elements_by_tag_name('option')):
@@ -871,6 +936,8 @@ class ArchivematicaSelenium:
         'Normalize': ('Normalize',),
         'Normalize for preservation': ('Normalize',),
         'Normalize for thumbnails': ('Normalize',),
+        'Perform policy checks on access derivatives?': ('Policy checks for derivatives',),
+        'Perform policy checks on preservation derivatives?': ('Policy checks for derivatives',),
         'Policy checks for access derivatives': ('Policy checks for derivatives',),
         'Policy checks for preservation derivatives': ('Policy checks for derivatives',),
         'Prepare AIP': ('Prepare AIP',),
@@ -919,6 +986,7 @@ class ArchivematicaSelenium:
         'Store AIP location': ('Store AIP',),
         'Transcribe': ('Transcribe SIP contents',),
         'Transcribe SIP contents': ('Transcribe SIP contents',),
+        'Upload DIP': ('Upload DIP',),
         'Validate formats': ('Validation',),
         'Validate access derivatives': ('Normalize',),
         'Validate preservation derivatives': ('Normalize',),
@@ -1431,9 +1499,9 @@ class ArchivematicaSelenium:
         command_select_el.click()
         self.wait_for_presence('#DataTables_Table_0')
 
-    def navigate(self, url):
+    def navigate(self, url, reload=False):
         """Navigate to ``url``; login and try again, if redirected."""
-        if self.driver.current_url == url:
+        if self.driver.current_url == url and not reload:
             return
         self.driver.get(url)
         if self.driver.current_url == url:
@@ -1661,10 +1729,11 @@ class ArchivematicaSelenium:
         """This AM instance has just been created. We need to create the first
         user and register it with its storage service.
         """
+        ss_api_key = self.ss_api_key
         self.create_first_user()
         self.wait_for_presence('#id_storage_service_apikey', 100)
         self.driver.find_element_by_id('id_storage_service_apikey')\
-            .send_keys(self.ss_api_key)
+            .send_keys(ss_api_key)
         self.driver.find_element_by_css_selector(
             'input[name=use_default]').click()
 
