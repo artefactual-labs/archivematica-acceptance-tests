@@ -13,9 +13,9 @@ Feature: Post-normalization conformance check
     And all PREMIS implementation-check-type validation events have eventOutcome = <event_outcome>
 
     Examples: Normalized for Preservation File Validity Possibilities
-    | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                       |
-    | valid         | Completed successfully | Passed            | pass          | preforma/when-normalized-all-valid  |
-    | not valid     | Failed                 | Failed            | fail          | preforma/when-normalized-none-valid |
+    | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                                        |
+    | valid         | Completed successfully | Passed            | pass          | acceptance-tests/preforma/when-normalized-all-valid  |
+    | not valid     | Failed                 | Failed            | fail          | acceptance-tests/preforma/when-normalized-none-valid |
 
   Scenario Outline: Isla wants to confirm that normalization to .mkv for access is successful
     Given directory <transfer_path> contains files that will all be normalized to <file_validity> .mkv
@@ -26,5 +26,5 @@ Feature: Post-normalization conformance check
     And all access conformance checks in the normalization report have value <validation_result>
 
     Examples: Normalized for Access File Validity Possibilities
-    | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                              |
-    | valid         | Completed successfully | Passed            | pass          | preforma/when-normalized-access-all-valid  |
+    | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                                               |
+    | valid         | Completed successfully | Passed            | pass          | acceptance-tests/preforma/when-normalized-access-all-valid  |

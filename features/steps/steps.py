@@ -12,6 +12,10 @@ MC_EVENT_OUTCOME_DETAIL_NOTE_POLICY_CHECK_PREFIX = \
 POLICIES_DIR = 'mediaconch-policies'
 
 
+class ArchivematicaSeleniumStepsError(Exception):
+    pass
+
+
 @when('the user waits for the "{microservice_name}" micro-service to complete'
       ' during {unit_type}')
 def step_impl(context, microservice_name, unit_type):
@@ -19,6 +23,13 @@ def step_impl(context, microservice_name, unit_type):
     uuid_val = get_uuid_val(context, unit_type)
     context.am_sel_cli.await_job_completion(
         microservice_name, uuid_val, unit_type=unit_type)
+
+
+@given('the user waits for the "{microservice_name}" micro-service to complete'
+      ' during {unit_type}')
+def step_impl(context, microservice_name, unit_type):
+    context.execute_steps('When the user waits for the "{}" micro-service to'
+        ' complete during {}'.format(microservice_name, unit_type))
 
 
 @when('the user waits for the "{microservice_name}" decision point to appear'
@@ -31,6 +42,26 @@ def step_impl(context, microservice_name, unit_type):
     context.scenario.awaiting_job_uuid = job_uuid
 
 
+@given('the user waits for the "{microservice_name}" decision point to appear'
+       ' during {unit_type}')
+def step_impl(context, microservice_name, unit_type):
+    context.execute_steps('When the user waits for the "{}" decision point to'
+        ' appear during {}'.format(microservice_name, unit_type))
+
+
+@when('the user waits for the "{microservice_name}" decision point to appear'
+      ' and chooses "{choice}" during {unit_type}')
+def step_impl(context, microservice_name, choice, unit_type):
+    steps = (
+        'When the user waits for the "{}" decision point to appear during {}\n'
+        'When the user chooses "{}" at decision point "{}" during {}\n'
+    ).format(microservice_name, unit_type, choice, microservice_name,
+             unit_type)
+    #raise Exception('fuckyou, microservice_name {}, choice {}, unit_type {}\n\nsteps:\n{}'.format(microservice_name, choice, unit_type, steps))
+    context.execute_steps(steps)
+
+
+
 @when('the user chooses "{choice}" at decision point "{decision_point}" during'
       ' {unit_type}')
 def step_impl(context, choice, decision_point, unit_type):
@@ -41,6 +72,14 @@ def step_impl(context, choice, decision_point, unit_type):
     uuid_val = get_uuid_val(context, unit_type)
     context.am_sel_cli.make_choice(
         choice, decision_point, uuid_val, unit_type=unit_type)
+
+
+@given('the user chooses "{choice}" at decision point "{decision_point}" during'
+      ' {unit_type}')
+def step_impl(context, choice, decision_point, unit_type):
+    context.execute_steps('When the user chooses "{}" at decision point "{}"'
+        ' during {}'.format(choice, decision_point, unit_type))
+
 
 @when('the user waits for the AIP to appear in archival storage')
 def step_impl(context):
@@ -120,6 +159,21 @@ def step_impl(context, microservice_name, microservice_output, unit_type):
 # FEATURE: Metadata-only AIP Re-ingest
 ###############################################################################
 
+@when('the user adds metadata')
+def step_impl(context):
+    context.am_sel_cli.add_dummy_metadata(get_uuid_val(context, 'sip'))
+
+
+@when('the user initiates a {reingest_type} re-ingest on the AIP')
+def step_impl(context, reingest_type):
+    # DEV DELETE
+    #context.scenario.sip_uuid = 'ededf16f-5877-4d22-b6ba-28520f999bce'
+    #context.scenario.transfer_name = 'BagTransfer_1478123709'
+    uuid_val = get_uuid_val(context, 'sip')
+    context.am_sel_cli.initiate_reingest(
+        uuid_val, reingest_type=reingest_type)
+
+
 @given('that the user has ensured that the default processing config is in its'
        ' default state')
 def step_impl(context):
@@ -132,6 +186,74 @@ def step_impl(context):
         decision_label='Reminder: add metadata if desired',
         choice_value='None')
     context.am_sel_cli.save_default_processing_config()
+
+
+def get_mets_from_scenario(context):
+    return context.am_sel_cli.get_mets(
+        context.scenario.transfer_name,
+        context.am_sel_cli.get_sip_uuid(context.scenario.transfer_name))
+
+
+def get_mets_from_scenario_DEPRECATED(context):
+    try:
+        mets = context.scenario.mets
+    except AttributeError:
+        mets = context.scenario.mets = context.am_sel_cli.get_mets(
+            context.scenario.transfer_name,
+            context.am_sel_cli.get_sip_uuid(context.scenario.transfer_name))
+    return mets
+
+
+@then('in the METS file the metsHdr element has a CREATEDATE attribute {conj_quant}'
+      ' LASTMODDATE attribute')
+def step_impl(context, conj_quant):
+    """``conj_quant`` is 'but no' or 'and a', a conjunction followed by a
+    quantifier, of course.
+    """
+    mets = get_mets_from_scenario(context)
+    mets_hdr_els = mets.findall('.//mets:metsHdr', context.am_sel_cli.mets_nsmap)
+    assert len(mets_hdr_els) == 1
+    mets_hdr_el = mets_hdr_els[0]
+    assert mets_hdr_el.get('CREATEDATE')
+    if conj_quant == 'but no':
+        assert mets_hdr_el.get('LASTMODDATE') is None
+    else:
+        assert mets_hdr_el.get('LASTMODDATE') is not None, ('<mets:metsHdr>'
+            ' element is lacking a LASTMODDATE attribute:'
+            ' {}'.format(mets_hdr_el.attrib))
+        # TODO: assert that value is ISO datetime
+    # Crucial, otherwise we'll be looking at the previous METS in subsequent
+    # tests.
+    # del context.scenario.mets
+
+
+@then('in the METS file the metsHdr element has {quant} dmdSec element as a next'
+      ' sibling')
+def step_impl(context, quant):
+    mets = get_mets_from_scenario(context)
+    mets_dmd_sec_els = mets.findall('.//mets:dmdSec', context.am_sel_cli.mets_nsmap)
+    if quant == 'no':
+        assert len(mets_dmd_sec_els) == 0
+    elif quant == 'one':
+        assert len(mets_dmd_sec_els) == 1
+    else:
+        raise ArchivematicaSeleniumStepsError('Unable to recognize the'
+            ' quantifier {} when checking for dmdSec elements in the METS'
+            ' file'.format(quant))
+
+
+@then('in the METS file the dmdSec element contains the metadata added')
+def step_impl(context):
+    mets = get_mets_from_scenario(context)
+    dublincore_el = mets.find(
+        './/mets:dmdSec/mets:mdWrap/mets:xmlData/dcterms:dublincore',
+        context.am_sel_cli.mets_nsmap)
+    assert dublincore_el
+    for attr in context.am_sel_cli.metadata_attrs:
+        dc_el = dublincore_el.find('dc:{}'.format(attr),
+                                   context.am_sel_cli.mets_nsmap)
+        assert dc_el is not None
+        assert dc_el.text == context.am_sel_cli.dummy_val
 
 
 ###############################################################################
@@ -203,6 +325,12 @@ def step_impl(context):
     context.am_sel_cli.change_normalization_rule_command(
         'Access Generic MOV',
         'Transcoding to mkv with ffmpeg')
+
+
+@given('a transfer is initiated on directory {transfer_path}')
+def step_impl(context, transfer_path):
+    context.execute_steps('When a transfer is initiated on directory'
+        ' {}'.format(transfer_path))
 
 
 @when('a transfer is initiated on directory {transfer_path}')

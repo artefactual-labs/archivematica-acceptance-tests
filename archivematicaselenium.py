@@ -110,6 +110,9 @@ DEFAULT_SS_USERNAME = 'test',
 DEFAULT_SS_PASSWORD = 'test',
 DEFAULT_SS_URL = 'http://192.168.168.192:8000/',
 
+DUMMY_VAL = 'Archivematica Acceptance Test'
+METADATA_ATTRS = ('title', 'creator')
+
 JOB_OUTPUTS_COMPLETE = (
     'Failed',
     'Completed successfully',
@@ -180,6 +183,8 @@ class ArchivematicaSelenium:
         self.ss_url = ss_url
         self._ss_api_key = ss_api_key
         self._tmp_path = None
+        self.metadata_attrs = METADATA_ATTRS
+        self.dummy_val = DUMMY_VAL
 
     # =========================================================================
     # Test Infrastructure.
@@ -326,10 +331,15 @@ class ArchivematicaSelenium:
     def get_ingest_url(self):
         return '{}ingest/'.format(self.am_url)
 
+    def get_metadata_add_url(self, sip_uuid):
+        return '{}ingest/{}/metadata/add/'.format(self.am_url, sip_uuid)
+
     def get_preservation_planning_url(self):
         return '{}fpr/format/'.format(self.am_url)
 
-    def get_archival_storage_url(self):
+    def get_archival_storage_url(self, aip_uuid=None):
+        if aip_uuid:
+            return '{}archival-storage/{}/'.format(self.am_url, aip_uuid)
         return '{}archival-storage/'.format(self.am_url)
 
     def get_rules_url(self):
@@ -512,7 +522,7 @@ class ArchivematicaSelenium:
         if unit_type != 'transfer':
             unit_url = self.get_ingest_url()
         self.navigate(unit_url)
-        group_name = self.micro_service2group(ms_name)
+        ms_name, group_name = self.micro_service2group(ms_name)
         # If not visible, click the micro-service group to expand it.
         self.wait_for_transfer_micro_service_group(group_name, transfer_uuid)
         is_visible = self.get_transfer_micro_service_group_elem(
@@ -524,14 +534,14 @@ class ArchivematicaSelenium:
                 group_name, transfer_uuid).click()
         self.wait_for_microservice_visibility(
             ms_name, group_name, transfer_uuid)
-        return group_name
+        return ms_name, group_name
 
     def await_job_completion(self, ms_name, transfer_uuid,
                              unit_type='transfer'):
         """Wait for the job representing the execution of micro-service
         ``ms_name`` on the unit with UUID ``transfer_uuid`` to complete.
         """
-        group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
+        ms_name, group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
         job_uuid, job_output = self.get_job_uuid(
             ms_name, group_name, transfer_uuid)
         return job_uuid, job_output
@@ -541,7 +551,8 @@ class ArchivematicaSelenium:
         """Wait for the decision point job for micro-service ``ms_name`` to
         appear.
         """
-        group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
+        logger.debug('Await decision point with unit_type {}'.format(unit_type))
+        ms_name, group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
         job_uuid, job_output = self.get_job_uuid(
             ms_name, group_name, transfer_uuid,
             job_outputs=('Awaiting decision',))
@@ -594,6 +605,66 @@ class ArchivematicaSelenium:
             else:
                 time.sleep(1)  # Sleep a little longer, for good measure
                 break
+
+    def initiate_reingest(self, aip_uuid, reingest_type='metadata-only'):
+        url = self.get_archival_storage_url(aip_uuid=aip_uuid)
+        max_attempts = 10
+        attempt = 0
+        while True:
+            if attempt > max_attempts:
+                raise ArchivematicaSeleniumError('Unable to navigate to'
+                    ' {}'.format(url))
+            r = requests.get(url)
+            if r.status_code == requests.codes.ok:
+                logger.info('Requests got OK status code {} when requesting'
+                            ' {}'.format(r.status_code, url))
+                break
+            logger.info('Requests got bad status code {} when requesting'
+                        ' {}; waiting for 1 second before trying'
+                        ' again'.format(r.status_code, url))
+            attempt += 1
+            time.sleep(1)
+        self.navigate(url)
+        reingest_tab_selector = 'a[href="#tab-reingest"]'
+        self.wait_for_presence(reingest_tab_selector, timeout=10)
+        try:
+            self.driver.find_element_by_css_selector(
+                reingest_tab_selector).click()
+        except:
+            logger.warning('Unable to find Re-ingest tab using selector'
+                ' {}'.format(reingest_tab_selector))
+            time.sleep(20)
+        type_selector = {
+            'metadata-only': 'input#id_reingest-reingest_type_1',
+            'metadata-and-objects': 'input#id_reingest-reingest_type_2'
+            }.get(reingest_type)
+        if not type_selector:
+            raise ArchivematicaSeleniumError('Unable to initiate a reingest of'
+                ' type {} on AIP {}'.format(reingest_type, aip_uuid))
+        self.driver.find_element_by_css_selector(type_selector).click()
+        self.driver.find_element_by_css_selector(
+            'button[name=submit-reingest-form]').click()
+        alert_text = self.driver.find_element_by_css_selector(
+            'div.alert-success').text.strip()
+        assert alert_text.startswith('Package {} sent to pipeline'.format(aip_uuid))
+        assert alert_text.endswith('for re-ingest')
+
+    def add_dummy_metadata(self, sip_uuid):
+        self.navigate(self.get_ingest_url())
+        self.driver.find_element_by_id('sip-row-{}'.format(sip_uuid))\
+            .find_element_by_css_selector('a.btn_show_metadata').click()
+        self.navigate(self.get_metadata_add_url(sip_uuid))
+        for attr in self.metadata_attrs:
+            self.driver.find_element_by_id('id_{}'.format(attr))\
+                .send_keys(self.dummy_val)
+        try:
+            self.driver.find_element_by_css_selector(
+                'input[value=Create]').click()
+        except NoSuchElementException:
+            # Should be a "Create" button but sometimes during development the
+            # metadata already exists so it is a "Save" button.
+            self.driver.find_element_by_css_selector(
+                'input[value=Save]').click()
 
     def save_download(self, request, file_path):
         with open(file_path, 'wb') as f:
@@ -655,7 +726,7 @@ class ArchivematicaSelenium:
         """Make the choice matching the text ``choice_text`` at decision point
         (i.e., microservice) job matching ``decision_point``.
         """
-        group_name = self.expose_job(
+        decision_point, group_name = self.expose_job(
             decision_point, uuid_val, unit_type=unit_type)
         ms_group_elem = self.get_transfer_micro_service_group_elem(
             group_name, uuid_val)
@@ -711,7 +782,7 @@ class ArchivematicaSelenium:
                     '<task_uuid>': { ... }
                 }
         """
-        group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
+        ms_name, group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
 
         # If we don't wait for a second here, then sometimes the tasks page
         # returns incorrect data because (assumedly) the tasks haven't been
@@ -871,7 +942,9 @@ class ArchivematicaSelenium:
     """
     micro_services2groups = {
         'Add processed structMap to METS.xml document': ('Update METS.xml document',),
+        'Approve AIP reingest': ('Reingest AIP',),
         'Approve normalization': ('Normalize',),
+        'Approve normalization (review)': ('Normalize',),
         'Approve standard transfer': ('Approve transfer',),
         'Assign checksums and file sizes to metadata': ('Process metadata directory',),
         'Assign checksums and file sizes to objects': ('Assign file UUIDs and checksums',),
@@ -1006,6 +1079,9 @@ class ArchivematicaSelenium:
     }
 
     def micro_service2group(self, micro_service):
+        parts = micro_service.split('|')
+        if len(parts) == 2:
+            return tuple(parts)
         map_ = self.micro_services2groups
         groups = None
         try:
@@ -1020,7 +1096,7 @@ class ArchivematicaSelenium:
         if len(groups) != 1:
             print('WARNING: the micro-service {} belongs to multiple'
                   ' micro-service groups'.format(micro_service))
-        return groups[0]
+        return micro_service, groups[0]
 
     def parse_normalization_report(self, sip_uuid):
         """Wait for the "Approve normalization" job to appear and then open the
@@ -1364,6 +1440,8 @@ class ArchivematicaSelenium:
                 self.click_add_button()
             else:
                 # Click ancestor folder's icon to open its contents.
+                logger.debug('Trying to click on folder {} using XPath'
+                             ' {}'.format(folder, folder_label_xpath))
                 self.click_folder(folder_label_xpath)
 
     def click_add_button(self):
@@ -1425,9 +1503,13 @@ class ArchivematicaSelenium:
         block.until(EC.presence_of_element_located(
             (By.XPATH, folder_label_xpath)))
         folder_icon_xpath = self.folder_label2icon_xpath(folder_label_xpath)
+        logger.debug('Trying to click on folder icon using XPath'
+                     ' {}'.format(folder_icon_xpath))
         self.driver.find_element_by_xpath(folder_icon_xpath).click()
         folder_children_xpath = self.folder_label2children_xpath(
             folder_label_xpath)
+        logger.debug('Waiting for folder children to be visible; using XPath'
+                     ' {}'.format(folder_children_xpath))
         block = WebDriverWait(self.driver, 10)
         block.until(EC.visibility_of_element_located(
             (By.XPATH, folder_children_xpath)))
@@ -1894,7 +1976,9 @@ class ArchivematicaSelenium:
     # Namespace map for parsing METS XML.
     mets_nsmap = {
         'mets': 'http://www.loc.gov/METS/',
-        'premis': 'info:lc/xmlns/premis-v2'
+        'premis': 'info:lc/xmlns/premis-v2',
+        'dc': 'http://purl.org/dc/elements/1.1/',
+        'dcterms': 'http://purl.org/dc/terms/'
     }
 
     # Wait methods - general

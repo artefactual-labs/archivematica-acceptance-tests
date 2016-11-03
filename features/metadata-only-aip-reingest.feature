@@ -12,47 +12,30 @@ Feature: Metadata-only AIP re-ingest
   Scenario: Isla creates an AIP, and then performs a metadata-only re-ingest on it, adds metadata to it, and confirms that her newly added metadata are in the modified METS file.
     Given that the user has ensured that the default processing config is in its default state
     And the reminder to add metadata is enabled
-
-    # And the user has ensured that a non-reingested AIP exists in archival storage. This implies the following, if not.
-    # And the user initiates a transfer vagrant/archivematica-sampledata/SampleTransfers/BagTransfer
-    # And the user makes the following choices at Transfer decision points:
-    # "Job: Approve standard transfer" "Approve transfer" "Reject transfer"
-    # "Job: Select file format identification command" "Identify using Fido" "Skip File identification" "Identify using Siegfried" "Identify by File Extension"
-    # "Job: Create SIP(s)" "Create single SIP and continue processing" "Send to backlog" "Reject transfer"
-    # And the user makes the following choices at Ingest decision points:
-    # "Job: Normalize" "Normalize for preservation"
-    # "Job: Approve normalization" "Approve" "Reject" "Redo"
-    # "Job: Reminder: add metadata if desired" "- Continue"
-    # "Job: Select file format identification command" "Identify using Fido" "Skip File identification" "Identify using Siegfried" "Identify by File Extension"
-    # "Job: Store AIP" NOTE: clicking on "review" and analyzing the METS XML is already (partially, at least) accomplished
-    # Ensure AIP has not been reingested and is lacking metadata. On initial creation we can click the "review" link
-    #   - has <mets:metsHdr CREATEDATE="2016-10-20T16:31:07"/> with NO "LASTMODDATE" attribute
-    #   - has no <mets:dmdSec as a next sibling after <mets:metsHdr>
-    # "Job: Store AIP" "Store AIP"
-    # "Job: Store AIP location" "- Store AIP in standard Archivematica Directory"
-    # Checking Archival Storage (http://192.168.168.192/archival-storage/)
-    # - Use requests to download AIP to temp dir: href="/archival-storage/download/aip/90903160-2add-4a65-9741-049a34462d2d/"
-    ## And the user ensures that a target AIP already exists in Archival storage
-
-    # When user initiates a metadata re-ingest (using the default processing config)
-    ## When the user selects metadata-only AIP re-ingest
-    # $('a[href="#tab-reingest"]').click()
-    # $('input#id_reingest-reingest_type_1').click()
-    # $('button[name=submit-reingest-form]').click()
-    # Assert:
-    # $('div.alert-success').text()
-    # "Package 90903160-2add-4a65-9741-049a34462d2d sent to pipeline Foxtrot (a02f176a-fde3-4de0-b76a-141ba01f66c4) for re-ingest"
-
-    ## Then Archivematica displays "Job: approve AIP re-ingest" in the Ingest tab
-    # http://192.168.168.192/ingest/
-    # "Job: Approve AIP reingest"
-
-    ## When the user approves AIP re-ingest
-    # "Job: Approve AIP reingest" "Approve AIP reingest"
-
-    # And the user chooses "Do not normalize" at "Job: Normalize"
-
-    ## Then Archivematica displays "Job: Reminder: add metadata if desired" in the Ingest tab
+    When a transfer is initiated on directory archivematica-sampledata/SampleTransfers/BagTransfer
+    And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
+    And the user waits for the "Create SIP(s)" decision point to appear and chooses "Create single SIP and continue processing" during transfer
+    And the user waits for the "Normalize" decision point to appear and chooses "Normalize for preservation" during ingest
+    And the user waits for the "Approve normalization (review)" decision point to appear and chooses "Approve" during ingest
+    And the user waits for the "Reminder: add metadata if desired" decision point to appear and chooses "Continue" during ingest
+    And the user waits for the "Select file format identification command|Process submission documentation" decision point to appear and chooses "Identify using Fido" during ingest
+    And the user waits for the "Store AIP (review)" decision point to appear during ingest
+    Then in the METS file the metsHdr element has a CREATEDATE attribute but no LASTMODDATE attribute
+    And in the METS file the metsHdr element has no dmdSec element as a next sibling
+    When the user chooses "Store AIP" at decision point "Store AIP (review)" during ingest
+    And the user waits for the "Store AIP location" decision point to appear and chooses "Store AIP in standard Archivematica Directory" during ingest
+    And the user waits for the AIP to appear in archival storage
+    And the user initiates a metadata-only re-ingest on the AIP
+    And the user waits for the "Approve AIP reingest" decision point to appear and chooses "Approve AIP reingest" during ingest
+    And the user waits for the "Normalize" decision point to appear and chooses "Do not normalize" during ingest
+    And the user waits for the "Reminder: add metadata if desired" decision point to appear during ingest
+    And the user adds metadata
+    And the user chooses "Continue" at decision point "Reminder: add metadata if desired" during ingest
+    And the user waits for the "Select file format identification command|Process submission documentation" decision point to appear and chooses "Identify using Fido" during ingest
+    And the user waits for the "Store AIP (review)" decision point to appear during ingest
+    Then in the METS file the metsHdr element has a CREATEDATE attribute and a LASTMODDATE attribute
+    And in the METS file the metsHdr element has one dmdSec element as a next sibling
+    And in the METS file the dmdSec element contains the metadata added
 
     ## When the user adds metadata and continues processing
     # Click on "show metadata" report icon FOR THE SIP being reingested:

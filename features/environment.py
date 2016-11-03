@@ -14,7 +14,8 @@ SS_URL = "http://192.168.168.192:8000/"
 SS_API_KEY = None
 
 # Path relative to /home where transfer sources live.
-TRANSFER_SOURCE_PATH = 'vagrant/acceptance-tests'
+# TRANSFER_SOURCE_PATH = 'vagrant/acceptance-tests'
+TRANSFER_SOURCE_PATH = 'vagrant'
 
 
 def get_am_sel_cli():
