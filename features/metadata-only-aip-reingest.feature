@@ -1,8 +1,3 @@
-# TODO: make tests possible without specific processing configs by having a
-# "When the user chooses <decision> at choice point <choice>". For one thing,
-# it allows tests that use the existing archivematica-sample-data transfer
-# sources.
-
 Feature: Metadata-only AIP re-ingest
   Users want to be able to take an existing AIP and perform a metadata-only
   re-ingest on it so that they can add metadata to it and confirm that those
