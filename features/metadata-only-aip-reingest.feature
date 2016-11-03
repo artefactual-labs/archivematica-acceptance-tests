@@ -8,7 +8,7 @@ Feature: Metadata-only AIP re-ingest
   re-ingest on it so that they can add metadata to it and confirm that those
   metadata are in the re-ingested AIP's METS file.
 
-  @testing
+  @mo-aip-reingest
   Scenario: Isla creates an AIP, and then performs a metadata-only re-ingest on it, adds metadata to it, and confirms that her newly added metadata are in the modified METS file.
     Given that the user has ensured that the default processing config is in its default state
     And the reminder to add metadata is enabled
@@ -36,34 +36,4 @@ Feature: Metadata-only AIP re-ingest
     Then in the METS file the metsHdr element has a CREATEDATE attribute and a LASTMODDATE attribute
     And in the METS file the metsHdr element has one dmdSec element as a next sibling
     And in the METS file the dmdSec element contains the metadata added
-
-    ## When the user adds metadata and continues processing
-    # Click on "show metadata" report icon FOR THE SIP being reingested:
-    # - Within this "div.sip-row#sip-row-<SIP_UUID>", find this: $('a.btn_show_metadata') and click it
-    # Or just go to this URL: http://192.168.168.192/ingest/90903160-2add-4a65-9741-049a34462d2d/
-    # Or just go straight to this URL: http://192.168.168.192/ingest/90903160-2add-4a65-9741-049a34462d2d/metadata/add/
-    # Add something distinctive in a subset of the fields in the form:
-    # $("input#id_title").val('hi')
-    # $("input#id_creator").val('hi')
-    # $('input[value=Save]').click()
-    # http://192.168.168.192/ingest/
-    # "Job: Reminder: add metadata if desired" "- Continue"
-    # "Job: Select file format identification command" "Identify using Fido" "Skip File identification" "Identify using Siegfried" "Identify by File Extension"
-
-    # Confirm that the new metadata is in the AIP METS file
-    # - click "review"
-    # - Confirm that the values we put in the metadata (e.g., for title, creator) are in the METS file, cf below
-    # - Confirm that mets:metsHdr has LASTMODDATE attr with a value; it didn't before
-    # <mets:mets xmlns:mets="http://www.loc.gov/METS/" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/METS/ http://www.loc.gov/standards/mets/version18/mets.xsd">
-    #   <mets:metsHdr CREATEDATE="2016-10-20T16:31:07" LASTMODDATE="2016-10-20T18:14:51"/>
-    #   <mets:dmdSec ID="dmdSec_589200" CREATED="2016-10-20T18:14:51" STATUS="original">
-    #     <mets:mdWrap MDTYPE="DC">
-    #       <mets:xmlData>
-    #         <dcterms:dublincore xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xsi:schemaLocation="http://purl.org/dc/terms/ http://dublincore.org/schemas/xmls/qdc/2008/02/11/dcterms.xsd">
-    #           <dc:title>Broccoli</dc:title>
-    #           <dc:creator>Bizin</dc:creator>
-    #           <dc:type>Archival Information Package</dc:type>
-    #
-    ## Then Archivematica adds new or updated metadata to AIP METS file
-    ## And Archivematica adds LASTMODDATE attribute to metsHdr in AIP METS file
 
