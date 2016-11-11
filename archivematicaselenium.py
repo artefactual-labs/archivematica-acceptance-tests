@@ -226,7 +226,7 @@ class ArchivematicaSelenium:
         for window_handle in self.driver.window_handles:
             self.driver.switch_to.window(window_handle)
             self.driver.close()
-        self.clear_tmp_dir()
+        #self.clear_tmp_dir()
         for driver in self.all_drivers:
             try:
                 driver.close()
@@ -1017,8 +1017,10 @@ class ArchivematicaSelenium:
         'Normalize for preservation': ('Normalize',),
         'Normalize for thumbnails': ('Normalize',),
         'Perform policy checks on access derivatives?': ('Policy checks for derivatives',),
+        'Perform policy checks on originals?': ('Validation',),
         'Perform policy checks on preservation derivatives?': ('Policy checks for derivatives',),
         'Policy checks for access derivatives': ('Policy checks for derivatives',),
+        'Policy checks for originals': ('Validation',),
         'Policy checks for preservation derivatives': ('Policy checks for derivatives',),
         'Prepare AIP': ('Prepare AIP',),
         'Process JSON metadata': ('Process metadata directory',),
@@ -1766,6 +1768,12 @@ class ArchivematicaSelenium:
     pc_decision2id = {
         'Send transfer to quarantine':
             'id_755b4177-c587-41a7-8c52-015277568302',
+        'Perform policy checks on access derivatives':
+            'id_8ce07e94-6130-4987-96f0-2399ad45c5c2',
+        'Perform policy checks on preservation derivatives':
+            'id_153c5f41-3cfb-47ba-9150-2dd44ebc27df',
+        'Perform policy checks on originals':
+            'id_70fc7040-d4fb-4d19-a0e6-792387ca1006',
         'Remove from quarantine after (days)':
             'id_19adb668-b19a-4fcb-8938-f49d7485eaf3',
         'Generate transfer structure report':

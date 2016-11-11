@@ -123,6 +123,58 @@ def step_impl(context, contains, policy_file):
                 aip_policy_path))
 
 
+@then('the transfer logs directory of the AIP {contains} a copy of the'
+      ' MediaConch policy file {policy_file}')
+def step_impl(context, contains, policy_file):
+    aip_path = context.scenario.aip_path
+    original_policy_path = os.path.join(POLICIES_DIR, policy_file)
+    policy_file_no_ext, _ = os.path.splitext(policy_file)
+    transfer_dirname = '{}-{}'.format(context.scenario.transfer_name,
+                                      context.scenario.transfer_uuid)
+    aip_policy_path = os.path.join(aip_path, 'data', 'logs', 'transfers',
+                                   transfer_dirname, 'logs', 'policyChecks',
+                                   policy_file_no_ext, policy_file)
+    if contains in ('contains', 'does contain'):
+        assert os.path.isfile(original_policy_path)
+        assert os.path.isfile(aip_policy_path), ('There is no MediaConch policy'
+            ' file in the AIP at {}!'.format(aip_policy_path))
+        assert filecmp.cmp(original_policy_path, aip_policy_path)
+    else:
+        assert not os.path.isfile(aip_policy_path), ('There is a MediaConch policy'
+            ' file in the AIP at {} but there shouldn\'t be!'.format(
+                aip_policy_path))
+
+
+@then('the transfer logs directory of the AIP contains a MediaConch policy'
+      ' check output file for each policy file tested against {policy_file}')
+def step_impl(context, policy_file):
+    policy_file_no_ext, _ = os.path.splitext(policy_file)
+    aip_path = context.scenario.aip_path
+    assert policy_file_no_ext, 'policy_file_no_ext is falsey!'
+    transfer_dirname = '{}-{}'.format(context.scenario.transfer_name,
+                                      context.scenario.transfer_uuid)
+    aip_policy_outputs_path = os.path.join(
+        aip_path, 'data', 'logs', 'transfers', transfer_dirname, 'logs',
+        'policyChecks', policy_file_no_ext)
+    assert os.path.isdir(aip_policy_outputs_path)
+    contents = os.listdir(aip_policy_outputs_path)
+    assert len(contents) > 0
+    file_paths = [x for x in [os.path.join(aip_policy_outputs_path, y) for y in
+                  contents] if os.path.isfile(x) and
+                  os.path.splitext(x)[1] == '.xml']
+    assert len(file_paths) > 0, ('There are no files in dir'
+        ' {}!'.format(aip_policy_outputs_path))
+    from lxml import etree
+    for fp in file_paths:
+        with open(fp) as f:
+            doc = etree.parse(f)
+            root_tag = doc.getroot().tag
+            expected_root_tag = '{https://mediaarea.net/mediaconch}MediaConch'
+            assert root_tag == expected_root_tag, ('The root tag of file {} was'
+                ' expected to be {} but was actually {}'.format(
+                    fp, expected_root_tag, root_tag))
+
+
 @then('the logs directory of the AIP contains a MediaConch policy check output'
       ' file for each policy file tested against {policy_file}')
 def step_impl(context, policy_file):
@@ -135,7 +187,8 @@ def step_impl(context, policy_file):
     contents = os.listdir(aip_policy_outputs_path)
     assert len(contents) > 0
     file_paths = [x for x in [os.path.join(aip_policy_outputs_path, y) for y in
-                  contents] if os.path.isfile(x)]
+                  contents] if os.path.isfile(x) and
+                  os.path.splitext(x)[1] == '.xml']
     assert len(file_paths) > 0, ('There are no files in dir'
         ' {}!'.format(aip_policy_outputs_path))
     from lxml import etree
@@ -185,6 +238,15 @@ def step_impl(context):
     context.am_sel_cli.set_processing_config_decision(
         decision_label='Reminder: add metadata if desired',
         choice_value='None')
+    context.am_sel_cli.save_default_processing_config()
+
+
+@given('the processing config decision "{decision_label}" is set to'
+       ' "{choice_value}"')
+def step_impl(context, decision_label, choice_value):
+    context.am_sel_cli.set_processing_config_decision(
+        decision_label=decision_label,
+        choice_value=choice_value)
     context.am_sel_cli.save_default_processing_config()
 
 
@@ -419,6 +481,12 @@ def step_impl(context, transfer_path, do_files_conform, policy_file):
     pass
 
 
+@given('directory {transfer_path} contains files that all do {do_files_conform}'
+       ' to {policy_file}')
+def step_impl(context, transfer_path, do_files_conform, policy_file):
+    pass
+
+
 @when('the user uploads the policy file {policy_file}')
 def step_impl(context, policy_file):
     policy_path = get_policy_path(policy_file)
@@ -458,6 +526,21 @@ def step_impl(context, microservice_output):
 
 
 @then('all policy check for access derivatives tasks indicate {event_outcome}')
+def step_impl(context, event_outcome):
+    policy_check_tasks = [t for t in context.scenario.job['tasks'].values() if
+                          t['stdout'].startswith(
+                              'Running Check against policy ')]
+    assert len(policy_check_tasks) > 0
+    if event_outcome == 'pass':
+        for task in policy_check_tasks:
+            assert 'All policy checks passed:' in task['stdout']
+            assert task['exit_code'] == '0'
+    else:
+        for task in policy_check_tasks:
+            assert '"eventOutcomeInformation": "fail"' in task['stdout']
+
+
+@then('all policy check for originals tasks indicate {event_outcome}')
 def step_impl(context, event_outcome):
     policy_check_tasks = [t for t in context.scenario.job['tasks'].values() if
                           t['stdout'].startswith(
