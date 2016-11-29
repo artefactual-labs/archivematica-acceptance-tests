@@ -104,14 +104,14 @@ def step_impl(context):
         context.scenario.aip_path)
 
 
-@then('the logs directory of the AIP {contains} a copy of the MediaConch policy'
-      ' file {policy_file}')
+@then('the submissionDocumentation directory of the AIP {contains} a copy of'
+      ' the MediaConch policy file {policy_file}')
 def step_impl(context, contains, policy_file):
     aip_path = context.scenario.aip_path
     original_policy_path = os.path.join(POLICIES_DIR, policy_file)
-    policy_file_no_ext, _ = os.path.splitext(policy_file)
-    aip_policy_path = os.path.join(aip_path, 'data', 'logs', 'policyChecks',
-                                   policy_file_no_ext, policy_file)
+    aip_policy_path = os.path.join(
+        aip_path, 'data', 'objects', 'submissionDocumentation', 'policies',
+        policy_file)
     if contains in ('contains', 'does contain'):
         assert os.path.isfile(original_policy_path)
         assert os.path.isfile(aip_policy_path), ('There is no MediaConch policy'
