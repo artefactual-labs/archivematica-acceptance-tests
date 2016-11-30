@@ -68,8 +68,9 @@ Feature: Ingest policy check
 
     Examples: Policy Check Outcomes
     | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                                 | policy_file                       | purpose                                                 |
-    | conform          | Completed successfully | pass           | successful          | acceptance-tests/preforma/all-conform-policy  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
-    | not conform      | Failed                 | fail           | failed              | acceptance-tests/preforma/none-conform-policy | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
+    | conform          | Completed successfully | pass           | successful          | acceptance-tests/preforma/all-conform-policy  | NYULib_MKVFFV1_MODIFIED.xml       | Validation of Preservation Derivatives against a Policy |
+    #| conform          | Completed successfully | pass           | successful          | acceptance-tests/preforma/all-conform-policy  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
+    #| not conform      | Failed                 | fail           | failed              | acceptance-tests/preforma/none-conform-policy | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
 
   @manual_preservation @ipc
   Scenario Outline: Isla has manually normalized preservation derivatives and she needs to know whether they conform to her preservation policy
