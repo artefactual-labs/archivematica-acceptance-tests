@@ -7,8 +7,6 @@
   <rule name="Video Width equals 720 (pixels)" value="Width" tracktype="Video" occurrence="*" operator="=">720</rule>
   <rule name="Video Height equals 486 (pixels)" value="Height" tracktype="Video" occurrence="*" operator="=">486</rule>
   <rule name="Video DisplayAspectRatio equals 4:3 (1.333)" value="DisplayAspectRatio" tracktype="Video" occurrence="*" operator="=">1.333</rule>
-  <rule name="Video FrameRate equals 29.97 fps (29.970)" value="FrameRate" tracktype="Video" occurrence="*" operator="=">29.970</rule>
-  <rule name="Video Standard equals NTSC" value="Standard" tracktype="Video" occurrence="*" operator="=">NTSC</rule>
   <rule name="Video ColorSpace equals YUV" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">YUV</rule>
   <rule name="Video ChromaSubsampling equals 4:2:0" value="ChromaSubsampling" tracktype="Video" occurrence="*" operator="=">4:2:0</rule>
   <rule name="Video BitDepth equals 8 (bits)" value="BitDepth" tracktype="Video" occurrence="*" operator="=">8</rule>
