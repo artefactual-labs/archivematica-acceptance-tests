@@ -1618,7 +1618,8 @@ class ArchivematicaSelenium:
 
     def upload_policy(self, policy_path):
         self.navigate_to_policies()
-        self.driver.find_element_by_css_selector('input[name=policy]')\
+        self.driver.execute_script("document.getElementById('file').style.display='block'")
+        self.driver.find_element_by_css_selector('input[name=file]')\
             .send_keys(policy_path)
         self.driver.find_element_by_css_selector('input[type=submit]').click()
 
