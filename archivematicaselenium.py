@@ -1112,7 +1112,7 @@ class ArchivematicaSelenium:
         if self.driver.current_url != url:
             self.login()
         self.driver.get(url)
-        self.expose_job('Approve normalization', sip_uuid, 'sip')
+        self.expose_job('Approve normalization (review)', sip_uuid, 'sip')
         nrmlztn_rprt_url = self.get_normalization_report_url(sip_uuid)
         self.driver.get(nrmlztn_rprt_url)
         if self.driver.current_url != nrmlztn_rprt_url:
