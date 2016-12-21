@@ -4,7 +4,7 @@ Feature: Post-normalization conformance check
   .mkv specification so that they know they are placing derivatives in
   storage/repositories which are reliable.
 
-  @pncc @preservation
+  @preforma @pncc @preservation
   Scenario Outline: Isla wants to confirm that normalization to .mkv for preservation is successful
     Given that the user has ensured that the default processing config is in its default state
     And directory <transfer_path> contains files that will all be normalized to <file_validity> .mkv
@@ -23,13 +23,12 @@ Feature: Post-normalization conformance check
     Examples: Normalized for Preservation File Validity Possibilities
     | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                                        |
     | valid         | Completed successfully | Passed            | pass          | acceptance-tests/preforma/when-normalized-all-valid  |
-    | not valid     | Failed                 | Failed            | fail          | acceptance-tests/preforma/when-normalized-none-valid |
+    #| not valid     | Failed                 | Failed            | fail          | acceptance-tests/preforma/when-normalized-none-valid |
 
-  @pncc @access
+  @preforma @pncc @access
   Scenario Outline: Isla wants to confirm that normalization to .mkv for access is successful
     Given that the user has ensured that the default processing config is in its default state
     And directory <transfer_path> contains files that will all be normalized to <file_validity> .mkv
-    #And directory <transfer_path> contains a processing config that does normalization for access, etc.
     When the user edits the FPR rule to transcode .mov files to .mkv for access
     And a transfer is initiated on directory <transfer_path>
     And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
