@@ -15,8 +15,9 @@ SS_API_KEY = None
 
 # Path relative to /home where transfer sources live.
 # TRANSFER_SOURCE_PATH = 'vagrant/acceptance-tests'
-TRANSFER_SOURCE_PATH = 'vagrant'
-
+# TRANSFER_SOURCE_PATH = 'vagrant'
+TRANSFER_SOURCE_PATH = (
+    'vagrant/archivematica-sampledata/TestTransfers/acceptance-tests')
 
 def get_am_sel_cli():
     """Instantiate an ArchivematicaSelenium."""
