@@ -12,7 +12,8 @@ Feature: Post-normalization conformance check
     And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
     And the user waits for the "Create SIP(s)" decision point to appear and chooses "Create single SIP and continue processing" during transfer
     And the user waits for the "Normalize" decision point to appear and chooses "Normalize for preservation" during ingest
-    Then validate preservation derivatives micro-service output is <microservice_output>
+    And the user waits for the "Validate preservation derivatives" micro-service to complete during ingest
+    Then the "Validate preservation derivatives" micro-service output is "<microservice_output>" during ingest
     When the user waits for the "Approve normalization (review)" decision point to appear during ingest
     Then all preservation conformance checks in the normalization report have value <validation_result>
     When the user chooses "Approve" at decision point "Approve normalization (review)" during ingest
@@ -35,7 +36,8 @@ Feature: Post-normalization conformance check
     And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
     And the user waits for the "Create SIP(s)" decision point to appear and chooses "Create single SIP and continue processing" during transfer
     And the user waits for the "Normalize" decision point to appear and chooses "Normalize for access" during ingest
-    Then validate access derivatives micro-service output is <microservice_output>
+    And the user waits for the "Validate access derivatives" micro-service to complete during ingest
+    Then the "Validate access derivatives" micro-service output is "<microservice_output>" during ingest
     When the user waits for the "Approve normalization (review)" decision point to appear during ingest
     Then all access conformance checks in the normalization report have value <validation_result>
 
