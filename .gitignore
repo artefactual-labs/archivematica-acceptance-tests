@@ -11,3 +11,4 @@ test-files/
 __pycache__
 behave-tutorial/
 reports/
+archivematicaselenium.log

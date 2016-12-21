@@ -1438,8 +1438,11 @@ class ArchivematicaSelenium:
                 (By.XPATH, folder_label_xpath)))
             if is_last:
                 # Click target (leaf) folder and then "Add" button.
-                self.driver.find_element_by_xpath(folder_label_xpath).click()
+                folder_el = self.driver.find_element_by_xpath(folder_label_xpath)
+
+                self.click_folder_label(folder_el)
                 self.click_add_button()
+                self.driver.execute_script('window.scrollTo(0, 0);')
             else:
                 # Click ancestor folder's icon to open its contents.
                 logger.debug('Trying to click on folder {} using XPath'
@@ -1493,7 +1496,18 @@ class ArchivematicaSelenium:
         <treeitem> element."""
         return '{}/following-sibling::treeitem'.format(folder_label_xpath)
 
-    def click_folder(self, folder_label_xpath, is_file=False):
+    def click_folder_label(self, folder_el, offset=0):
+        try:
+            folder_el.click()
+        except WebDriverException:
+            print('folder element is NOT clickable')
+            container_el = self.driver.find_element_by_css_selector(
+                '.transfer-tree-container')
+            self.driver.execute_script(
+                "arguments[0].scrollTop = {}".format(offset), container_el)
+            self.click_folder_label(folder_el, offset + 100)
+
+    def click_folder(self, folder_label_xpath, is_file=False, offset=0):
         """Click a folder in the new AM file explorer interface (i.e., the one
         introduced by the merging of dev/integrate-transfer-browser into qa/1.x
         (PR#491).
@@ -1501,22 +1515,30 @@ class ArchivematicaSelenium:
             which is the case when you're clicking a METS file in the "Review
             AIP" file explorer.
         """
-        block = WebDriverWait(self.driver, 10)
-        block.until(EC.presence_of_element_located(
-            (By.XPATH, folder_label_xpath)))
-        folder_icon_xpath = self.folder_label2icon_xpath(folder_label_xpath)
-        logger.debug('Trying to click on folder icon using XPath'
-                     ' {}'.format(folder_icon_xpath))
-        self.driver.find_element_by_xpath(folder_icon_xpath).click()
-        folder_children_xpath = self.folder_label2children_xpath(
-            folder_label_xpath)
-        logger.debug('Waiting for folder children to be visible; using XPath'
-                     ' {}'.format(folder_children_xpath))
-        block = WebDriverWait(self.driver, 10)
-        block.until(EC.visibility_of_element_located(
-            (By.XPATH, folder_children_xpath)))
-        # TODO: when clicking a file in the new interface (if ever this is
-        # required), we may need different behaviour.
+        try:
+            block = WebDriverWait(self.driver, 10)
+            block.until(EC.presence_of_element_located(
+                (By.XPATH, folder_label_xpath)))
+            folder_icon_xpath = self.folder_label2icon_xpath(folder_label_xpath)
+            logger.debug('Trying to click on folder icon using XPath'
+                        ' {}'.format(folder_icon_xpath))
+            folder_icon_el = self.driver.find_element_by_xpath(folder_icon_xpath)
+            folder_icon_el.click()
+            folder_children_xpath = self.folder_label2children_xpath(
+                folder_label_xpath)
+            logger.debug('Waiting for folder children to be visible; using XPath'
+                        ' {}'.format(folder_children_xpath))
+            block = WebDriverWait(self.driver, 10)
+            block.until(EC.visibility_of_element_located(
+                (By.XPATH, folder_children_xpath)))
+            # TODO: when clicking a file in the new interface (if ever this is
+            # required), we may need different behaviour.
+        except WebDriverException:
+            container_el = self.driver.find_element_by_css_selector(
+                '.transfer-tree-container')
+            self.driver.execute_script(
+                "arguments[0].scrollTop = {}".format(offset), container_el)
+            self.click_folder(folder_label_xpath, is_file, offset + 100)
 
     def click_folder_old_browser(self, folder_id, is_file=False):
         """Click a folder in the old AM file explorer interface (i.e., the one

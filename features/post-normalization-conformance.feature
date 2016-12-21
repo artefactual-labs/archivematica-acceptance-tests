@@ -21,9 +21,10 @@ Feature: Post-normalization conformance check
     Then all PREMIS implementation-check-type validation events have eventOutcome = <event_outcome>
 
     Examples: Normalized for Preservation File Validity Possibilities
-    | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                                        |
-    | valid         | Completed successfully | Passed            | pass          | acceptance-tests/preforma/when-normalized-all-valid  |
-    #| not valid     | Failed                 | Failed            | fail          | acceptance-tests/preforma/when-normalized-none-valid |
+    | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                       |
+    | valid         | Completed successfully | Passed            | pass          | preforma/when-normalized-all-valid  |
+    # The following row must remain uncommented until we can find a video file that, when normalized to .mkv, no longer conforms to the mkv spec, according to MediaConch
+    #| not valid     | Failed                 | Failed            | fail          | preforma/when-normalized-none-valid |
 
   @preforma @pncc @access
   Scenario Outline: Isla wants to confirm that normalization to .mkv for access is successful
@@ -39,5 +40,5 @@ Feature: Post-normalization conformance check
     Then all access conformance checks in the normalization report have value <validation_result>
 
     Examples: Normalized for Access File Validity Possibilities
-    | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                                               |
-    | valid         | Completed successfully | Passed            | pass          | acceptance-tests/preforma/when-normalized-access-all-valid  |
+    | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                              |
+    | valid         | Completed successfully | Passed            | pass          | preforma/when-normalized-access-all-valid  |
