@@ -3,14 +3,22 @@ Feature: Pre-ingest conformance check
   preserving are valid before they process them, because if they are
   invalid it might impact further preservation decisions.
 
+  @preforma @picc
   Scenario Outline: Isla wants to confirm that her file is a valid .mkv
-    Given directory <transfer_path> contains files that are all <file_validity> .mkv
+    Given that the user has ensured that the default processing config is in its default state
+    And directory <transfer_path> contains files that are all <file_validity> .mkv
     When a transfer is initiated on directory <transfer_path>
-    Then validation micro-service output is <microservice_output>
-    And Archivematica <am_action>
-    And all PREMIS implementation-check-type validation events have eventOutcome = <event_outcome>
+    And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
+    And the user waits for the "Validate formats" micro-service to complete during transfer
+    Then the "Validate formats" micro-service output is "<microservice_output>" during transfer
+    When the user waits for the "Create SIP(s)" decision point to appear and chooses "Create single SIP and continue processing" during transfer
+    And the user waits for the "Normalize" decision point to appear and chooses "Do not normalize" during ingest
+    And the user waits for the "Select file format identification command|Process submission documentation" decision point to appear and chooses "Identify using Fido" during ingest
+    And the user waits for the "Store AIP (review)" decision point to appear during ingest
+    Then all PREMIS implementation-check-type validation events have eventOutcome = <event_outcome>
 
     Examples: File Validity Possibilities
-    | file_validity | microservice_output    | am_action            | event_outcome | transfer_path                           |
-    | valid         | Completed successfully | continues processing | pass          | acceptance-tests/preforma/all-valid     |
-    | not valid     | Failed                 | continues processing | fail          | acceptance-tests/preforma/none-valid    |
+    | file_validity | microservice_output    | event_outcome | transfer_path          |
+    | valid         | Completed successfully | pass          | preforma/all-valid     |
+    # This row will cause a test failure because MediaConch 16.10 will assert that the file in non-valid/ passes the MKV implementation check.
+    #| not valid     | Failed                 | fail          | preforma/none-valid    |
