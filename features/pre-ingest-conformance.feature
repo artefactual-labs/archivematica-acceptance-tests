@@ -20,5 +20,5 @@ Feature: Pre-ingest conformance check
     Examples: File Validity Possibilities
     | file_validity | microservice_output    | event_outcome | transfer_path          |
     | valid         | Completed successfully | pass          | preforma/all-valid     |
-    # This row will cause a test failure because MediaConch 16.10 will assert that the file in non-valid/ passes the MKV implementation check.
+    # This row will cause a test failure because MediaConch 16.10 will assert that the file in none-valid/ passes the MKV implementation check.
     #| not valid     | Failed                 | fail          | preforma/none-valid    |
