@@ -3,7 +3,7 @@ Feature: Transfer policy check
   pre-defined policy/policies before proceeding with further digital
   preservation actions.
 
-  @tpc
+  @preforma @tpc
   Scenario Outline: Isla has started a transfer of files and needs to know if they conform to her policy for original files.
     Given that the user has ensured that the default processing config is in its default state
     And the processing config decision "Perform policy checks on originals" is set to "Yes"
@@ -25,10 +25,11 @@ Feature: Transfer policy check
     And the user waits for the AIP to appear in archival storage
     And the user downloads the AIP
     And the user decompresses the AIP
-    Then the transfer logs directory of the AIP contains a copy of the MediaConch policy file <policy_file>
-    And the transfer logs directory of the AIP contains a MediaConch policy check output file for each policy file tested against <policy_file>
+    # TODO: where does the transfer policy check policy end up?
+    #Then the submissionDocumentation directory of the AIP contains a copy of the MediaConch policy file <policy_file>
+    Then the transfer logs directory of the AIP contains a MediaConch policy check output file for each policy file tested against <policy_file>
 
  Examples: Policy Check Outcomes
-    | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                                           | policy_file                       | purpose                                  |
-    | conform          | Completed successfully | pass           | successful          | acceptance-tests/preforma/all-conform-policy-originals  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Originals against a Policy |
-    | not conform      | Failed                 | fail           | failed              | acceptance-tests/preforma/none-conform-policy-originals | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Originals against a Policy |
+    | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                          | policy_file                       | purpose                                  |
+    | conform          | Completed successfully | pass           | successful          | preforma/all-conform-policy-originals  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Originals against a Policy |
+    | not conform      | Failed                 | fail           | failed              | preforma/none-conform-policy-originals | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Originals against a Policy |
