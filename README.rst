@@ -27,7 +27,7 @@ To run the tests::
     $ behave
 
 If a feature file contains tagged scenarios or scenario outlines (i.e., those
-with somethign like ``@tag-name`` above them), then you can run just those
+with something like ``@tag-name`` above them), then you can run just those
 scenarious by passing the ``--tags`` argument to behave. For example, to just
 run the metadata-only AIP re-ingest tests, run::
 
@@ -74,20 +74,3 @@ features/environment.py.
 - URL:      http://192.168.168.192/
 - username: test
 - password: testtest
-
-
-Move the Test Transfers Over
---------------------------------------------------------------------------------
-
-The MediaConch-related tests require that the test transfer directories in
-test-transfers/ be present in an acceptance-tests/ sub-directory of the
-directory specified in features/environment.py:TRANSFER_SOURCE_PATH (which
-defaults to /home/vagrant/). Assuming you are using Artefactual's
-deploy-pub repo to create an Archivematica installation to test on, one way to
-move the test transfers over is::
-
-    $ cp -r test-transfers /path/to/archivematica/vagrant/synced/folder
-    $ cd /path/to/archivematica/Vagrantfile/dir/
-    $ vagrant ssh
-    $ vagrant@am-local:~$ mv /vagrant/src/test-transfers ~/acceptance-tests
-
