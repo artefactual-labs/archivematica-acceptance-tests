@@ -97,6 +97,7 @@ logger.setLevel(logging.DEBUG)
 
 # Assuming we don't switch JS frameworks :), DOM selectors should be constants.
 SELECTOR_INPUT_TRANSFER_NAME = 'input[ng-model="vm.transfer.name"]'
+SELECTOR_INPUT_TRANSFER_ACCESSION = 'input[ng-model="vm.transfer.accession"]'
 SELECTOR_DIV_TRANSFER_SOURCE_BROWSE = 'div.transfer-tree-container'
 SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER = 'button.pull-right[type=submit]'
 SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES = \
@@ -243,7 +244,7 @@ class ArchivematicaSelenium:
     # These methods let you do high-level things in the AM GUI like logging in
     # or starting a transfer with a given name and transfer directory.
 
-    def start_transfer(self, transfer_path, transfer_name):
+    def start_transfer(self, transfer_path, transfer_name, accession_no=None):
         """Start a new transfer with name ``transfer_name``, transfering the
         directory at ``transfer_path``.
         :param str transfer_path: the path to the transfer to be started as it
@@ -256,6 +257,8 @@ class ArchivematicaSelenium:
         """
         self.navigate_to_transfer_tab()
         self.enter_transfer_name(transfer_name)
+        if accession_no:
+            self.enter_accession_no(accession_no)
         self.add_transfer_directory(transfer_path)
         self.click_start_transfer_button()
         transfer_uuid, transfer_div_elem = self.wait_for_transfer_to_appear(
@@ -1031,6 +1034,7 @@ class ArchivematicaSelenium:
         'Remove files without linking information (failed normalization artifacts etc.)': (
                 'Process submission documentation',
                 'Normalize'),
+        'Remove from quarantine': ('Quarantine',),
         'Remove hidden files and directories': ('Verify transfer compliance',),
         'Remove the processing directory': ('Store AIP',),
         'Remove unneeded files': ('Verify transfer compliance',),
@@ -1346,6 +1350,11 @@ class ArchivematicaSelenium:
         transfer_name_elem = self.driver.find_element_by_css_selector(
             SELECTOR_INPUT_TRANSFER_NAME)
         transfer_name_elem.send_keys(transfer_name)
+
+    def enter_accession_no(self, accession_no):
+        accession_no_elem = self.driver.find_element_by_css_selector(
+            SELECTOR_INPUT_TRANSFER_ACCESSION)
+        accession_no_elem.send_keys(accession_no)
 
     def add_transfer_directory(self, path):
         """Navigate to the transfer directory at ``path`` and click its "Add"

@@ -18,6 +18,7 @@ SS_API_KEY = None
 # TRANSFER_SOURCE_PATH = 'vagrant'
 TRANSFER_SOURCE_PATH = (
     'vagrant/archivematica-sampledata/TestTransfers/acceptance-tests')
+HOME = 'vagrant'
 
 def get_am_sel_cli():
     """Instantiate an ArchivematicaSelenium."""
@@ -43,6 +44,7 @@ def before_scenario(context, scenario):
     context.am_sel_cli = get_am_sel_cli()
     context.am_sel_cli.set_up()
     context.TRANSFER_SOURCE_PATH = TRANSFER_SOURCE_PATH
+    context.HOME = HOME
 
 
 def after_scenario(context, scenario):

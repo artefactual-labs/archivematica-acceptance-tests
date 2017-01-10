@@ -1,6 +1,8 @@
 import filecmp
+import json
 import os
 import pprint
+import re
 
 from behave import when, then, given
 
@@ -266,6 +268,78 @@ def get_mets_from_scenario_DEPRECATED(context):
     return mets
 
 
+def assert_premis_event(event_type, event, context):
+    """Make PREMIS-event-type-specific assertions about ``event``."""
+    if event_type == 'unpacking':
+        premis_evt_detail_el = event.find(
+            'premis:eventDetail', context.am_sel_cli.mets_nsmap)
+        assert premis_evt_detail_el.text.strip().startswith('Unpacked from: ')
+    elif event_type == 'message digest calculation':
+        event_detail = event.find('premis:eventDetail', context.am_sel_cli.mets_nsmap).text
+        event_odn = event.find(
+            'premis:eventOutcomeInformation/'
+            'premis:eventOutcomeDetail/'
+            'premis:eventOutcomeDetailNote',
+            context.am_sel_cli.mets_nsmap).text
+        assert 'program="python"' in event_detail
+        assert 'module="hashlib.sha256()"' in event_detail
+        assert re.search('^[a-f0-9]+$', event_odn)
+    elif event_type == 'virus check':
+        event_detail = event.find('premis:eventDetail',
+            context.am_sel_cli.mets_nsmap).text
+        event_outcome = event.find(
+            'premis:eventOutcomeInformation/premis:eventOutcome',
+            context.am_sel_cli.mets_nsmap).text
+        assert 'program="Clam AV"' in event_detail
+        assert event_outcome == 'Pass'
+
+
+def assert_premis_properties(event, context, properties):
+    """Make assertions about the ``event`` element using the user-supplied
+    ``properties`` dict, which maps descendants of ``event`` to dicts that map
+    relations on those descendants to values.
+    """
+    for xpath, predicates in properties.items():
+        xpath = '/'.join(['premis:' + part for part in xpath.split('/')])
+        desc_el = event.find(xpath, context.am_sel_cli.mets_nsmap)
+        for relation, value in predicates:
+            if relation == 'equals':
+                assert desc_el.text.strip() == value
+            elif relation == 'contains':
+                assert value in desc_el.text.strip()
+            elif relation == 'regex':
+                assert re.search(value, desc_el.text.strip())
+
+
+@then('in the METS file there are/is {count} PREMIS event(s) of type'
+      ' {event_type} with properties {properties}')
+def step_impl(context, count, event_type, properties):
+    mets = get_mets_from_scenario(context)
+    events = []
+    properties = json.loads(properties)
+    for premis_evt_el in mets.findall('.//premis:event', context.am_sel_cli.mets_nsmap):
+        premis_evt_type_el = premis_evt_el.find(
+            'premis:eventType', context.am_sel_cli.mets_nsmap)
+        if premis_evt_type_el.text == event_type:
+            events.append(premis_evt_el)
+            assert_premis_event(event_type, premis_evt_el, context)
+            assert_premis_properties(premis_evt_el, context, properties)
+    assert len(events) == int(count)
+
+
+@then('in the METS file there are/is {count} PREMIS event(s) of type {event_type}')
+def step_impl(context, count, event_type):
+    mets = get_mets_from_scenario(context)
+    events = []
+    for premis_evt_el in mets.findall('.//premis:event', context.am_sel_cli.mets_nsmap):
+        premis_evt_type_el = premis_evt_el.find(
+            'premis:eventType', context.am_sel_cli.mets_nsmap)
+        if premis_evt_type_el.text == event_type:
+            events.append(premis_evt_el)
+            assert_premis_event(event_type, premis_evt_el, context)
+    assert len(events) == int(count)
+
+
 @then('in the METS file the metsHdr element has a CREATEDATE attribute {conj_quant}'
       ' LASTMODDATE attribute')
 def step_impl(context, conj_quant):
@@ -395,14 +469,14 @@ def step_impl(context, transfer_path):
         ' {}'.format(transfer_path))
 
 
+@when('a transfer is initiated on directory {transfer_path} with accession number {accession_no}')
+def step_impl(context, transfer_path, accession_no):
+    initiate_transfer(context, transfer_path, accession_no=accession_no)
+
+
 @when('a transfer is initiated on directory {transfer_path}')
 def step_impl(context, transfer_path):
-    context.scenario.transfer_path = os.path.join(
-        context.TRANSFER_SOURCE_PATH, transfer_path)
-    context.scenario.transfer_name = context.am_sel_cli.unique_name(
-        transfer_path2name(transfer_path))
-    context.scenario.transfer_uuid = context.am_sel_cli.start_transfer(
-        context.scenario.transfer_path, context.scenario.transfer_name)
+    initiate_transfer(context, transfer_path)
 
 
 @then('validate preservation derivatives micro-service output is'
@@ -624,3 +698,17 @@ def get_uuid_val(context, unit_type):
             uuid_val = context.scenario.sip_uuid = \
                 context.am_sel_cli.get_sip_uuid(context.scenario.transfer_name)
     return uuid_val
+
+
+def initiate_transfer(context, transfer_path, accession_no=None):
+    if transfer_path.startswith('~'):
+        context.scenario.transfer_path = os.path.join(
+            context.HOME, transfer_path[2:])
+    else:
+        context.scenario.transfer_path = os.path.join(
+            context.TRANSFER_SOURCE_PATH, transfer_path)
+    context.scenario.transfer_name = context.am_sel_cli.unique_name(
+        transfer_path2name(transfer_path))
+    context.scenario.transfer_uuid = context.am_sel_cli.start_transfer(
+        context.scenario.transfer_path, context.scenario.transfer_name,
+        accession_no=accession_no)
