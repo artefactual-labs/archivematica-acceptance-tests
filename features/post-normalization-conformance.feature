@@ -21,6 +21,9 @@ Feature: Post-normalization conformance check
     And the user waits for the "Store AIP (review)" decision point to appear during ingest
     Then all PREMIS implementation-check-type validation events have eventOutcome = <event_outcome>
 
+    # Note: with recent Pronom update, the .mov file no longer has a default
+    # preservation (to .mkv) role because it is now "Apple ProRes" fmt/797 and
+    # not "Generic MOV"
     Examples: Normalized for Preservation File Validity Possibilities
     | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                       |
     | valid         | Completed successfully | Passed            | pass          | preforma/when-normalized-all-valid  |

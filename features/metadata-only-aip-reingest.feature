@@ -7,7 +7,7 @@ Feature: Metadata-only AIP re-ingest
   Scenario: Isla creates an AIP, and then performs a metadata-only re-ingest on it, adds metadata to it, and confirms that her newly added metadata are in the modified METS file.
     Given that the user has ensured that the default processing config is in its default state
     And the reminder to add metadata is enabled
-    When a transfer is initiated on directory archivematica-sampledata/SampleTransfers/BagTransfer
+    When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
     And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
     And the user waits for the "Create SIP(s)" decision point to appear and chooses "Create single SIP and continue processing" during transfer
     And the user waits for the "Normalize" decision point to appear and chooses "Normalize for preservation" during ingest
