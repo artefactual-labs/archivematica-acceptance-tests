@@ -65,16 +65,20 @@ become visible. See ``navigate_to_transfer_directory_and_click``.
 
 import json
 import logging
-from lxml import etree
 import os
 import pprint
-import requests
 import shlex
 import shutil
+import string
 import sys
 import subprocess
 import time
 import uuid
+
+from lxml import etree
+import pexpect
+import requests
+
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
@@ -110,6 +114,14 @@ DEFAULT_AM_URL = 'http://192.168.168.192/',
 DEFAULT_SS_USERNAME = 'test',
 DEFAULT_SS_PASSWORD = 'test',
 DEFAULT_SS_URL = 'http://192.168.168.192:8000/',
+
+# Set these constants if the AM client should be able to gain SSH access to the
+# server where AM is being served. This is needed in order to scp server files
+# to local, which some tests need. If SSH access is not possible, set
+# ``SSH_ACCESSIBLE`` to ``False``.
+SSH_ACCESSIBLE = True
+SERVER_USER = 'vagrant'
+SERVER_PASSWORD = 'vagrant'
 
 DUMMY_VAL = 'Archivematica Acceptance Test'
 METADATA_ATTRS = ('title', 'creator')
@@ -227,7 +239,7 @@ class ArchivematicaSelenium:
         for window_handle in self.driver.window_handles:
             self.driver.switch_to.window(window_handle)
             self.driver.close()
-        #self.clear_tmp_dir()
+        self.clear_tmp_dir()
         for driver in self.all_drivers:
             try:
                 driver.close()
@@ -284,6 +296,25 @@ class ArchivematicaSelenium:
         submit_button_elem = self.driver.find_element_by_tag_name('button')
         submit_button_elem.click()
         # submit_button_elem.send_keys(Keys.RETURN)
+
+    def login_ss(self):
+        """Login to Archivematica Storage Service."""
+        self.driver.get(self.get_ss_login_url())
+        username_input_id = 'id_username'
+        password_input_id = 'id_password'
+        try:
+            element_present = EC.presence_of_element_located(
+                (By.ID, username_input_id))
+            WebDriverWait(self.driver, self.timeout).until(element_present)
+        except TimeoutException:
+            print("Loading took too much time!")
+        username_elem = self.driver.find_element_by_id(username_input_id)
+        username_elem.send_keys(self.ss_username)
+        password_elem = self.driver.find_element_by_id(password_input_id)
+        password_elem.send_keys(self.ss_password)
+        submit_button_elem = self.driver.find_element_by_css_selector(
+            'input[type=submit]')
+        submit_button_elem.click()
 
     def remove_all_transfers(self):
         """Remove all transfers in the Transfers tab."""
@@ -375,6 +406,24 @@ class ArchivematicaSelenium:
 
     def get_installer_welcome_url(self):
         return '{}installer/welcome/'.format(self.am_url)
+
+    def get_spaces_url(self):
+        return '{}spaces/'.format(self.ss_url)
+
+    def get_space_url(self, space_uuid):
+        return '{}spaces/{}/'.format(self.ss_url, space_uuid)
+
+    def get_location_url(self, location_uuid):
+        return '{}locations/{}/'.format(self.ss_url, location_uuid)
+
+    def get_spaces_create_url(self):
+        return '{}spaces/create/'.format(self.ss_url)
+
+    def get_locations_create_url(self, space_uuid):
+        return '{}spaces/{}/location_create/'.format(self.ss_url, space_uuid)
+
+    def get_ss_login_url(self):
+        return '{}login/'.format(self.ss_url)
 
     # CSS classes, selectors and other identifiers
     # =========================================================================
@@ -554,7 +603,7 @@ class ArchivematicaSelenium:
         """Wait for the decision point job for micro-service ``ms_name`` to
         appear.
         """
-        logger.debug('Await decision point with unit_type {}'.format(unit_type))
+        logger.info('Await decision point with unit_type {}'.format(unit_type))
         ms_name, group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
         job_uuid, job_output = self.get_job_uuid(
             ms_name, group_name, transfer_uuid,
@@ -674,13 +723,58 @@ class ArchivematicaSelenium:
             for block in request.iter_content(1024):
                 f.write(block)
 
+
+    def scp_server_file_to_local(self, server_file_path):
+        """Use scp to copy a file from the server to our local tmp directory."""
+        if SERVER_USER and SERVER_PASSWORD and SSH_ACCESSIBLE:
+            filename = os.path.basename(server_file_path)
+            local_path = os.path.join(self.tmp_path, filename)
+            AM_IP = ''.join([x for x in self.am_url if x in string.digits + '.'])
+            cmd = 'scp -o StrictHostKeyChecking=no {}@{}:{} {}'.format(
+                SERVER_USER, AM_IP, server_file_path, local_path)
+            child = pexpect.spawn(cmd)
+            child.expect('assword:')
+            child.sendline(SERVER_PASSWORD)
+            child.expect(pexpect.EOF, timeout=20)
+            if os.path.isfile(local_path):
+                return local_path
+            logger.info('Failed to scp %s:%s to %s', AM_IP, server_file_path,
+                        local_path)
+            return False
+        else:
+            logger.info('You do not have SSH access to the Archivematica'
+                        ' server')
+            return None
+
+    def decompress_package(self, package_path):
+        if os.path.isdir(package_path):
+            return package_path
+        fname, extension = os.path.splitext(package_path)
+        if extension == '.gpg':
+            fname, extension = os.path.splitext(fname)
+        if extension != '.7z':
+            logger.info('decompress_package; extension %s of fname %s is NOT'
+                        ' .7z', extension, fname)
+            return False
+        try:
+            stdout = subprocess.check_output(['7z', '-h'])
+        except FileNotFoundError:
+            logger.info('7z is not installed; aborting decompression attempt')
+            return False
+        try:
+            stdout = subprocess.check_output(['7z', 'x', package_path])
+        except subprocess.CalledProcessError:
+            logger.info('7z extraction failed. File %s is not a .7z file or it'
+                        ' is encrypted', package_path)
+            return None
+        return fname
+
     def download_aip(self, transfer_name, sip_uuid):
         """Use the AM SS to download the completed AIP.
         Calls http://localhost:8000/api/v2/file/<SIP-UUID>/download/\
                   ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
         """
         payload = {'username': self.ss_username, 'api_key': self.ss_api_key}
-        logger.debug('payload for downloading aip {}'.format(payload))
         url = '{}api/v2/file/{}/download/'.format(self.ss_url, sip_uuid)
         aip_name = '{}-{}.7z'.format(transfer_name, sip_uuid)
         aip_path = os.path.join(self.tmp_path, aip_name)
@@ -705,6 +799,37 @@ class ArchivematicaSelenium:
                                    r.text))
                 raise ArchivematicaSeleniumError(
                     'Unable to download AIP {}'.format(sip_uuid))
+
+    def download_aip_pointer_file(self, transfer_name, sip_uuid):
+        """Use the AM SS to download the completed AIP's pointer file.
+        Calls http://localhost:8000/api/v2/file/<SIP-UUID>/pointer_file/\
+                  ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
+        """
+        payload = {'username': self.ss_username, 'api_key': self.ss_api_key}
+        url = '{}api/v2/file/{}/pointer_file/'.format(self.ss_url, sip_uuid)
+        pointer_file_name = 'pointer.{}.xml'.format(sip_uuid)
+        pointer_file_path = os.path.join(self.tmp_path, pointer_file_name)
+        max_attempts = 20
+        attempt = 0
+        while True:
+            r = requests.get(url, params=payload, stream=True)
+            if r.ok:
+                self.save_download(r, pointer_file_path)
+                return pointer_file_path
+            elif r.status_code in (404, 500) and attempt < max_attempts:
+                logger.warning(
+                    'Trying again to download AIP {} pointer file via GET'
+                    ' request to URL {}; SS returned status code {} and message'
+                    ' {}'.format( sip_uuid, url, r.status_code, r.text))
+                attempt += 1
+                time.sleep(1)
+            else:
+                logger.warning('Unable to download AIP {} pointer file via GET'
+                               ' request to URL {}; SS returned status code {}'
+                               ' and message {}'.format(sip_uuid, url,
+                                                        r.status_code, r.text))
+                raise ArchivematicaSeleniumError(
+                    'Unable to download AIP {} pointer file'.format(sip_uuid))
 
     def decompress_aip(self, aip_path):
         aip_dir_path, _ = os.path.splitext(aip_path)
@@ -1454,8 +1579,6 @@ class ArchivematicaSelenium:
                 self.driver.execute_script('window.scrollTo(0, 0);')
             else:
                 # Click ancestor folder's icon to open its contents.
-                logger.debug('Trying to click on folder {} using XPath'
-                             ' {}'.format(folder, folder_label_xpath))
                 self.click_folder(folder_label_xpath)
 
     def click_add_button(self):
@@ -1529,14 +1652,10 @@ class ArchivematicaSelenium:
             block.until(EC.presence_of_element_located(
                 (By.XPATH, folder_label_xpath)))
             folder_icon_xpath = self.folder_label2icon_xpath(folder_label_xpath)
-            logger.debug('Trying to click on folder icon using XPath'
-                        ' {}'.format(folder_icon_xpath))
             folder_icon_el = self.driver.find_element_by_xpath(folder_icon_xpath)
             folder_icon_el.click()
             folder_children_xpath = self.folder_label2children_xpath(
                 folder_label_xpath)
-            logger.debug('Waiting for folder children to be visible; using XPath'
-                        ' {}'.format(folder_children_xpath))
             block = WebDriverWait(self.driver, 10)
             block.until(EC.visibility_of_element_located(
                 (By.XPATH, folder_children_xpath)))
@@ -1632,7 +1751,10 @@ class ArchivematicaSelenium:
             if self.driver.current_url.endswith('/installer/welcome/'):
                 self.setup_new_install()
             else:
-                self.login()
+                if url.startswith(self.ss_url):
+                    self.login_ss()
+                else:
+                    self.login()
         self.driver.get(url)
 
     def change_normalization_rule_command(self, search_term, command_name):
@@ -1695,6 +1817,150 @@ class ArchivematicaSelenium:
             return
         policy_command = self.get_policy_command(policy_file)
         self.save_policy_check_command(policy_command, description)
+
+    def ensure_ss_space_exists(self, attributes):
+        """Ensure there is a Storage Service space with the attributes in the
+        ``attributes`` dict.
+        """
+        existing_spaces = self.get_existing_spaces()
+        matching_space = None
+        for ex_space in existing_spaces:
+            match = True
+            for key, val in attributes.items():
+                if ex_space.get(key.lower()) != val:
+                    match = False
+                    break
+            if match:
+                matching_space = ex_space
+                break
+        if matching_space:
+            space_uuid = matching_space['uuid']
+        else:
+            logger.info('space with attributes {} does NOT'
+                        ' exist'.format(attributes))
+            space_uuid = self.create_ss_space(attributes)
+        return space_uuid
+
+    def create_ss_space(self, attributes):
+        """Create an AM SS Space using ``attributes``."""
+        self.navigate(self.get_spaces_create_url())
+        form_el = self.driver.find_element_by_css_selector(
+            'form[action="/spaces/create/"]')
+        protocol_el = self.driver.find_element_by_id('protocol_form')
+        for parent in (form_el, protocol_el):
+            for p_el in parent.find_elements_by_tag_name('p'):
+                for el in p_el.find_elements_by_css_selector('*'):
+                    if el.tag_name == 'label':
+                        label_text = el.text.strip().lower().replace(':', '')
+                        for key, val in attributes.items():
+                            if key.lower() == label_text:
+                                input_id = el.get_attribute('for')
+                                input_el = self.driver.find_element_by_id(input_id)
+                                input_el.send_keys(val)
+        self.driver.find_element_by_css_selector('input[type=submit]').click()
+        header = self.driver.find_element_by_tag_name('h1').text.strip()
+        space_uuid = header.split()[0].replace('"', '').replace(':', '')
+        return space_uuid
+
+    def create_ss_location(self, space_uuid, attributes):
+        """Create an AM SS Location, in Space with UUID ``space_uuid``, using
+        attributes ``attributes``.
+        """
+        self.navigate(self.get_locations_create_url(space_uuid))
+        form_el = self.driver.find_element_by_css_selector(
+            'form[action="/spaces/{}/location_create/"]'.format(
+                space_uuid))
+        for p_el in form_el.find_elements_by_tag_name('p'):
+            for el in p_el.find_elements_by_css_selector('*'):
+                if el.tag_name == 'label':
+                    label_text = el.text.strip().lower().replace(':', '')
+                    for key, val in attributes.items():
+                        if key.lower() == label_text:
+                            input_id = el.get_attribute('for')
+                            input_el = self.driver.find_element_by_id(input_id)
+                            input_el.send_keys(val)
+        self.driver.find_element_by_css_selector('input[type=submit]').click()
+        header = self.driver.find_element_by_tag_name('h1').text.strip()
+        location_uuid = header.split()[0].replace('"', '').replace(':', '')
+        return location_uuid
+
+    def get_existing_spaces(self):
+        """Return a summary of the existing spaces in the AM SS as a list of
+        dicts.
+        """
+        existing_spaces = []
+        self.navigate(self.get_spaces_url())
+        space_urls = []
+        for div_el in self.driver.find_elements_by_css_selector('div.space'):
+            space_detail_anchor = div_el.find_element_by_xpath(
+                'dl/dd/ul/li/a[text() = "View Details and Locations"]')
+            space_urls.append(space_detail_anchor.get_attribute('href'))
+        for space_url in space_urls:
+            self.navigate(space_url)
+            space_uuid = space_url
+            if space_uuid.endswith('/'):
+                space_uuid = space_uuid[:-1]
+            space_uuid = space_uuid.split('/')[-1]
+            space = {'uuid': space_uuid}
+            space_div_el = self.driver.find_element_by_css_selector('div.space dl')
+            last_key = None
+            for el in space_div_el.find_elements_by_css_selector('dt, dd'):
+                text = el.text.strip()
+                if el.tag_name == 'dt':
+                    last_key = text.lower()
+                elif text != 'Actions':
+                    space[last_key] = text
+            existing_spaces.append(space)
+        return existing_spaces
+
+    def get_existing_locations(self, space_uuid):
+        """Return a summary of the existing locations in the space with UUID
+        ``space_uuid`` in the AM SS as a list of dicts.
+        """
+        existing_locations = []
+        self.navigate(self.get_space_url(space_uuid))
+        location_urls = {}
+        for tr_el in self.driver.find_elements_by_tag_name('tr'):
+            loc_uuid_td_el = tr_el.find_element_by_xpath('td[position()=5]')
+            loc_uuid = loc_uuid_td_el.text.strip()
+            location_urls[loc_uuid] = self.get_location_url(location_uuid)
+        for loc_uuid, loc_url in location_urls.items():
+            self.navigate(loc_url)
+            location = {'uuid': loc_uuid}
+            loc_div_el = self.driver.find_element_by_css_selector('div.location dl')
+            last_key = None
+            for el in loc_div_el.find_elements_by_css_selector('dt, dd'):
+                text = el.text.strip()
+                if el.tag_name == 'dt':
+                    last_key = text.lower()
+                elif text not in ('Space', 'Actions'):
+                    location[last_key] = text
+            existing_locations.append(location)
+        return existing_locations
+
+    def ensure_ss_location_exists(self, space_uuid, attributes):
+        """Ensure there is a Storage Service location within the space with
+        UUID ``space_uuid`` that has the attributes in the ``attributes`` dict.
+        Return that location's UUId.
+        """
+        existing_locations = self.get_existing_locations(space_uuid)
+        matching_loc = None
+        for ex_loc in existing_locations:
+            match = True
+            for key, val in attributes.items():
+                if ex_loc.get(key.lower()) != val:
+                    match = False
+                    break
+            if match:
+                matching_loc = ex_loc
+                break
+        if matching_loc:
+            loc_uuid = matching_loc['uuid']
+        else:
+            logger.info('location with attributes {} does NOT'
+                        ' exist'.format(attributes))
+            loc_uuid = self.create_ss_location(space_uuid, attributes)
+        return loc_uuid
 
     def get_policy_command(self, policy_file):
         """Return a string representing a policy check validation command that
@@ -2018,7 +2284,8 @@ class ArchivematicaSelenium:
         'mets': 'http://www.loc.gov/METS/',
         'premis': 'info:lc/xmlns/premis-v2',
         'dc': 'http://purl.org/dc/elements/1.1/',
-        'dcterms': 'http://purl.org/dc/terms/'
+        'dcterms': 'http://purl.org/dc/terms/',
+        'xlink': 'http://www.w3.org/1999/xlink'
     }
 
     # Wait methods - general
