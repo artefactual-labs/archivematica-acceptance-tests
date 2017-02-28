@@ -173,10 +173,6 @@ def step_impl(context):
         doc = etree.parse(filei)
         file_el = doc.find(
             'mets:fileSec/mets:fileGrp/mets:file', ns)
-        # .gpg suffix added to xlink:href
-        flocat_el = file_el.find('mets:FLocat', ns)
-        xlink_href = flocat_el.get('{' + ns['xlink'] + '}href')
-        assert os.path.splitext(xlink_href)[1] == '.gpg'
         # <tranformFile> decryption element added, and decompression one
         # modified.
         deco_tran_el = file_el.find(
