@@ -1926,10 +1926,10 @@ class ArchivematicaSelenium:
         existing_locations = []
         self.navigate(self.get_space_url(space_uuid))
         location_urls = {}
-        for tr_el in self.driver.find_elements_by_tag_name('tr'):
+        for tr_el in self.driver.find_elements_by_css_selector('tbody tr'):
             loc_uuid_td_el = tr_el.find_element_by_xpath('td[position()=5]')
             loc_uuid = loc_uuid_td_el.text.strip()
-            location_urls[loc_uuid] = self.get_location_url(location_uuid)
+            location_urls[loc_uuid] = self.get_location_url(loc_uuid)
         for loc_uuid, loc_url in location_urls.items():
             self.navigate(loc_url)
             location = {'uuid': loc_uuid}
