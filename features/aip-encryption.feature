@@ -6,8 +6,8 @@ Feature: AIP Encryption
 
   @aip-encrypt
   Scenario: Richard wants to create a space on his Archivematica Storage Service that encrypts all AIPs stored in that space. He also wants to confirm that the AIPs stored in that space are encrypted both by trying to open them without the key and by reading the AIP's pointer file. Finally, he wants to be able to download the AIPS via the Archivematica interface and have them be decrypted prior to download.
-    Given the user has ensured that there is a storage service space with attributes Access protocol: GPG encryption on Local Filesystem; Path: /; Staging path: /var/archivematica/storage_service_encrypted77; GnuPG Private Key: Archivematica Storage Service GPG Key;
-    And the user has ensured that there is a location in the GPG Space with attributes Purpose: AIP Storage; Relative path: var/archivematica/sharedDirectory/www/AIPsStoreEncrypted77; Description: Store AIP Encrypted in standard Archivematica Directory77;
+    Given the user has ensured that there is a storage service space with attributes Access protocol: GPG encryption on Local Filesystem; Path: /; Staging path: /var/archivematica/storage_service_encrypted; GnuPG Private Key: Archivematica Storage Service GPG Key;
+    And the user has ensured that there is a location in the GPG Space with attributes Purpose: AIP Storage; Relative path: var/archivematica/sharedDirectory/www/AIPsStoreEncrypted; Description: Store AIP Encrypted in standard Archivematica Directory;
     And that the user has ensured that the default processing config is in its default state
     When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
     And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
