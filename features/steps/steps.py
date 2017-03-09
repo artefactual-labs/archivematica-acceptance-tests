@@ -4,6 +4,7 @@ from lxml import etree
 import os
 import pprint
 import re
+import tarfile
 
 from behave import when, then, given
 
@@ -235,6 +236,39 @@ def step_impl(context):
     # we expect it to fail because the AIP file is encrypted with GPG.
     assert aip_local_path is None
 
+
+@then('the uncompressed AIP on disk at {aips_store_path} is encrypted')
+def step_impl(context, aips_store_path):
+    """
+    """
+    tmp = context.scenario.sip_uuid.replace('-', '')
+    parts = [tmp[i:i + 4] for i in range(0, len(tmp), 4)]
+    print('parts')
+    print(parts)
+    subpath = '/'.join(parts)
+    print('subpath')
+    print(subpath)
+    aip_server_path = '{}{}/{}-{}'.format(
+        aips_store_path, subpath, context.scenario.transfer_name,
+        context.scenario.sip_uuid)
+    print('aip_server_path')
+    print(aip_server_path)
+    aip_local_path = context.am_sel_cli.scp_server_file_to_local(
+        aip_server_path)
+    if aip_local_path is None:
+        print('Unable to copy file {} from the server to the local file'
+                ' system. Server is not accessible via SSH. Abandoning'
+                ' attempt to assert that the AIP on disk is'
+                ' encrypted.'.format(aip_server_path))
+        return
+    elif aip_local_path is False:
+        print('Unable to copy file {} from the server to the local file'
+                ' system. Attempt to scp the file failed. Abandoning attempt'
+                ' to assert that the AIP on disk is'
+                ' encrypted.'.format(aip_server_path))
+        return
+    assert not os.path.isdir(aip_local_path)
+    assert not tarfile.is_tarfile(aip_local_path)
 
 @when('the user decompresses the AIP')
 def step_impl(context):
@@ -814,6 +848,12 @@ def step_impl(context):
     context.scenario.aip_path = context.am_sel_cli.decompress_aip(
         context.scenario.aip_path)
     assert os.path.isdir(context.scenario.aip_path)
+
+
+@then('the downloaded uncompressed AIP is an unencrypted tarfile')
+def step_impl(context):
+    print(context.scenario.aip_path)
+    assert tarfile.is_tarfile(context.scenario.aip_path)
 
 
 ###############################################################################
