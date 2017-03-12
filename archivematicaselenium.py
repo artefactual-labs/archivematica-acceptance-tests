@@ -104,12 +104,12 @@ SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES = \
     'button[data-target="#transfer_browse_tree"]'
 SELECTOR_BUTTON_START_TRANSFER = 'button[ng-click="vm.transfer.start()"]'
 
-DEFAULT_AM_USERNAME = 'test',
-DEFAULT_AM_PASSWORD = 'testtest',
-DEFAULT_AM_URL = 'http://192.168.168.192/',
-DEFAULT_SS_USERNAME = 'test',
-DEFAULT_SS_PASSWORD = 'test',
-DEFAULT_SS_URL = 'http://192.168.168.192:8000/',
+DEFAULT_AM_USERNAME = os.getenv('AM_USERNAME','test'),
+DEFAULT_AM_PASSWORD = os.getenv('AM_PASSWORD','testtest')
+DEFAULT_AM_URL = os.getenv('AM_URL','http://192.168.168.192/'),
+DEFAULT_SS_USERNAME = os.getenv('SS_USERNAME','test'),
+DEFAULT_SS_PASSWORD = os.getenv('SS_USERNAME','test'),
+DEFAULT_SS_URL = os.getenv('SS_URL','http://192.168.168.192:8000/'),
 
 DUMMY_VAL = 'Archivematica Acceptance Test'
 METADATA_ATTRS = ('title', 'creator')
