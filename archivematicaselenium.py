@@ -326,6 +326,28 @@ class ArchivematicaSelenium:
                 break
             self.remove_top_transfer(top_transfer_elem)
 
+    def remove_transfer(self, transfer_uuid):
+        """Remove the transfer with uuid ``transfer_uuid``."""
+        self.navigate_to_transfer_tab()
+        self.wait_for_presence(self.transfer_div_selector, 20)
+        transfer_elem = self.get_transfer(transfer_uuid)
+        if transfer_elem:
+            self.remove_top_transfer(transfer_elem)
+
+    def get_transfer(self, transfer_uuid):
+        transfer_elems = self.driver.find_elements_by_css_selector(
+            self.transfer_div_selector)
+        transfer_elem = None
+        if transfer_elems:
+            for tel in transfer_elems:
+                if tel.find_element_by_css_selector(
+                        'div.sip-detail-uuid').text.strip() == transfer_uuid:
+                    transfer_elem = tel
+                    break
+        else:
+            return None
+        return transfer_elem
+
     def remove_all_ingests(self):
         """Remove all ingests in the Ingest tab."""
         url = self.get_ingest_url()
@@ -482,6 +504,12 @@ class ArchivematicaSelenium:
         sip_uuid, ingest_div_elem = self.wait_for_transfer_to_appear(
             transfer_name)
         return sip_uuid
+
+    def get_transfer_uuid(self, transfer_name):
+        self.navigate_to_transfer_tab()
+        transfer_uuid, transfer_div_elem = self.wait_for_transfer_to_appear(
+            transfer_name)
+        return transfer_uuid
 
     def get_mets(self, transfer_name, sip_uuid=None, parse_xml=True):
         """Return the METS file XML as a string.
@@ -658,7 +686,7 @@ class ArchivematicaSelenium:
                 time.sleep(1)  # Sleep a little longer, for good measure
                 break
 
-    def initiate_reingest(self, aip_uuid, reingest_type='metadata-only'):
+    def initiate_reingest(self, aip_uuid, reingest_type='metadata-only', wait=False):
         url = self.get_archival_storage_url(aip_uuid=aip_uuid)
         max_attempts = 10
         attempt = 0
@@ -683,12 +711,13 @@ class ArchivematicaSelenium:
             self.driver.find_element_by_css_selector(
                 reingest_tab_selector).click()
         except:
-            logger.warning('Unable to find Re-ingest tab using selector'
+            logger.exception('Unable to find Re-ingest tab using selector'
                 ' {}'.format(reingest_tab_selector))
             time.sleep(20)
         type_selector = {
             'metadata-only': 'input#id_reingest-reingest_type_1',
-            'metadata-and-objects': 'input#id_reingest-reingest_type_2'
+            'metadata-and-objects': 'input#id_reingest-reingest_type_2',
+            'full': 'input#id_reingest-reingest_type_3'
             }.get(reingest_type)
         if not type_selector:
             raise ArchivematicaSeleniumError('Unable to initiate a reingest of'
@@ -696,6 +725,9 @@ class ArchivematicaSelenium:
         self.driver.find_element_by_css_selector(type_selector).click()
         self.driver.find_element_by_css_selector(
             'button[name=submit-reingest-form]').click()
+        if wait:
+            time.sleep(20)
+        self.wait_for_presence('div.alert', timeout=10)
         alert_text = self.driver.find_element_by_css_selector(
             'div.alert-success').text.strip()
         assert alert_text.startswith('Package {} sent to pipeline'.format(aip_uuid))
@@ -854,6 +886,9 @@ class ArchivematicaSelenium:
         """Make the choice matching the text ``choice_text`` at decision point
         (i.e., microservice) job matching ``decision_point``.
         """
+        logger.debug('Attempting to make choice %s at decision point %s on %s'
+                     ' unit with uuid %s', choice_text, decision_point,
+                     unit_type, uuid_val)
         decision_point, group_name = self.expose_job(
             decision_point, uuid_val, unit_type=unit_type)
         ms_group_elem = self.get_transfer_micro_service_group_elem(

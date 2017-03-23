@@ -1,11 +1,23 @@
 import filecmp
 import json
+import logging
 from lxml import etree
 import os
 import pprint
 import re
+import time
 
 from behave import when, then, given
+
+logger = logging.getLogger(__file__)
+log_filename, _ = os.path.splitext(os.path.basename(__file__))
+log_filename = log_filename + '.log'
+log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), log_filename)
+handler = logging.FileHandler(log_path)
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)
 
 MC_EVENT_DETAIL_PREFIX = 'program="MediaConch"'
 MC_EVENT_OUTCOME_DETAIL_NOTE_IMPLEMENTATION_CHECK_PREFIX = \
@@ -60,7 +72,6 @@ def step_impl(context, microservice_name, choice, unit_type):
         'When the user chooses "{}" at decision point "{}" during {}\n'
     ).format(microservice_name, unit_type, choice, microservice_name,
              unit_type)
-    #raise Exception('fuckyou, microservice_name {}, choice {}, unit_type {}\n\nsteps:\n{}'.format(microservice_name, choice, unit_type, steps))
     context.execute_steps(steps)
 
 
@@ -355,12 +366,17 @@ def step_impl(context):
 
 @when('the user initiates a {reingest_type} re-ingest on the AIP')
 def step_impl(context, reingest_type):
-    # DEV DELETE
-    #context.scenario.sip_uuid = 'ededf16f-5877-4d22-b6ba-28520f999bce'
-    #context.scenario.transfer_name = 'BagTransfer_1478123709'
     uuid_val = get_uuid_val(context, 'sip')
     context.am_sel_cli.initiate_reingest(
         uuid_val, reingest_type=reingest_type)
+
+
+# For DEVELOPMENT
+@when('the user initiates a {reingest_type} re-ingest on the AIP and waits')
+def step_impl(context, reingest_type):
+    uuid_val = get_uuid_val(context, 'sip')
+    context.am_sel_cli.initiate_reingest(
+        uuid_val, reingest_type=reingest_type, wait=True)
 
 
 @given('that the user has ensured that the default processing config is in its'
@@ -879,9 +895,84 @@ def initiate_transfer(context, transfer_path, accession_no=None):
         accession_no=accession_no)
 
 
+@when('the user removes the transfer')
+def step_impl(context):
+    context.am_sel_cli.remove_transfer(context.scenario.transfer_uuid)
+
+
+@when('the user approves the full re-ingest transfer')
+def step_impl(context):
+    """After a full reingest, the user approves the new transfer. This is
+    tricky because the UUID of the original transfer will be in ``context`` so
+    we have to re-extract the UUID from the DOM.
+    """
+    context.scenario.transfer_uuid = context.am_sel_cli.get_transfer_uuid(
+        context.scenario.transfer_name)
+    logger.debug('transfer uuid for transfer named {} is {}'.format(
+        context.scenario.transfer_name,
+        context.scenario.transfer_uuid))
+    context.execute_steps(
+        'When the user waits for the "Approve standard transfer" decision point'
+        ' to appear and chooses "Approve transfer" during transfer')
+
+
+@then('the METS file records a deleted preservation derivative')
+def step_impl(context):
+    """Assert that the METS file records the deletion of a preservation
+    derivative that was deleted because a new preservation derivative was made
+    in its place, i.e., during a full reingest.
+
+    1. There is a mets:file in a mets:fileGrp[@USE="deleted"]
+    2. That deleted file has an amdSec containing a 'deletion' premis:eventType
+       ancestor
+    3. That deleted file's amdSec also has a 'derivation' relationship pointing
+       to the UUID of the original file
+    4. That original file has a mets:file element.
+    """
+    mets = get_mets_from_scenario(context)
+    ns = context.am_sel_cli.mets_nsmap
+    # Get the fileSec for the first deleted file
+    file_sec_el = mets.find('mets:fileSec', ns)
+    del_file_grp_el = mets.find('mets:fileSec/mets:fileGrp[@USE="deleted"]', ns)
+    assert del_file_grp_el is not None
+    del_file_el = del_file_grp_el.find('mets:file', ns)
+    assert del_file_el is not None
+    del_file_id = del_file_el.get('ID')
+    del_file_admid = del_file_el.get('ADMID')
+    # Get the amdSec for the deleted file
+    del_file_amdsec_el = mets.find('mets:amdSec[@ID="{}"]'.format(del_file_admid), ns)
+    assert del_file_amdsec_el is not None
+    # Get the 'deletion' premis:eventType of the deleted file
+    deletion_evt_type = None
+    for evt_type_el in del_file_amdsec_el.findall('.//premis:eventType', ns):
+        if evt_type_el.text.strip() == 'deletion':
+            deletion_evt_type = True
+            break
+    assert deletion_evt_type is not None
+    # Get the 'derivation' premis:relationship of the deleted file
+    prm_rel_el = del_file_amdsec_el.find('.//premis:relationship', ns)
+    assert prm_rel_el is not None
+    prm_rel_type_el = prm_rel_el.find('premis:relationshipType', ns)
+    assert prm_rel_type_el is not None
+    assert prm_rel_type_el.text.strip() == 'derivation'
+    source_uuid = prm_rel_el.find(
+        'premis:relatedObjectIdentification/premis:relatedObjectIdentifierValue',
+        ns).text.strip()
+    # Get the original file mets:file element
+    orig_file_el = mets.find(
+        'mets:fileSec/mets:fileGrp[@USE="original"]/'
+        'mets:file[@ID="file-{}"]'.format(source_uuid), ns)
+    assert orig_file_el is not None
+
+
 def _parse_k_v_attributes(attributes):
     """Parse a string of key-value attributes formatted like "key 1: value 1;
     key 2: value 2;".
     """
     return {pair.split(':')[0].strip(): pair.split(':')[1].strip() for
             pair in attributes.split(';') if pair.strip()}
+
+
+@when('the user waits for {seconds} seconds')
+def step_impl(context, seconds):
+    time.sleep(int(seconds))
