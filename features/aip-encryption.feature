@@ -33,8 +33,7 @@ Feature: AIP Encryption
     And the user has ensured that there is a location in the GPG Space with attributes Purpose: AIP Storage; Relative path: var/archivematica/sharedDirectory/www/AIPsStoreEncrypted; Description: Store AIP Encrypted in standard Archivematica Directory;
     And that the user has ensured that the default processing config is in its default state
     And the processing config decision "Select compression algorithm" is set to "Uncompressed"
-    # When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
-    When a transfer is initiated on directory ~/easy
+    When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
     And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
     And the user waits for the "Create SIP(s)" decision point to appear and chooses "Create single SIP and continue processing" during transfer
     And the user waits for the "Normalize" decision point to appear and chooses "Normalize for preservation" during ingest

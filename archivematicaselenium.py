@@ -123,14 +123,6 @@ DEFAULT_AM_API_KEY = None
 DEFAULT_SS_API_KEY = None
 DEFAULT_DRIVER_NAME = 'Chrome'  # 'Firefox' should also work.
 
-# Set these constants if the AM client should be able to gain SSH access to the
-# server where AM is being served. This is needed in order to scp server files
-# to local, which some tests need. If SSH access is not possible, set
-# ``SSH_ACCESSIBLE`` to ``False``.
-SSH_ACCESSIBLE = True
-SERVER_USER = 'vagrant'
-SERVER_PASSWORD = 'vagrant'
-
 DUMMY_VAL = 'Archivematica Acceptance Test'
 METADATA_ATTRS = ('title', 'creator')
 
@@ -182,6 +174,13 @@ class ArchivematicaSelenium:
     # General timeout for page load and JS changes (in seconds)
     timeout = 5
 
+    _default_to_none = (
+        'ssh_accessible',
+        'ssh_requires_password',
+        'server_user',
+        'server_password'
+    )
+
     def __init__(self,
              am_username=DEFAULT_AM_USERNAME,
              am_password=DEFAULT_AM_PASSWORD,
@@ -191,8 +190,8 @@ class ArchivematicaSelenium:
              ss_password=DEFAULT_SS_PASSWORD,
              ss_url=DEFAULT_SS_URL,
              ss_api_key=DEFAULT_SS_API_KEY,
-             driver_name=DEFAULT_DRIVER_NAME
-             ):
+             driver_name=DEFAULT_DRIVER_NAME,
+             **kwargs):
         self.am_username = am_username
         self.am_password = am_password
         self.am_url = am_url
@@ -205,6 +204,11 @@ class ArchivematicaSelenium:
         self._tmp_path = None
         self.metadata_attrs = METADATA_ATTRS
         self.dummy_val = DUMMY_VAL
+        for k, v in kwargs.items():
+            if k not in self._default_to_none:
+                setattr(self, k, v)
+        for attr in self._default_to_none:
+            setattr(self, attr, kwargs.get(attr))
 
     # =========================================================================
     # Test Infrastructure.
@@ -729,18 +733,21 @@ class ArchivematicaSelenium:
             for block in request.iter_content(1024):
                 f.write(block)
 
-
     def scp_server_file_to_local(self, server_file_path):
         """Use scp to copy a file from the server to our local tmp directory."""
-        if SERVER_USER and SERVER_PASSWORD and SSH_ACCESSIBLE:
+        if self.server_user and self.server_password and self.ssh_accessible:
             filename = os.path.basename(server_file_path)
             local_path = os.path.join(self.tmp_path, filename)
             AM_IP = ''.join([x for x in self.am_url if x in string.digits + '.'])
-            cmd = 'scp -o StrictHostKeyChecking=no {}@{}:{} {}'.format(
-                SERVER_USER, AM_IP, server_file_path, local_path)
+            cmd = ('scp'
+                   ' -o UserKnownHostsFile=/dev/null'
+                   ' -o StrictHostKeyChecking=no'
+                   ' {}@{}:{} {}'.format(
+                        self.server_user, AM_IP, server_file_path, local_path))
             child = pexpect.spawn(cmd)
-            child.expect('assword:')
-            child.sendline(SERVER_PASSWORD)
+            if self.ssh_requires_password:
+                child.expect('assword:')
+                child.sendline(self.server_password)
             child.expect(pexpect.EOF, timeout=20)
             if os.path.isfile(local_path):
                 return local_path
