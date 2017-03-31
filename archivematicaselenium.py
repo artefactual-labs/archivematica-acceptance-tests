@@ -56,6 +56,11 @@ Test environments where this module has been tested and has worked:
        Selenium 2.53.6
        Python 3.4.2
 
+    4. Chrome 56.0.2924.87 (64-bit) 
+       Ubuntu 16.04
+       Selenium 2.53.6
+       Python 3.5.2
+
 WARNING: this will *not* currently work with a headless PhantomJS() webdriver.
 With PhantomJS, it can login, but when it attempts to use the interface for
 selecting a transfer folder it times out when waiting for the 'home' folder to
@@ -104,12 +109,12 @@ SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES = \
     'button[data-target="#transfer_browse_tree"]'
 SELECTOR_BUTTON_START_TRANSFER = 'button[ng-click="vm.transfer.start()"]'
 
-DEFAULT_AM_USERNAME = 'test',
-DEFAULT_AM_PASSWORD = 'testtest',
-DEFAULT_AM_URL = 'http://192.168.168.192/',
-DEFAULT_SS_USERNAME = 'test',
-DEFAULT_SS_PASSWORD = 'test',
-DEFAULT_SS_URL = 'http://192.168.168.192:8000/',
+DEFAULT_AM_USERNAME = os.getenv('AM_USERNAME','test'),
+DEFAULT_AM_PASSWORD = os.getenv('AM_PASSWORD','testtest')
+DEFAULT_AM_URL = os.getenv('AM_URL','http://192.168.168.192/'),
+DEFAULT_SS_USERNAME = os.getenv('SS_USERNAME','test'),
+DEFAULT_SS_PASSWORD = os.getenv('SS_USERNAME','test'),
+DEFAULT_SS_URL = os.getenv('SS_URL','http://192.168.168.192:8000/'),
 
 DUMMY_VAL = 'Archivematica Acceptance Test'
 METADATA_ATTRS = ('title', 'creator')
@@ -194,7 +199,7 @@ class ArchivematicaSelenium:
     # Valuate this to 'Firefox' or 'Chrome'. 'PhantomJS' will fail.
     # Note/TODO: Chrome is currently failing on my machine because the
     # transfers are not displaying their jobs/microservices.
-    driver_name = 'Firefox'
+    driver_name = 'Chrome'
     # driver_name = 'PhantomJS'
 
     all_drivers = []
@@ -220,6 +225,7 @@ class ArchivematicaSelenium:
         - Firefox 47.01 (*note* does not work on v. 48.0)
         """
         self.driver = self.get_driver()
+        self.driver.set_window_size(1700,900)
         self.driver.maximize_window()
 
     def tear_down(self):

@@ -1,15 +1,15 @@
 import archivematicaselenium
-
+import os
 # Change these to match your test environment
-AM_USERNAME = "test"
-AM_PASSWORD = "testtest"
-AM_URL = "http://192.168.168.192/"
+AM_USERNAME = os.getenv('AM_USERNAME','test')
+AM_PASSWORD = os.getenv('AM_PASSWORD','testtest')
+AM_URL = os.getenv('AM_URL','http://192.168.168.192/')
 #AM_URL = "http://138.68.4.177/"
 # Note: the following are not yet used by ``ArchivematicaSelenium``
 AM_API_KEY = None
-SS_USERNAME = "test"
-SS_PASSWORD = "test"
-SS_URL = "http://192.168.168.192:8000/"
+SS_USERNAME = os.getenv('SS_USERNAME','test')
+SS_PASSWORD = os.getenv('SS_PASSWORD','test')
+SS_URL = os.getenv('SS_URL','http://192.168.168.192:8000/')
 #SS_URL = "http://138.68.4.177:8000/"
 SS_API_KEY = None
 
