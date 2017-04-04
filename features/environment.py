@@ -1,36 +1,35 @@
 import archivematicaselenium
 
 # Change these to match your test environment
+# These may also be overridden as Behave userdata options
+# (https://pythonhosted.org/behave/new_and_noteworthy_v1.2.5.html#index-7),
+# i.e., ``behave -D am_username=demo -D am_password=secret``
 AM_USERNAME = "test"
 AM_PASSWORD = "testtest"
 AM_URL = "http://192.168.168.192/"
-#AM_URL = "http://138.68.4.177/"
-# Note: the following are not yet used by ``ArchivematicaSelenium``
 AM_API_KEY = None
 SS_USERNAME = "test"
 SS_PASSWORD = "test"
 SS_URL = "http://192.168.168.192:8000/"
-#SS_URL = "http://138.68.4.177:8000/"
 SS_API_KEY = None
-
 # Path relative to /home where transfer sources live.
-# TRANSFER_SOURCE_PATH = 'vagrant/acceptance-tests'
-# TRANSFER_SOURCE_PATH = 'vagrant'
-TRANSFER_SOURCE_PATH = (
-    'vagrant/archivematica-sampledata/TestTransfers/acceptance-tests')
+TRANSFER_SOURCE_PATH = 'vagrant/archivematica-sampledata/TestTransfers/acceptance-tests'
 HOME = 'vagrant'
+DRIVER_NAME = 'Chrome'
 
-def get_am_sel_cli():
+
+def get_am_sel_cli(userdata):
     """Instantiate an ArchivematicaSelenium."""
     return archivematicaselenium.ArchivematicaSelenium(
-        AM_USERNAME,
-        AM_PASSWORD,
-        AM_URL,
-        AM_API_KEY,
-        SS_USERNAME,
-        SS_PASSWORD,
-        SS_URL,
-        SS_API_KEY
+        userdata.get('am_username', AM_USERNAME),
+        userdata.get('am_password', AM_PASSWORD),
+        userdata.get('am_url', AM_URL),
+        userdata.get('am_api_key', AM_API_KEY),
+        userdata.get('ss_username', SS_USERNAME),
+        userdata.get('ss_password', SS_PASSWORD),
+        userdata.get('ss_url', SS_URL),
+        userdata.get('ss_api_key', SS_API_KEY),
+        userdata.get('driver_name', DRIVER_NAME),
     )
 
 
@@ -41,10 +40,12 @@ def before_scenario(context, scenario):
     the tests to fail. That is why we are using ``before_scenario`` here and
     not ``before_all``.
     """
-    context.am_sel_cli = get_am_sel_cli()
+    userdata = context.config.userdata
+    context.am_sel_cli = get_am_sel_cli(userdata)
     context.am_sel_cli.set_up()
-    context.TRANSFER_SOURCE_PATH = TRANSFER_SOURCE_PATH
-    context.HOME = HOME
+    context.TRANSFER_SOURCE_PATH = userdata.get(
+        'transfer_source_path', TRANSFER_SOURCE_PATH)
+    context.HOME = userdata.get('home', HOME)
 
 
 def after_scenario(context, scenario):

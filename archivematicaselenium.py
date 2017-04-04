@@ -56,6 +56,11 @@ Test environments where this module has been tested and has worked:
        Selenium 2.53.6
        Python 3.4.2
 
+    4. Chrome 56.0.2924.87 (64-bit)
+       Ubuntu 16.04
+       Selenium 2.53.6
+       Python 3.5.2
+
 WARNING: this will *not* currently work with a headless PhantomJS() webdriver.
 With PhantomJS, it can login, but when it attempts to use the interface for
 selecting a transfer folder it times out when waiting for the 'home' folder to
@@ -110,6 +115,9 @@ DEFAULT_AM_URL = 'http://192.168.168.192/',
 DEFAULT_SS_USERNAME = 'test',
 DEFAULT_SS_PASSWORD = 'test',
 DEFAULT_SS_URL = 'http://192.168.168.192:8000/',
+DEFAULT_AM_API_KEY = None
+DEFAULT_SS_API_KEY = None
+DEFAULT_DRIVER_NAME = 'Chrome'  # 'Firefox' should also work.
 
 DUMMY_VAL = 'Archivematica Acceptance Test'
 METADATA_ATTRS = ('title', 'creator')
@@ -150,13 +158,9 @@ class ArchivematicaSeleniumError(Exception):
 
 
 class ArchivematicaSelenium:
-    """Selenium tests for MediaConch-related functionality in Archivematica.
+    """Convenience class for using Selenium to interact with a live
+    Archivematica instance.
 
-    TODOs:
-
-    1. Test in multiple different browser and platform combinations.
-    2. Run headless.
-    3. Fix issues: search for "TODO/WARNING"
     """
 
     # =========================================================================
@@ -170,17 +174,20 @@ class ArchivematicaSelenium:
              am_username=DEFAULT_AM_USERNAME,
              am_password=DEFAULT_AM_PASSWORD,
              am_url=DEFAULT_AM_URL,
-             am_api_key=None,
+             am_api_key=DEFAULT_AM_API_KEY,
              ss_username=DEFAULT_SS_USERNAME,
              ss_password=DEFAULT_SS_PASSWORD,
              ss_url=DEFAULT_SS_URL,
-             ss_api_key=None):
+             ss_api_key=DEFAULT_SS_API_KEY,
+             driver_name=DEFAULT_DRIVER_NAME
+             ):
         self.am_username = am_username
         self.am_password = am_password
         self.am_url = am_url
         self.am_api_key = am_api_key
         self.ss_username = ss_username
         self.ss_password = ss_password
+        self.driver_name = driver_name
         self.ss_url = ss_url
         self._ss_api_key = ss_api_key
         self._tmp_path = None
@@ -190,12 +197,6 @@ class ArchivematicaSelenium:
     # =========================================================================
     # Test Infrastructure.
     # =========================================================================
-
-    # Valuate this to 'Firefox' or 'Chrome'. 'PhantomJS' will fail.
-    # Note/TODO: Chrome is currently failing on my machine because the
-    # transfers are not displaying their jobs/microservices.
-    driver_name = 'Firefox'
-    # driver_name = 'PhantomJS'
 
     all_drivers = []
 
@@ -210,7 +211,12 @@ class ArchivematicaSelenium:
                  ' AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116'
                  ' Safari/537.36')
             return webdriver.PhantomJS(desired_capabilities=cap)
-        driver = getattr(webdriver, self.driver_name)()
+        elif self.driver_name == 'Chrome':
+            driver = webdriver.Chrome()
+            driver.set_window_size(1700, 900)
+        else:
+            driver = getattr(webdriver, self.driver_name)()
+        driver.set_script_timeout(10)
         self.all_drivers.append(driver)
         return driver
 
@@ -1780,7 +1786,7 @@ class ArchivematicaSelenium:
                                         command_description)
         self.search_rules(search_term)
 
-    def ensure_fpr_rule_enabled(purpose, format, command_description):
+    def ensure_fpr_rule_enabled(self, purpose, format, command_description):
         self.navigate(self.get_rules_url())
         self.search_for_fpr_rule(purpose, format, command_description)
         info_el = self.driver.find_element_by_id('DataTables_Table_0_info')

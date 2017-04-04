@@ -3,7 +3,7 @@ Feature: Metadata-only AIP re-ingest
   re-ingest on it so that they can add metadata to it and confirm that those
   metadata are in the re-ingested AIP's METS file.
 
-  @mo-aip-reingest
+  @mo-aip-reingest @am16
   Scenario: Isla creates an AIP, and then performs a metadata-only re-ingest on it, adds metadata to it, and confirms that her newly added metadata are in the modified METS file.
     Given that the user has ensured that the default processing config is in its default state
     And the reminder to add metadata is enabled
