@@ -1,38 +1,51 @@
-Feature: Create Basic AIP with Automated Workflow 
+@create-AIP @am16
+Feature: Create Basic AIP with Simple Automated Workflow ddfd
   Some institutions want to be able to begin preservation (or evaluation of Archivematica) 
   with the minimum set up possible, using as much default behaviour as possible, 
   and with as little user intervention as possible.  
 
-  @create-AIP @standard # I am just guessing we need this, but not clear what these are for
-  Scenario: Minimal User Input Required
- 	# Test Data will not trigger errors or human decisions (e.g. no virus and therefore no quarantine required)	 		
+@simpleconfig
+Background: Configuration of simple automation (using standard config options, but not Automation tools) 
   Given that the user has ensured that the default processing config is in its default state
-  	# to make this more JISC like, we might want to start with something like: 
-  	# Given that a research data set has been copied to the transfer source location
   And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Fido"
   And the processing config decision "Create SIP(s)" is set to "Create single SIP and continue processing"
   And the processing config decision "Select file format identification command (Ingest)" is set to "Identify using Fido"
   And the processing config decision "Normalize" is set to "Do not normalize"
   And the processing config decision "Approve normalization" is set to "Yes"
   And the processing config decision "Select file format identification command (Submission documentation & metadata)" is set to "Identify using Fido"
-  When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
-  	# could consider creating a ResearchData directory and putting in a real dataset?
-  	# ultimately JISC want a highly automated workflow... I want to figure out how we can 
-  	# automate a transfer once a dataset is dropped in a transfer source location
-  And the user waits for the "Store AIP (review)" decision point to appear during ingest
-  	# could we set the config do this automatically? e.g. 
-  	# And the processing config decision "Store AIP" is set to "Yes"
-  	# And the processing config decision "Store AIP location:" is set to "Store AIP in standard Archivematica Directory" 
-  Then an AIP is created 
-  And the AIP is stored in ....
-  And the AIP has a METS file  
+    
+  @stp 
+  Scenario: Straight Through Processing of new AIP	
+  Given research data sets have been copied to the transfer location for preservation 
+    # this is a new step - but could be 'empty' for now
+  When a transfer is initiated on directory <transfer_path>
+  And the user waits for the "Store AIP (review)" decision point to appear and chooses "Store AIP" during ingest
+  And the user waits for the "Store AIP location" decision point to appear and chooses "Store AIP in standard Archivematica Directory" during ingest
+  And the user waits for the AIP to appear in archival storage
+  And the user downloads the AIP
+  And the user decompresses the AIP
+  Then in the METS file there are/is <ingest_number> PREMIS event(s) of type ingestion
   
-    # there are many other 'quality checks' we could make... including checking for PREMIS events
-    # the above would be enough for now though
+  Examples: File Validity Possibilities
+  | transfer_path | ingest_number          | 
+  | valid         | Completed successfully | 
+  | not valid     | Failed                 | 
   
-  	#in the METS file there are/is 7 PREMIS event(s) of type ingestion
-  	#And in the METS file there are/is 7 PREMIS event(s) of type message digest calculation with properties {"eventDetail": [["contains", "program=\"python\""], ["contains", "module=\"hashlib.sha256()\""]], "eventOutcomeInformation/eventOutcomeDetail/eventOutcomeDetailNote": [["regex", "^[a-f0-9]+$"]]}
-  	#And in the METS file there are/is 7 PREMIS event(s) of type virus check with properties {"eventDetail": [["contains",  "program=\"Clam AV\""]], "eventOutcomeInformation/eventOutcome": [["equals", "Pass"]]}
+  # To Do: 
 
-   #other ideas: perhaps use Scenario Outline so we can provide locations for multiple transfers
-   # then we could indicate how many PREMIS events should be created for each
+  # 1) create config steps (below) so that they are no longer required as a user action:
+      # And the processing config decision "Store AIP" is set to "Yes"
+      # And the processing config decision "Store AIP location:" is set to "Store AIP in standard Archivematica Directory" 
+      
+  # 2) create a better "then" steps to define what successful creation of an AIP is for this scenario. I used the METS file count  
+      # because the step has already been written, but it doesn't fit well. here is what I would prefer to see 
+      # 
+  
+  # 2) in future we should move background steps to a feature file, then define a higher level step for config
+      # (e.g. 'given system is configured for simple automation') that can be used in 'functional' features like this one 
+  
+
+  
+    	# Test Data will not trigger errors or human decisions (e.g. no virus and therefore no quarantine required)	 	
+   
+   
