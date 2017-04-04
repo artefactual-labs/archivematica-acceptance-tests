@@ -646,6 +646,17 @@ def step_impl(context, event_outcome):
         assert e['event_outcome'] == event_outcome
 
 
+@given('that normalization to {format} of file {file_path} will {outcome}')
+def step_impl(context, format, file_path, outcome):
+    """Vacuous step implementation representing the assumption that the result
+    of attempting normalization to format ``format`` of the file at
+    ``file_path`` will result in the outcome ``outcome``. This could contain
+    assertions but would involve the (for now) needless complication of scp-ing
+    files from the server locally and running FPR commands against them.
+    """
+    pass
+
+
 ###############################################################################
 # HELPER FUNCS
 ###############################################################################
