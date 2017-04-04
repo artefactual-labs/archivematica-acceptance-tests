@@ -1,7 +1,8 @@
 @create-AIP @am16
 Feature: Create Basic AIP with Simple Automated Workflow ddfd
   Some institutions want to be able to begin preservation (or evaluation of Archivematica) 
-  with the minimum set up possible, using as much default behaviour as possible, 
+  with the minimum set up possible. They will want to provide directories of files (or a data set) to be preserved, and 
+  have an Archival Information Package (AIP) created using as much default Archivematica behaviour as possible, 
   and with as little user intervention as possible.  
 
 @simpleconfig
@@ -27,25 +28,27 @@ Background: Configuration of simple automation (using standard config options, b
   Then in the METS file there are/is <ingest_number> PREMIS event(s) of type ingestion
   
   Examples: File Validity Possibilities
-  | transfer_path | ingest_number          | 
-  | valid         | Completed successfully | 
-  | not valid     | Failed                 | 
-  
-  # To Do: 
+  | transfer_path                         | ingest_number          | 
+  | ResearchData/10.17863/CAM.679         | 4                      | 
 
+  # To Do: 
   # 1) create config steps (below) so that they are no longer required as a user action:
       # And the processing config decision "Store AIP" is set to "Yes"
       # And the processing config decision "Store AIP location:" is set to "Store AIP in standard Archivematica Directory" 
       
-  # 2) create a better "then" steps to define what successful creation of an AIP is for this scenario. I used the METS file count  
-      # because the step has already been written, but it doesn't fit well. here is what I would prefer to see 
-      # 
+  # 2) create a better "then" steps to define what successful creation of an AIP is for this scenario. I used the last 4 lines in  
+      # this scenario because they already existed. I'd prefer something like below 
+      # - wondering if we can create empty steps for these? (for now at least)
+      # Then all containers in the transfer are unpacked
+      # And all files in the transfer are scanned for viruses
+      # And a message digest is created for each file
+      # And an AIP is created
+      # And the AIP has a METS metadata file
+      # And the AIP is stored in archival storage
   
-  # 2) in future we should move background steps to a feature file, then define a higher level step for config
+  # 3) add remaining 'examples' (we have identified 7 test data sets at this stage for RDSS)
+  
+  # 4) in future we should move background steps to a feature file, then define a higher level step for config
       # (e.g. 'given system is configured for simple automation') that can be used in 'functional' features like this one 
   
-
-  
-    	# Test Data will not trigger errors or human decisions (e.g. no virus and therefore no quarantine required)	 	
-   
-   
+  # 5) start adding other scenarios - like; research data set contains a virus; add normalisation; etc. 
