@@ -3,7 +3,7 @@ Feature: PREMIS events are recorded correctly
   Archivematica are recorded correctly in the resulting METS file according
   to the PREMIS specification.
 
-  @premis-events @standard
+  @premis-events @standard @am16
   Scenario: Isla wants to confirm that standard PREMIS events are created
   Given that the user has ensured that the default processing config is in its default state
   And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Fido"
@@ -18,7 +18,7 @@ Feature: PREMIS events are recorded correctly
   And in the METS file there are/is 7 PREMIS event(s) of type message digest calculation with properties {"eventDetail": [["contains", "program=\"python\""], ["contains", "module=\"hashlib.sha256()\""]], "eventOutcomeInformation/eventOutcomeDetail/eventOutcomeDetailNote": [["regex", "^[a-f0-9]+$"]]}
   And in the METS file there are/is 7 PREMIS event(s) of type virus check with properties {"eventDetail": [["contains",  "program=\"Clam AV\""]], "eventOutcomeInformation/eventOutcome": [["equals", "Pass"]]}
 
-  @premis-events @package
+  @premis-events @package @am16
   Scenario: Isla wants to confirm that an unpacking PREMIS event is created when a package is ingested
   Given that the user has ensured that the default processing config is in its default state
   And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Fido"
@@ -31,7 +31,7 @@ Feature: PREMIS events are recorded correctly
   And the user waits for the "Store AIP (review)" decision point to appear during ingest
   Then in the METS file there are/is 11 PREMIS event(s) of type unpacking
 
-  @premis-events @registration
+  @premis-events @registration @am16
   Scenario: Isla wants to confirm that a registration PREMIS event is created when an accession number is provided with a transfer
   Given that the user has ensured that the default processing config is in its default state
   And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Fido"
@@ -44,7 +44,7 @@ Feature: PREMIS events are recorded correctly
   And the user waits for the "Store AIP (review)" decision point to appear during ingest
   Then in the METS file there are/is 6 PREMIS event(s) of type registration with properties {"eventOutcomeInformation/eventOutcomeDetail/eventOutcomeDetailNote": [["equals", "accession#1234-567"]]}
 
-  @premis-events @quarantine
+  @premis-events @quarantine @am16
   Scenario: Isla wants to confirm that quarantine PREMIS events are created when files are put under quarantine
   Given that the user has ensured that the default processing config is in its default state
   And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Fido"
@@ -61,7 +61,7 @@ Feature: PREMIS events are recorded correctly
   Then in the METS file there are/is 6 PREMIS event(s) of type quarantine
   And in the METS file there are/is 6 PREMIS event(s) of type unquarantine
 
-  @premis-events @format-identification
+  @premis-events @format-identification @am16
   Scenario: Isla wants to confirm that quarantine PREMIS events are created when files are put under quarantine
   Given that the user has ensured that the default processing config is in its default state
   And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Siegfried"
@@ -72,5 +72,5 @@ Feature: PREMIS events are recorded correctly
   And the processing config decision "Select file format identification command (Submission documentation & metadata)" is set to "Identify using Siegfried"
   When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
   And the user waits for the "Store AIP (review)" decision point to appear during ingest
-  Then in the METS file there are/is 7 PREMIS event(s) of type format identification with properties {"eventDetail": [["contains", "program=\"Siegfried\"; version=\"1.5.0\""]], "eventOutcomeInformation/eventOutcome": [["equals", "Positive"]], "eventOutcomeInformation/eventOutcomeDetail/eventOutcomeDetailNote": [["contains", "fmt"]]}
+  Then in the METS file there are/is 7 PREMIS event(s) of type format identification with properties {"eventDetail": [["contains", "program=\"Siegfried\"; version="]], "eventOutcomeInformation/eventOutcome": [["equals", "Positive"]], "eventOutcomeInformation/eventOutcomeDetail/eventOutcomeDetailNote": [["contains", "fmt"]]}
 

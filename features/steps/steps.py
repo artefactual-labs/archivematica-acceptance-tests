@@ -304,11 +304,11 @@ def assert_premis_properties(event, context, properties):
         desc_el = event.find(xpath, context.am_sel_cli.mets_nsmap)
         for relation, value in predicates:
             if relation == 'equals':
-                assert desc_el.text.strip() == value
+                assert desc_el.text.strip() == value, '{} does not equal {}'.format(desc_el.text.strip(), value)
             elif relation == 'contains':
-                assert value in desc_el.text.strip()
+                assert value in desc_el.text.strip(), '{} does not substring-contain {}'.format(desc_el.text.strip(), value)
             elif relation == 'regex':
-                assert re.search(value, desc_el.text.strip())
+                assert re.search(value, desc_el.text.strip()), '{} does not contain regex {}'.format(desc_el.text.strip(), value)
 
 
 @then('in the METS file there are/is {count} PREMIS event(s) of type'
