@@ -59,9 +59,7 @@ def step_impl(context, microservice_name, choice, unit_type):
         'When the user chooses "{}" at decision point "{}" during {}\n'
     ).format(microservice_name, unit_type, choice, microservice_name,
              unit_type)
-    #raise Exception('fuckyou, microservice_name {}, choice {}, unit_type {}\n\nsteps:\n{}'.format(microservice_name, choice, unit_type, steps))
     context.execute_steps(steps)
-
 
 
 @when('the user chooses "{choice}" at decision point "{decision_point}" during'
