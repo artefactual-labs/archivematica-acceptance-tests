@@ -11,7 +11,7 @@ MC_EVENT_OUTCOME_DETAIL_NOTE_IMPLEMENTATION_CHECK_PREFIX = \
     'MediaConch implementation check result:'
 MC_EVENT_OUTCOME_DETAIL_NOTE_POLICY_CHECK_PREFIX = \
     'MediaConch policy check result'
-POLICIES_DIR = 'mediaconch-policies'
+POLICIES_DIR = 'etc/mediaconch-policies'
 
 
 class ArchivematicaSeleniumStepsError(Exception):
@@ -530,7 +530,7 @@ def step_impl(context, event_outcome):
 
 
 @given('MediaConch policy file {policy_file} is present in the local'
-       ' mediaconch-policies/ directory')
+       ' etc/mediaconch-policies/ directory')
 def step_impl(context, policy_file):
     assert policy_file in os.listdir(POLICIES_DIR)
 

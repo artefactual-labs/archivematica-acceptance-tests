@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<policy type="and" name="NYULib_MKVFFV1_MODIFIED" license="CC-BY-SA-4.0+">
+  <description>Attempt to re-implement the NYULibraries_MKVFFV1.xsl policy file of MediaConch XML v. 0.1 as a v. 0.3 .xml policy</description>
+  <rule name="General Format equals Matroska" value="Format" tracktype="General" occurrence="*" operator="=">Matroska</rule>
+  <rule name="Video Format is FFV1" value="Format" tracktype="Video" occurrence="*" operator="=">FFV1</rule>
+  <rule name="Video CodecID equals FFV1" value="CodecID" tracktype="Video" occurrence="*" operator="=">V_MS/VFW/FOURCC / FFV1</rule>
+  <rule name="Video Width equals 720 (pixels)" value="Width" tracktype="Video" occurrence="*" operator="=">720</rule>
+  <rule name="Video Height equals 486 (pixels)" value="Height" tracktype="Video" occurrence="*" operator="=">486</rule>
+  <rule name="Video DisplayAspectRatio equals 4:3 (1.333)" value="DisplayAspectRatio" tracktype="Video" occurrence="*" operator="=">1.333</rule>
+  <rule name="Video ColorSpace equals YUV" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">YUV</rule>
+  <rule name="Video ChromaSubsampling equals 4:2:0" value="ChromaSubsampling" tracktype="Video" occurrence="*" operator="=">4:2:0</rule>
+  <rule name="Video BitDepth equals 8 (bits)" value="BitDepth" tracktype="Video" occurrence="*" operator="=">8</rule>
+  <rule name="Audio Format equals PCM" value="Format" tracktype="Audio" occurrence="*" operator="=">PCM</rule>
+  <rule name="Audio Channels are greater or equal than 1" value="Channels" tracktype="Audio" occurrence="*" operator="&gt;=">1</rule>
+  <rule name="Audio SamplingRate is greater or equal than 48 kHz (48000)" value="SamplingRate" tracktype="Audio" occurrence="*" operator="&gt;=">48000</rule>
+  <rule name="Audio BitDepth is greater or equal than 16-bit" value="BitDepth" tracktype="Audio" occurrence="*" operator="&gt;=">16</rule>
+</policy>
