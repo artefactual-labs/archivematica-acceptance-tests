@@ -53,8 +53,8 @@ Install the Python dependencies::
 One way to run the tests headless, i.e., without a visible browser, is with
 Xvfb. To install Xvfb on Ubuntu 14.04::
 
-    sudo apt-get update
-    sudo apt-get install -y xorg xvfb dbus-x11 xfonts-100dpi xfonts-75dpi xfonts-cyrillic
+    $ sudo apt-get update
+    $ sudo apt-get install -y xorg xvfb dbus-x11 xfonts-100dpi xfonts-75dpi xfonts-cyrillic
 
 See also:
 
@@ -137,14 +137,19 @@ events::
 
     $ behave --tags=premis-events --tags=standard --no-skipped
 
+There is also a convenience script for running just the tests that target
+Archivematica version 1.6::
+
+    $ ./runtests.sh
+
 The scenarios in the .feature files may be tagged with zero or more tags. The
 above command runs all scenarios tagged ``@premis-events`` and ``@standard``.
 
 There are two convenience scripts for closing all transfers and closing all
 ingests via the GUI (i.e., using Selenium)::
 
-    $ ./close_all_transfers.py
-    $ ./close_all_ingests.py
+    $ ./close_all_transfers.sh
+    $ ./close_all_ingests.sh
 
 
 Configuration
@@ -195,7 +200,10 @@ by altering the following constants in features/environment.py...::
 options. For example, the following would run the tests against an
 Archivematica instance at 123.456.123.456 using the Firefox driver::
 
-    $ behave -D am_url=123.456.123.456 -D driver_name=Firefox
+    $ behave \
+        -D am_url=http://192.168.168.16 \
+        -D ss_url=http://192.168.168.16:8000/ \
+        -D driver_name=Firefox
 
 
 .. _Archivematica: https://github.com/artefactual/archivematica

@@ -1,9 +1,10 @@
+@preforma
 Feature: Transfer policy check
   Archivists want to check that the original files they transfer conform to a
   pre-defined policy/policies before proceeding with further digital
   preservation actions.
 
-  @preforma @tpc
+  @tpc
   Scenario Outline: Isla has started a transfer of files and needs to know if they conform to her policy for original files.
     Given that the user has ensured that the default processing config is in its default state
     And the processing config decision "Perform policy checks on originals" is set to "Yes"

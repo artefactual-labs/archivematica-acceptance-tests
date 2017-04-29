@@ -585,6 +585,11 @@ def step_impl(context, purpose, policy_file):
     )
 
 
+@when('the user closes all {unit_type}')
+def step_impl(context, unit_type):
+    getattr(context.am_sel_cli, 'remove_all_' + unit_type)()
+
+
 @then('policy checks for preservation derivatives micro-service output is'
       ' {microservice_output}')
 def step_impl(context, microservice_output):

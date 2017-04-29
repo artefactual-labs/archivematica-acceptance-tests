@@ -1,9 +1,10 @@
+@premis-events @am16
 Feature: PREMIS events are recorded correctly
   Users of Archivematica want to be sure that the steps taken by
   Archivematica are recorded correctly in the resulting METS file according
   to the PREMIS specification.
 
-  @premis-events @standard @am16
+  @standard
   Scenario: Isla wants to confirm that standard PREMIS events are created
   Given that the user has ensured that the default processing config is in its default state
   And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Fido"
@@ -18,7 +19,7 @@ Feature: PREMIS events are recorded correctly
   And in the METS file there are/is 7 PREMIS event(s) of type message digest calculation with properties {"eventDetail": [["contains", "program=\"python\""], ["contains", "module=\"hashlib.sha256()\""]], "eventOutcomeInformation/eventOutcomeDetail/eventOutcomeDetailNote": [["regex", "^[a-f0-9]+$"]]}
   And in the METS file there are/is 7 PREMIS event(s) of type virus check with properties {"eventDetail": [["contains",  "program=\"Clam AV\""]], "eventOutcomeInformation/eventOutcome": [["equals", "Pass"]]}
 
-  @premis-events @package @am16
+  @package
   Scenario: Isla wants to confirm that an unpacking PREMIS event is created when a package is ingested
   Given that the user has ensured that the default processing config is in its default state
   And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Fido"
@@ -31,7 +32,7 @@ Feature: PREMIS events are recorded correctly
   And the user waits for the "Store AIP (review)" decision point to appear during ingest
   Then in the METS file there are/is 11 PREMIS event(s) of type unpacking
 
-  @premis-events @registration @am16
+  @registration
   Scenario: Isla wants to confirm that a registration PREMIS event is created when an accession number is provided with a transfer
   Given that the user has ensured that the default processing config is in its default state
   And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Fido"
@@ -44,7 +45,7 @@ Feature: PREMIS events are recorded correctly
   And the user waits for the "Store AIP (review)" decision point to appear during ingest
   Then in the METS file there are/is 6 PREMIS event(s) of type registration with properties {"eventOutcomeInformation/eventOutcomeDetail/eventOutcomeDetailNote": [["equals", "accession#1234-567"]]}
 
-  @premis-events @quarantine @am16
+  @quarantine
   Scenario: Isla wants to confirm that quarantine PREMIS events are created when files are put under quarantine
   Given that the user has ensured that the default processing config is in its default state
   And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Fido"
@@ -61,7 +62,7 @@ Feature: PREMIS events are recorded correctly
   Then in the METS file there are/is 6 PREMIS event(s) of type quarantine
   And in the METS file there are/is 6 PREMIS event(s) of type unquarantine
 
-  @premis-events @format-identification @am16
+  @format-identification
   Scenario: Isla wants to confirm that quarantine PREMIS events are created when files are put under quarantine
   Given that the user has ensured that the default processing config is in its default state
   And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Siegfried"

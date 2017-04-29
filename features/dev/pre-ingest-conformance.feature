@@ -1,9 +1,10 @@
+@preforma
 Feature: Pre-ingest conformance check
   Archivists need to know whether or not mkv files which they are
   preserving are valid before they process them, because if they are
   invalid it might impact further preservation decisions.
 
-  @preforma @picc
+  @picc
   Scenario Outline: Isla wants to confirm that her file is a valid .mkv
     Given that the user has ensured that the default processing config is in its default state
     And directory <transfer_path> contains files that are all <file_validity> .mkv

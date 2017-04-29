@@ -1,10 +1,11 @@
+@preforma @dev
 Feature: Post-normalization conformance check
   Archivists need to verify that the preservation and access copies that
   Archivematica has created through normalization are in conformance with the
   .mkv specification so that they know they are placing derivatives in
   storage/repositories which are reliable.
 
-  @preforma @pncc @preservation
+  @pncc @preservation
   Scenario Outline: Isla wants to confirm that normalization to .mkv for preservation is successful
     Given that the user has ensured that the default processing config is in its default state
     And directory <transfer_path> contains files that will all be normalized to <file_validity> .mkv
@@ -30,7 +31,7 @@ Feature: Post-normalization conformance check
     # The following row must remain uncommented until we can find a video file that, when normalized to .mkv, no longer conforms to the mkv spec, according to MediaConch
     #| not valid     | Failed                 | Failed            | fail          | preforma/when-normalized-none-valid |
 
-  @preforma @pncc @access
+  @pncc @access
   Scenario Outline: Isla wants to confirm that normalization to .mkv for access is successful
     Given that the user has ensured that the default processing config is in its default state
     And directory <transfer_path> contains files that will all be normalized to <file_validity> .mkv

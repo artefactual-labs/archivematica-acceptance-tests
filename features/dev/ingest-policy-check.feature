@@ -1,3 +1,4 @@
+@preforma @dev
 Feature: Ingest policy check
   Archivists want to check that the files that are defined for access or
   preservation conform to a pre-defined policy/policies. The access and
@@ -5,7 +6,7 @@ Feature: Ingest policy check
   normalization or may have been predefined by the user prior to
   transfer.
 
-  @preforma @ipc @access @nonmanual @dev
+  @ipc @access @nonmanual
   Scenario Outline: Isla has access derivatives and she needs to know whether they conform to her access policy
     Given that the user has ensured that the default processing config is in its default state
     And the processing config decision "Perform policy checks on access derivatives" is set to "Yes"
@@ -40,7 +41,7 @@ Feature: Ingest policy check
     #| conform          | Completed successfully | pass           | successful          | preforma/all-conform-policy-norm-acc   | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Access Derivatives against a Policy |
     #| not conform      | Failed                 | fail           | failed              | preforma/none-conform-policy-norm-acc  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Access Derivatives against a Policy |
 
-  @preforma @ipc @preservation @nonmanual @dev
+  @ipc @preservation @nonmanual
   Scenario Outline: Isla has preservation derivatives and she needs to know whether they conform to her preservation policy
     Given that the user has ensured that the default processing config is in its default state
     And the processing config decision "Perform policy checks on preservation derivatives" is set to "Yes"
@@ -75,7 +76,7 @@ Feature: Ingest policy check
     #| conform          | Completed successfully | pass           | successful          | preforma/all-conform-policy  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
     #| not conform      | Failed                 | fail           | failed              | preforma/none-conform-policy | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
 
-  @preforma @ipc @preservation @manual @dev
+  @ipc @preservation @manual
   Scenario Outline: Isla has manually normalized preservation derivatives and she needs to know whether they conform to her preservation policy
     Given that the user has ensured that the default processing config is in its default state
     And the processing config decision "Perform policy checks on preservation derivatives" is set to "Yes"
@@ -109,7 +110,7 @@ Feature: Ingest policy check
     #| conform          | Completed successfully | pass           | successful          | preforma/manually-normalized-preservation-all-conform-policy   | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
     #| not conform      | Failed                 | fail           | failed              | preforma/manually-normalized-preservation-none-conform-policy  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Preservation Derivatives against a Policy |
 
-  @preforma @ipc @access @manual @dev
+  @ipc @access @manual
   Scenario Outline: Isla has manually normalized access derivatives and she needs to know whether they conform to her access policy
     Given that the user has ensured that the default processing config is in its default state
     And the processing config decision "Perform policy checks on access derivatives" is set to "Yes"
