@@ -2,14 +2,29 @@
   Archivematica Acceptance Tests
 ================================================================================
 
-Acceptance tests for Archivematica_ (AM) written using Python behave_ and the
-Gherkin_ language. Deploying an Archivematica system to test against is a
-necessary separate step. The tests use Selenium_ to launch a browser in order to
-interact with Archivematica's web GUI. (They also make vanilla requests to AM's
-API using Python's Requests_ library). They have been run successfully with
-Firefox and Chrome, and in CI scenarios using Xvfb_ (X virtual framebuffer).
+Acceptance tests for Archivematica_ (AM) are written using Python behave_ and the
+Gherkin_ language. Acceptance tests serve three goals: they enable semi-automated
+or fully automated execution of tests, they can be used to specify system 
+behaviour as part of Behaviour Driven Development (BDD) methods and they serve as
+"living documentation" of how the system works. 
 
-Using Gherkin to express tests makes them quite readable to non-programmers.
+This document sets out 
+- how the tests are organised in Github (so readers can determine what tests 
+exist, what they do and which ones they would like to run) 
+- how to install and configure the tests
+- how to execute the tests against a particular deployment of Archivematica. 
+
+Structure & Organisation of Archivematica Acceptance Tests
+================================================================================
+
+Features
+--------------------------------------------------------------------------------
+
+Features describe a particular user story. They are written in Gherkin, which can
+be understood by non-programmers, while also being structured enough to support
+automated validation and testing. (A feature is an acceptance test; the two terms
+are used interchangeably in this document.)
+
 Consider the following snippet from the premis-events.feature file::
 
     Feature: PREMIS events are recorded correctly
@@ -27,17 +42,63 @@ implemented by "step" functions in the features/steps/steps.py file, which, in
 turn, may interact with Archivematica GUI(s) by calling methods of an
 ``archivematicaselenium.py::ArchivematicaSelenium`` instance.
 
+Organisation of Features and use of Tags
+--------------------------------------------------------------------------------
+Features are held in the Features directory with the following sub-directories:
+- the **core** directory holds tests that should pass the latest stable release
+- the **dev** directory holds tests that should pass against a particular
+development or qa release of Archivematica
+- client or project directories can be added for tests that have dependencies on
+a particular client or project deployment (e.g. integration with other systems)
+
+Tags (starting with an '@' sign) provide one or moe 'labels' for each feature and 
+each scenario within a feature. When the tests are executed, tags allow a tester 
+to indicate which features or scenarios they want to run (or not run). 
+- @am16 tag indicates the feature (or scenario) should pass against a stable 
+release of Archivematica 1.6
+- @dev indicates that the feature will only run on a particular dev or qa 
+release of Archivematica
+- every feature should have a unique tag (e.g. @premis-events) and each 
+scenario within a feature should have a unique tag (e.g. @registration) so that 
+testers can choose whether to execute a whole feature or certain scenarios 
+
+Github Repository Structure and Workflow
+--------------------------------------------------------------------------------
+The **artefactual-labs/archivematica-acceptance-tests** repo is the public 
+repository for Archivematica acceptance tests. Anyone can contribute to the 
+public set of tests by creating a fork of this repo and making a pull request 
+of new features developed. 
+
+Pull requests should be made from a dev branch while the feature is in 
+development. Features that are complete and pass in a development environment
+can be merged to the QA branch. When a major release of Archivematica is made, 
+all QA features should be tested and those that pass merged into the Master branch.
 
 Installation
 ================================================================================
+Acceptance tests can be run from one machine, and executed against a deployment
+of Archivematica that may or may not be on the same machine.
 
+The tests use Selenium_ to launch a browser in order to interact with 
+Archivematica's web GUI. (They also make vanilla requests to AM's
+API using Python's Requests_ library). They have been run successfully with
+Firefox and Chrome, and in CI scenarios using Xvfb_ (X virtual framebuffer).
+
+The installation instructions describe how to install the tests, supporting code 
+and browser on the machine where the tests will be executed from.
+
+The configuration instructions describe how to specify the specific deployment of
+Archivematica to test against (e.g. the URL, the user account and password that
+will used and so on). 
+
+Installation of Acceptance Tests & Supporting Code
+--------------------------------------------------------------------------------
 Create a virualenv using Python 3 and activate it::
 
     $ virtualenv -p python3 env
     $ source env/bin/activate
 
-Clone the source (either to the same machine where Archivematica is installed,
-or to another)::
+Clone the source (to whichever machine you will run the tests from)::
 
     $ git clone https://github.com/artefactual-labs/archivematica-acceptance-tests.git
 
@@ -50,20 +111,35 @@ Install the Python dependencies::
 
     $ pip install -r requirements.txt
 
-One way to run the tests headless, i.e., without a visible browser, is with
-Xvfb. To install Xvfb on Ubuntu 14.04::
+Installation of Browser and Browser Driver
+--------------------------------------------------------------------------------
+**Running tests from your desktop / laptop**
+The acceptance tests can be run using Chrome or Firefox. We recommend Chrome. You will 
+need to ensure the browser is installed, and that the driver is installed. See: 
+- https://www.google.ca/chrome/
+- http://www.kenst.com/2015/03/installing-chromedriver-on-mac-osx/
+
+As you run the tests, a browser will be opened on the machine you run them from.
+The test code will control the browser, clicking and entering data as required to 
+complete the test.  
+
+**Running tests from the server or a Linux Desktop**
+To execute the tests from a server, you will need to run in 'headless' mode, without 
+a visible browser (a server is 'headless' because it doesn't have a monitor). 
+The browser & drivers must be installed, as well as a tool called Xvfb that enables 
+headless operation. 
+To install Xvfb on Ubuntu 14.04::
 
     $ sudo apt-get update
     $ sudo apt-get install -y xorg xvfb dbus-x11 xfonts-100dpi xfonts-75dpi xfonts-cyrillic
+
+(note that while it is theoretically possible to run headless from a Windows or Mac 
+desktop / laptop, it is challenging. We don't provide instructions here for doing that.)
 
 See also:
 
 - http://stackoverflow.com/questions/34548472/trying-to-configure-xvfb-to-run-firefox-headlessly
 - http://elementalselenium.com/tips/38-headless
-
-A browser (Chrome or Firefox) must be installed on the system where the tests
-are being run; see below. On a dev or CI server, this may require installation.
-
 
 Install Chrome on Ubuntu 14.04
 --------------------------------------------------------------------------------
@@ -104,52 +180,6 @@ for installing that on Ubuntu 14.04 here::
     $ sudo dpkg -i firefox-mozilla-build_47.0.1-0ubuntu1_amd64.deb 
     $ firefox -v
     Mozilla Firefox 47.0.1
-
-
-Troubleshooting
-================================================================================
-
-If the tests generate ``cannot allocate memory`` errors, there may be unclosed
-browsers. Run the following command to look for persistent firefox or chrome
-browsers and kill them::
-
-    $ ps --sort -rss -eo rss,pid,command | head
-
-
-Usage
-================================================================================
-
-Basic usage::
-
-    $ behave
-
-The above will launch many annoying browser windows. Use Xvfb to hide all that
-rubbish. Start Xvfb on display port 42 and background the process::
-
-    $ Xvfb :42 &
-
-Tell the terminal session to use the display port::
-
-    $ export DISPLAY=:42
-
-Run the tests, this time just those targetting the correct creation of PREMIS
-events::
-
-    $ behave --tags=premis-events --tags=standard --no-skipped
-
-There is also a convenience script for running just the tests that target
-Archivematica version 1.6::
-
-    $ ./runtests.sh
-
-The scenarios in the .feature files may be tagged with zero or more tags. The
-above command runs all scenarios tagged ``@premis-events`` and ``@standard``.
-
-There are two convenience scripts for closing all transfers and closing all
-ingests via the GUI (i.e., using Selenium)::
-
-    $ ./close_all_transfers.sh
-    $ ./close_all_ingests.sh
 
 
 Configuration
@@ -212,3 +242,55 @@ Archivematica instance at 123.456.123.456 using the Firefox driver::
 .. _Selenium: http://www.seleniumhq.org/
 .. _Requests: http://docs.python-requests.org/en/master/
 .. _Xvfb: https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml
+
+How to execute Acceptance tests
+================================================================================
+
+Basic Execution (with browser)
+--------------------------------------------------------------------------------
+You initiate execution of the tests with the behave command::
+
+    $ behave
+
+The behave command will attempt to execute all of the tests that exist in the 
+features directory. You can target specific tests (or scenarios within them) 
+by specifying their tags. For example, the following command will only run the 
+premis-events.feature (tagged @premis-events), and within that, only the one 
+scenario with the tag @standard::
+
+    $ behave --tags=premis-events --tags=standard --no-skipped
+
+There is also a convenience script for running just the tests that target
+Archivematica version 1.6::
+
+    $ ./runtests.sh
+
+There are two convenience scripts for closing all transfers and closing all
+ingests via the GUI (i.e., using Selenium)::
+
+    $ ./close_all_transfers.sh
+    $ ./close_all_ingests.sh
+    
+Headless Execution (for server execution)
+--------------------------------------------------------------------------------
+
+Before running the commands above, use Xvfrb. Start Xvfb on display port 42 
+and background the process::
+
+    $ Xvfb :42 &
+
+Tell the terminal session to use the display port::
+
+    $ export DISPLAY=:42
+
+
+Troubleshooting
+================================================================================
+
+If the tests generate ``cannot allocate memory`` errors, there may be unclosed
+browsers. Run the following command to look for persistent firefox or chrome
+browsers and kill them::
+
+    $ ps --sort -rss -eo rss,pid,command | head
+
+
