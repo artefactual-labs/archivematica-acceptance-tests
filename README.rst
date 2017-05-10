@@ -9,6 +9,7 @@ behaviour as part of Behaviour Driven Development (BDD) methods and they serve a
 "living documentation" of how the system works. 
 
 This document sets out 
+
 - how the tests are organised in Github (so readers can determine what tests 
 exist, what they do and which ones they would like to run) 
 - how to install and configure the tests
@@ -45,6 +46,7 @@ turn, may interact with Archivematica GUI(s) by calling methods of an
 Organisation of Features and use of Tags
 --------------------------------------------------------------------------------
 Features are held in the Features directory with the following sub-directories:
+
 - the **core** directory holds tests that should pass the latest stable release
 - the **dev** directory holds tests that should pass against a particular
 development or qa release of Archivematica
@@ -54,6 +56,7 @@ a particular client or project deployment (e.g. integration with other systems)
 Tags (starting with an '@' sign) provide one or moe 'labels' for each feature and 
 each scenario within a feature. When the tests are executed, tags allow a tester 
 to indicate which features or scenarios they want to run (or not run). 
+
 - @am16 tag indicates the feature (or scenario) should pass against a stable 
 release of Archivematica 1.6
 - @dev indicates that the feature will only run on a particular dev or qa 
@@ -91,6 +94,11 @@ The configuration instructions describe how to specify the specific deployment o
 Archivematica to test against (e.g. the URL, the user account and password that
 will used and so on). 
 
+These instructions assume some basic familiarity with the command line, python 
+and git / github. These instructions_ for setting up command line tools and python
+(on a Mac) are good for beginners and should be adequate to enable you to follow
+the rest of these instructions (but your mileage may vary).   
+
 Installation of Acceptance Tests & Supporting Code
 --------------------------------------------------------------------------------
 Create a virualenv using Python 3 and activate it::
@@ -114,8 +122,10 @@ Install the Python dependencies::
 Installation of Browser and Browser Driver
 --------------------------------------------------------------------------------
 **Running tests from your desktop / laptop**
+
 The acceptance tests can be run using Chrome or Firefox. We recommend Chrome. You will 
 need to ensure the browser is installed, and that the driver is installed. See: 
+
 - https://www.google.ca/chrome/
 - http://www.kenst.com/2015/03/installing-chromedriver-on-mac-osx/
 
@@ -124,6 +134,7 @@ The test code will control the browser, clicking and entering data as required t
 complete the test.  
 
 **Running tests from the server or a Linux Desktop**
+
 To execute the tests from a server, you will need to run in 'headless' mode, without 
 a visible browser (a server is 'headless' because it doesn't have a monitor). 
 The browser & drivers must be installed, as well as a tool called Xvfb that enables 
@@ -242,12 +253,19 @@ Archivematica instance at 123.456.123.456 using the Firefox driver::
 .. _Selenium: http://www.seleniumhq.org/
 .. _Requests: http://docs.python-requests.org/en/master/
 .. _Xvfb: https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml
+.. _instructions: https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-local-programming-environment-on-macos
 
 How to execute Acceptance tests
 ================================================================================
 
 Basic Execution (with browser)
 --------------------------------------------------------------------------------
+If you have just installed the tools, your virtualenv will still be activated. 
+If you installed some time ago, go to the directory you installed the tests in 
+and activate your python 3 virtualenv::
+
+    $ source env/bin/activate
+
 You initiate execution of the tests with the behave command::
 
     $ behave
