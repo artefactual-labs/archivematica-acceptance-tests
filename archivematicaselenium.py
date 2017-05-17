@@ -811,6 +811,9 @@ class ArchivematicaSelenium:
         table_dict = {'job_output': job_output, 'tasks': {}}
         tasks_url = self.get_tasks_url(job_uuid)
         table_dict = self.parse_tasks_table(tasks_url, table_dict)
+        logger.debug('job output for micro-service {} on transfer {}'.format(
+            ms_name, transfer_uuid))
+        logger.debug(pprint.pformat(table_dict))
         return table_dict
 
     def parse_tasks_table(self, tasks_url, table_dict):
@@ -987,6 +990,7 @@ class ArchivematicaSelenium:
         'Determine if transfer contains packages': ('Extract packages',),
         'Determine which files to identify': ('Identify file format',),
         'Examine contents?': ('Examine contents',),
+        'Extract contents from compressed archives': ('Extract packages',),
         'Find type to process as': ('Quarantine',),
         'Generate METS.xml document': ('Generate METS.xml document', 'Generate AIP METS'),
         'Generate transfer structure report': ('Generate transfer structure report',),

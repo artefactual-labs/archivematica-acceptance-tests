@@ -59,7 +59,6 @@ def step_impl(context, microservice_name, choice, unit_type):
         'When the user chooses "{}" at decision point "{}" during {}\n'
     ).format(microservice_name, unit_type, choice, microservice_name,
              unit_type)
-    #raise Exception('fuckyou, microservice_name {}, choice {}, unit_type {}\n\nsteps:\n{}'.format(microservice_name, choice, unit_type, steps))
     context.execute_steps(steps)
 
 
@@ -273,7 +272,8 @@ def assert_premis_event(event_type, event, context):
     if event_type == 'unpacking':
         premis_evt_detail_el = event.find(
             'premis:eventDetail', context.am_sel_cli.mets_nsmap)
-        assert premis_evt_detail_el.text.strip().startswith('Unpacked from: ')
+        # assert premis_evt_detail_el.text.strip().startswith('Unpacked from: ')
+        assert premis_evt_detail_el.text.strip().startswith('Unpacked ')
     elif event_type == 'message digest calculation':
         event_detail = event.find('premis:eventDetail', context.am_sel_cli.mets_nsmap).text
         event_odn = event.find(
@@ -314,6 +314,9 @@ def assert_premis_properties(event, context, properties):
 @then('in the METS file there are/is {count} PREMIS event(s) of type'
       ' {event_type} with properties {properties}')
 def step_impl(context, count, event_type, properties):
+    """Asserts that *all* PREMIS:EVENTs of the specified type have the specified
+    properties and there are ``count`` number of them.
+    """
     mets = get_mets_from_scenario(context)
     events = []
     properties = json.loads(properties)
@@ -325,6 +328,34 @@ def step_impl(context, count, event_type, properties):
             assert_premis_event(event_type, premis_evt_el, context)
             assert_premis_properties(premis_evt_el, context, properties)
     assert len(events) == int(count)
+
+
+@then('in the METS file there are/is {count} PREMIS event(s) such that they are'
+      ' of type {event_type} and have properties {properties}')
+def step_impl(context, count, event_type, properties):
+    """Asserts that there are ``count`` number of PREMIS:EVENTs that have the
+    specified type and the specified properties.
+    """
+    # DEV DELETE
+    context.scenario.sip_uuid = '6b19d96d-0203-49f7-8c03-7251239372182'
+    context.scenario.transfer_name = '227_026_1494968822'
+    mets = get_mets_from_scenario(context)
+    events = []
+    properties = json.loads(properties)
+    for premis_evt_el in mets.findall('.//premis:event', context.am_sel_cli.mets_nsmap):
+        premis_evt_type_el = premis_evt_el.find(
+            'premis:eventType', context.am_sel_cli.mets_nsmap)
+        if premis_evt_type_el.text == event_type:
+            assert_premis_event(event_type, premis_evt_el, context)
+            try:
+                assert_premis_properties(premis_evt_el, context, properties)
+            except AssertionError:
+                pass
+            else:
+                events.append(premis_evt_el)
+    assert len(events) == int(count), (
+        'There are {} matching events but we expected to find {}'.format(
+            len(events), count))
 
 
 @then('in the METS file there are/is {count} PREMIS event(s) of type {event_type}')
@@ -561,6 +592,38 @@ def step_impl(context, transfer_path, do_files_conform, policy_file):
     pass
 
 
+@given('that the processing config is set up for HFS disk image transfers')
+def step_impl(context):
+    """Convenience ``Given`` that configures an Archivematica install for the
+    processing of HFS disk images. Crucially does the following:
+
+    - Siegfried file identification
+    - No package deletion post extraction
+    - No normalization
+    """
+    context.execute_steps('\n'.join([
+        'Given that the user has ensured that the default processing config'
+            ' is in its default state',
+        'And the processing config decision "Select file format'
+            ' identification command (Transfer)" is set to "Identify using'
+            ' Siegfried"',
+        'And the processing config decision "Create SIP(s)" is set to'
+            ' "Create single SIP and continue processing"',
+        'And the processing config decision "Select file format'
+            ' identification command (Ingest)" is set to "Identify using'
+            ' Siegfried"',
+        'And the processing config decision "Normalize" is set to "Do not'
+            ' normalize"',
+        'And the processing config decision "Delete packages after'
+            ' extraction" is set to "No"',
+        'And the processing config decision "Approve normalization" is set'
+            ' to "Yes"',
+        'And the processing config decision "Select file format'
+            ' identification command (Submission documentation & metadata)" is'
+            ' set to "Identify using Siegfried"'
+    ]))
+
+
 @when('the user uploads the policy file {policy_file}')
 def step_impl(context, policy_file):
     policy_path = get_policy_path(policy_file)
@@ -632,6 +695,35 @@ def step_impl(context, event_outcome):
     else:
         for task in policy_check_tasks:
             assert '"eventOutcomeInformation": "fail"' in task['stdout']
+
+
+@then('all files are identified as "{ident_string}"')
+def step_impl(context, ident_string):
+    """Asserts that all files in the last job parsed (presumed to be an
+    identifyFileFormat job) were identified as HFS disk images.
+        HFS Disk Image"')
+    """
+    for task in context.scenario.job['tasks'].values():
+        assert 'identified as a {}'.format(ident_string) in task['stdout']
+
+
+@then('hfsexplorer was the extraction tool used')
+def step_impl(context):
+    for task in context.scenario.job['tasks'].values():
+        assert '"tool_override": "hfsexplorer"' in task['stdout']
+
+
+@then('one file was characterized as an HFS disk image using DFXML')
+def step_impl(context):
+    found_it = False
+    for task in context.scenario.job['tasks'].values():
+        stdout = task['stdout']
+        if (    'xmlns:hfs="http://www.forensicswiki.org/wiki/HFS"' in stdout and
+                '<dc:type>Disk Image</dc:type>' in stdout and
+                '<ftype_str>HFS</ftype_str>' in stdout):
+            found_it = True
+            break
+    assert found_it
 
 
 @then('all PREMIS policy-check-type validation events have eventOutcome ='
