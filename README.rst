@@ -7,7 +7,7 @@ Gherkin_ language. Deploying an Archivematica system to test against is a
 necessary separate step. The tests use Selenium_ to launch a browser in order to
 interact with Archivematica's web GUI. (They also make vanilla requests to AM's
 API using Python's Requests_ library). They have been run successfully with
-Firefox and Chrome, and in CI scenarios using Xvfb_ (X virtual framebuffer).
+Firefox and Chrome, and in CI scenarios using Thightvnc_ .
 
 Using Gherkin to express tests makes them quite readable to non-programmers.
 Consider the following snippet from the premis-events.feature file::
@@ -51,15 +51,10 @@ Install the Python dependencies::
     $ pip install -r requirements.txt
 
 One way to run the tests headless, i.e., without a visible browser, is with
-Xvfb. To install Xvfb on Ubuntu 14.04::
+vnc server. To install one of the available vnc servers on Ubuntu 14.04::
 
     $ sudo apt-get update
-    $ sudo apt-get install -y xorg xvfb dbus-x11 xfonts-100dpi xfonts-75dpi xfonts-cyrillic
-
-See also:
-
-- http://stackoverflow.com/questions/34548472/trying-to-configure-xvfb-to-run-firefox-headlessly
-- http://elementalselenium.com/tips/38-headless
+    $ sudo apt-get install -y tightvncserver
 
 A browser (Chrome or Firefox) must be installed on the system where the tests
 are being run; see below. On a dev or CI server, this may require installation.
@@ -123,10 +118,12 @@ Basic usage::
 
     $ behave
 
-The above will launch many annoying browser windows. Use Xvfb to hide all that
-rubbish. Start Xvfb on display port 42 and background the process::
+The above will launch many annoying browser windows. Use vnc to hide all that
+rubbish. Start vnc server on display port 42 and background the process::
 
-    $ Xvfb :42 &
+    $ tightvncserver -geometry 1920x1080 :42 
+
+The first time you run this command, it will ask for a password.
 
 Tell the terminal session to use the display port::
 
@@ -136,6 +133,11 @@ Run the tests, this time just those targetting the correct creation of PREMIS
 events::
 
     $ behave --tags=premis-events --tags=standard --no-skipped
+
+If you want to connect to the vnc session to see the tests running, use any vnc client from your computer, and connect to the ip of the vm in display 42::
+
+   $ sudo apt-get install xtightvncviewer
+   $ xtightvncviewer 192.168.168.192:42
 
 There is also a convenience script for running just the tests that target
 Archivematica version 1.6::
@@ -211,4 +213,4 @@ Archivematica instance at 123.456.123.456 using the Firefox driver::
 .. _Gherkin: https://github.com/cucumber/cucumber/wiki/Gherkin
 .. _Selenium: http://www.seleniumhq.org/
 .. _Requests: http://docs.python-requests.org/en/master/
-.. _Xvfb: https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml
+.. _Tightvnc: http://www.tightvnc.com/vncserver.1.php
