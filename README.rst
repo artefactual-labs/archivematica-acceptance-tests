@@ -7,7 +7,7 @@ Gherkin_ language. Deploying an Archivematica system to test against is a
 necessary separate step. The tests use Selenium_ to launch a browser in order to
 interact with Archivematica's web GUI. (They also make vanilla requests to AM's
 API using Python's Requests_ library). They have been run successfully with
-Firefox and Chrome, and in CI scenarios using Thightvnc_ .
+Firefox and Chrome, and in CI scenarios using TightVNC_ .
 
 Using Gherkin to express tests makes them quite readable to non-programmers.
 Consider the following snippet from the premis-events.feature file::
@@ -123,7 +123,7 @@ rubbish. Start vnc server on display port 42 and background the process::
 
     $ tightvncserver -geometry 1920x1080 :42 
 
-The first time you run this command, it will ask for a password.
+The first time you run this command, TightVNC server will ask you to create a password.
 
 Tell the terminal session to use the display port::
 
@@ -134,7 +134,7 @@ events::
 
     $ behave --tags=premis-events --tags=standard --no-skipped
 
-If you want to connect to the vnc session to see the tests running, use any vnc client from your computer, and connect to the ip of the vm in display 42::
+If you want to connect to the vnc session to see the tests running, use any vnc client from your computer, and connect to the ip of the vm in display 42. As an example, with Ubuntu, you can do the follow:::
 
    $ sudo apt-get install xtightvncviewer
    $ xtightvncviewer 192.168.168.192:42
@@ -213,4 +213,4 @@ Archivematica instance at 123.456.123.456 using the Firefox driver::
 .. _Gherkin: https://github.com/cucumber/cucumber/wiki/Gherkin
 .. _Selenium: http://www.seleniumhq.org/
 .. _Requests: http://docs.python-requests.org/en/master/
-.. _Tightvnc: http://www.tightvnc.com/vncserver.1.php
+.. _TightVNC: http://www.tightvnc.com/vncserver.1.php
