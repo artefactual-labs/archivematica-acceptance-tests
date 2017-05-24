@@ -7,6 +7,7 @@ import archivematicaselenium
 AM_USERNAME = "test"
 AM_PASSWORD = "testtest"
 AM_URL = "http://192.168.168.192/"
+AM_VERSION = '1.6'
 AM_API_KEY = None
 SS_USERNAME = "test"
 SS_PASSWORD = "test"
@@ -33,6 +34,7 @@ def get_am_sel_cli(userdata):
         userdata.get('am_username', AM_USERNAME),
         userdata.get('am_password', AM_PASSWORD),
         userdata.get('am_url', AM_URL),
+        userdata.get('am_version', AM_VERSION),
         userdata.get('am_api_key', AM_API_KEY),
         userdata.get('ss_username', SS_USERNAME),
         userdata.get('ss_password', SS_PASSWORD),

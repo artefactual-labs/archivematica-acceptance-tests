@@ -12,3 +12,4 @@ __pycache__
 behave-tutorial/
 reports/
 archivematicaselenium.log
+steps.log
