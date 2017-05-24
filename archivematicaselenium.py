@@ -112,13 +112,18 @@ SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER = 'button.pull-right[type=submit]'
 SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES = \
     'button[data-target="#transfer_browse_tree"]'
 SELECTOR_BUTTON_START_TRANSFER = 'button[ng-click="vm.transfer.start()"]'
+SELECTOR_SS_LOGIN_BUTTON = 'input[value=login]'
+SELECTOR_SS_LOGIN_BUTTON_1_7 = 'input[value="Log in"]'
+SELECTOR_DFLT_SS_REG = 'input[name=use_default]'
+SELECTOR_DFLT_SS_REG_1_7 = 'input[type=submit]'
 
-DEFAULT_AM_USERNAME = 'test',
-DEFAULT_AM_PASSWORD = 'testtest',
-DEFAULT_AM_URL = 'http://192.168.168.192/',
-DEFAULT_SS_USERNAME = 'test',
-DEFAULT_SS_PASSWORD = 'test',
-DEFAULT_SS_URL = 'http://192.168.168.192:8000/',
+DEFAULT_AM_USERNAME = 'test'
+DEFAULT_AM_PASSWORD = 'testtest'
+DEFAULT_AM_URL = 'http://192.168.168.192/'
+DEFAULT_AM_VERSION = '1.6'
+DEFAULT_SS_USERNAME = 'test'
+DEFAULT_SS_PASSWORD = 'test'
+DEFAULT_SS_URL = 'http://192.168.168.192:8000/'
 DEFAULT_AM_API_KEY = None
 DEFAULT_SS_API_KEY = None
 DEFAULT_DRIVER_NAME = 'Chrome'  # 'Firefox' should also work.
@@ -131,6 +136,20 @@ JOB_OUTPUTS_COMPLETE = (
     'Completed successfully',
     'Awaiting decision')
 TMP_DIR_NAME = '.amsc-tmp'
+
+
+def varvn(varname, vn):
+    """Return global var/constant named ``varname`` for version ``vn``, if it
+    exists, else return global ``varname``. E.g.,
+    ``varvn('SELECTOR_SS_LOGIN_BUTTON', '1.7')`` will return
+    ``SELECTOR_SS_LOGIN_BUTTON_1_7`` if it exists, else
+    `SELECTOR_SS_LOGIN_BUTTON``.
+    """
+    return globals().get(
+        '{}_{}'.format(varname, vn.replace('.', '_')),
+        globals().get(
+            varname,
+            'There is no var {}'.format(varname)))
 
 
 def squash(string):
@@ -185,6 +204,7 @@ class ArchivematicaSelenium:
              am_username=DEFAULT_AM_USERNAME,
              am_password=DEFAULT_AM_PASSWORD,
              am_url=DEFAULT_AM_URL,
+             am_version=DEFAULT_AM_VERSION,
              am_api_key=DEFAULT_AM_API_KEY,
              ss_username=DEFAULT_SS_USERNAME,
              ss_password=DEFAULT_SS_PASSWORD,
@@ -195,6 +215,7 @@ class ArchivematicaSelenium:
         self.am_username = am_username
         self.am_password = am_password
         self.am_url = am_url
+        self.am_version = self.vn = am_version
         self.am_api_key = am_api_key
         self.ss_username = ss_username
         self.ss_password = ss_password
@@ -246,9 +267,15 @@ class ArchivematicaSelenium:
 
     def tear_down(self):
         # Close all the $%&@#! browser windows!
-        for window_handle in self.driver.window_handles:
-            self.driver.switch_to.window(window_handle)
-            self.driver.close()
+        # TODO: figure out why in some cases (with some browsers) the following
+        # call to ``self.driver.window_handles`` causes Selenium to hang
+        # indefinitely.
+        # For some reason Selenium with Firefox 47 hangs if you call
+        # ``driver.window_handles`
+        if self.driver_name != 'Firefox':
+            for window_handle in self.driver.window_handles:
+                self.driver.switch_to.window(window_handle)
+                self.driver.close()
         self.clear_tmp_dir()
         for driver in self.all_drivers:
             try:
@@ -386,6 +413,9 @@ class ArchivematicaSelenium:
             return '{}archival-storage/{}/'.format(self.am_url, aip_uuid)
         return '{}archival-storage/'.format(self.am_url)
 
+    def get_transfer_backlog_url(self):
+        return '{}backlog/'.format(self.am_url)
+
     def get_rules_url(self):
         return '{}fpr/fprule/'.format(self.am_url)
 
@@ -425,6 +455,9 @@ class ArchivematicaSelenium:
 
     def get_location_url(self, location_uuid):
         return '{}locations/{}/'.format(self.ss_url, location_uuid)
+
+    def get_locations_url(self):
+        return '{}locations/'.format(self.ss_url)
 
     def get_spaces_create_url(self):
         return '{}spaces/create/'.format(self.ss_url)
@@ -503,7 +536,8 @@ class ArchivematicaSelenium:
         ingest_url = self.get_ingest_url()
         self.navigate(ingest_url)
         # Wait for the "Store AIP" micro-service.
-        self.expose_job('Store AIP  (review)', sip_uuid, 'ingest')
+        ms_name = _normalize_ms_name('Store AIP (review)', self.vn)
+        self.expose_job(ms_name, sip_uuid, 'ingest')
         aip_preview_url = '{}/ingest/preview/aip/{}'.format(
             self.am_url, sip_uuid)
         self.navigate(aip_preview_url)
@@ -613,7 +647,9 @@ class ArchivematicaSelenium:
         """Wait for the decision point job for micro-service ``ms_name`` to
         appear.
         """
-        logger.info('Await decision point with unit_type {}'.format(unit_type))
+        ms_name = _normalize_ms_name(ms_name, self.vn)
+        logger.info('Await decision point "{}" with unit {} of type {}'.format(
+            ms_name, transfer_uuid, unit_type))
         ms_name, group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
         job_uuid, job_output = self.get_job_uuid(
             ms_name, group_name, transfer_uuid,
@@ -660,6 +696,32 @@ class ArchivematicaSelenium:
             summary_el = self.driver.find_element_by_css_selector(
                 'div.search-summary')
             if 'No results, please try another search.' in summary_el.text:
+                seconds += 1
+                if seconds > max_seconds:
+                    break
+                time.sleep(1)
+            else:
+                time.sleep(1)  # Sleep a little longer, for good measure
+                break
+
+    def wait_for_dip_in_transfer_backlog(self, dip_uuid):
+        """Wait for the DIP with UUID ``dip_uuid`` to appear in the Backlog tab.
+        """
+        max_seconds = 120
+        seconds = 0
+        while True:
+            self.navigate(self.get_transfer_backlog_url(), reload=True)
+            self.driver.find_element_by_css_selector(
+                'input[title="search query"]').send_keys(dip_uuid)
+            Select(self.driver.find_element_by_css_selector(
+                'select[title="field name"]')).select_by_visible_text(
+                    'SIP UUID')
+            Select(self.driver.find_element_by_css_selector(
+                'select[title="query type"]')).select_by_visible_text(
+                    'Phrase')
+            self.driver.find_element_by_id('search_submit').click()
+            summary_el = self.driver.find_element_by_id('backlog-entries_info')
+            if 'Showing 0 to 0 of 0 entries' == summary_el.text.strip():
                 seconds += 1
                 if seconds > max_seconds:
                     break
@@ -867,6 +929,7 @@ class ArchivematicaSelenium:
         """Make the choice matching the text ``choice_text`` at decision point
         (i.e., microservice) job matching ``decision_point``.
         """
+        decision_point = _normalize_ms_name(decision_point, self.vn)
         decision_point, group_name = self.expose_job(
             decision_point, uuid_val, unit_type=unit_type)
         ms_group_elem = self.get_transfer_micro_service_group_elem(
@@ -1086,6 +1149,7 @@ class ArchivematicaSelenium:
         'Approve AIP reingest': ('Reingest AIP',),
         'Approve normalization': ('Normalize',),
         'Approve normalization (review)': ('Normalize',),
+        'Approve normalization Review': ('Normalize',),
         'Approve standard transfer': ('Approve transfer',),
         'Assign checksums and file sizes to metadata': ('Process metadata directory',),
         'Assign checksums and file sizes to objects': ('Assign file UUIDs and checksums',),
@@ -1206,7 +1270,8 @@ class ArchivematicaSelenium:
         'Set remove preservation and access normalized files to renormalize link.': ('Normalize',),
         'Set transfer type: Standard': ('Verify transfer compliance',),
         'Store AIP': ('Store AIP',),
-        'Store AIP  (review)': ('Store AIP',),
+        'Store AIP (review)': ('Store AIP',),
+        'Store AIP Review': ('Store AIP',),
         'Store AIP location': ('Store AIP',),
         'Transcribe': ('Transcribe SIP contents',),
         'Transcribe SIP contents': ('Transcribe SIP contents',),
@@ -1238,8 +1303,9 @@ class ArchivematicaSelenium:
             if not groups:
                 raise
         if len(groups) != 1:
-            print('WARNING: the micro-service {} belongs to multiple'
-                  ' micro-service groups'.format(micro_service))
+            logger.info('WARNING: the micro-service "{}" belongs to multiple'
+                        ' micro-service groups; returning "{}"'.format(
+                        micro_service, groups[0]))
         return micro_service, groups[0]
 
     def parse_normalization_report(self, sip_uuid):
@@ -1254,7 +1320,8 @@ class ArchivematicaSelenium:
         if self.driver.current_url != url:
             self.login()
         self.driver.get(url)
-        self.expose_job('Approve normalization (review)', sip_uuid, 'sip')
+        ms_name = _normalize_ms_name('Approve normalization (review)', self.vn)
+        self.expose_job(ms_name, sip_uuid, 'sip')
         nrmlztn_rprt_url = self.get_normalization_report_url(sip_uuid)
         self.driver.get(nrmlztn_rprt_url)
         if self.driver.current_url != nrmlztn_rprt_url:
@@ -1358,13 +1425,18 @@ class ArchivematicaSelenium:
         if not transfer_div_elem:
             # print('Unable to find Transfer {}.'.format(transfer_uuid))
             return None
-        expected_name = 'Micro-service: {}'.format(group_name)
+        if self.vn == '1.6':
+            expected_name = 'Micro-service: {}'.format(group_name)
+        else:
+            expected_name = 'Microservice: {}'.format(group_name)
         result = None
         for ms_group_elem in transfer_div_elem.find_elements_by_css_selector(
                 'div.microservicegroup'):
             name_elem_text = ms_group_elem.find_element_by_css_selector(
                 'span.microservice-group-name').text.strip()
             if name_elem_text == expected_name:
+                logger.info('DOM name "{}" MATCHES expected name "{}"'.format(
+                    name_elem_text, expected_name))
                 result = ms_group_elem
                 break
         return result
@@ -1892,6 +1964,15 @@ class ArchivematicaSelenium:
                             input_id = el.get_attribute('for')
                             input_el = self.driver.find_element_by_id(input_id)
                             input_el.send_keys(val)
+                    # Here we just choose the first available pipeline for the
+                    # location. This is a hack but it's better than having a
+                    # pipeline-less location. WARNING/TODO: this will need to
+                    # be changed for setups with multiple pipelines.
+                    if label_text == 'pipeline':
+                        input_id = el.get_attribute('for')
+                        select_el = self.driver.find_element_by_id(input_id)
+                        select = Select(select_el)
+                        select.select_by_index(0)
         self.driver.find_element_by_css_selector('input[type=submit]').click()
         header = self.driver.find_element_by_tag_name('h1').text.strip()
         location_uuid = header.split()[0].replace('"', '').replace(':', '')
@@ -2353,7 +2434,7 @@ class ArchivematicaSelenium:
         self.driver.find_element_by_id('id_storage_service_apikey')\
             .send_keys(ss_api_key)
         self.driver.find_element_by_css_selector(
-            'input[name=use_default]').click()
+                varvn('SELECTOR_DFLT_SS_REG', self.vn)).click()
 
     @property
     def ss_api_key(self):
@@ -2361,7 +2442,8 @@ class ArchivematicaSelenium:
             self.driver.get(self.get_ss_login_url())
             self.driver.find_element_by_id('id_username').send_keys(self.ss_username)
             self.driver.find_element_by_id('id_password').send_keys(self.ss_password)
-            self.driver.find_element_by_css_selector('input[value=login]').click()
+            self.driver.find_element_by_css_selector(
+                varvn('SELECTOR_SS_LOGIN_BUTTON', self.vn)).click()
             self.driver.get(self.get_default_ss_user_edit_url())
             block = WebDriverWait(self.driver, 20)
             block.until(EC.presence_of_element_located(
@@ -2422,3 +2504,47 @@ class ArchivematicaSelenium:
 
     def unique_name(self, name):
         return '{}_{}'.format(name, self.unixtimestamp())
+
+    def disable_default_transfer_backlog(self):
+        self.navigate(self.get_locations_url())
+        search_el = self.driver.find_element_by_css_selector('input[type=text]')
+        search_el.send_keys('Default transfer backlog')
+        row_els = self.driver.find_elements_by_css_selector(
+            '#DataTables_Table_0 > tbody > tr')
+        if len(row_els) != 1:
+            raise ArchivematicaSeleniumError(
+                'Unable to find a unique default transfer backlog location')
+        cell_el = row_els[0].find_elements_by_css_selector('td')[8]
+        disable_a_el = enable_a_el = None
+        for a_el in cell_el.find_elements_by_css_selector('a'):
+            print(a_el.text)
+            if a_el.text.strip() == 'Disable':
+                disable_a_el = a_el
+            if a_el.text.strip() == 'Enable':
+                enable_a_el = a_el
+        if not (enable_a_el or disable_a_el):
+            raise ArchivematicaSeleniumError(
+                'Unable to find a disable/enable button/link for the default'
+                ' transfer backlog location')
+        if disable_a_el:
+            disable_a_el.click()
+
+
+def _normalize_ms_name(ms_name, vn):
+    """Normalize the microservice name. This allows for different AM versions
+    to use different names for the same microservice, without us having to
+    change a whole bunch of feature files to accommodate such changes.
+    """
+    new_ms_name = ms_name
+    if ms_name == 'Approve normalization (review)' and vn != '1.6':
+        new_ms_name = 'Approve normalization Review'
+    elif ms_name == 'Store AIP (review)' and vn != '1.6':
+        new_ms_name = 'Store AIP Review'
+    elif ms_name == 'Store AIP Review' and vn == '1.6':
+        new_ms_name = 'Store AIP (review)'
+    elif ms_name == 'Approve normalization Review' and vn == '1.6':
+        new_ms_name = 'Approve normalization (review)'
+    if ms_name != new_ms_name:
+        logger.warning('Treating microservice "{}" as "{}"'.format(
+            ms_name, new_ms_name))
+    return new_ms_name
