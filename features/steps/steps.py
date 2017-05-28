@@ -15,7 +15,7 @@ MC_EVENT_OUTCOME_DETAIL_NOTE_IMPLEMENTATION_CHECK_PREFIX = \
 MC_EVENT_OUTCOME_DETAIL_NOTE_POLICY_CHECK_PREFIX = \
     'MediaConch policy check result'
 POLICIES_DIR = 'etc/mediaconch-policies'
-
+GPG_KEYS_DIR = 'etc/gpgkeys'
 
 STDRD_GPG_TB_REL_PATH = (
     'var/archivematica/sharedDirectory/www/AIPsStore/transferBacklogEncrypted')
@@ -1019,6 +1019,10 @@ def get_policy_path(policy_file):
     return os.path.realpath(os.path.join(POLICIES_DIR, policy_file))
 
 
+def get_gpg_key_path(key_fname):
+    return os.path.realpath(os.path.join(GPG_KEYS_DIR, key_fname))
+
+
 def get_normalized_unit_type(unit_type):
     return {'transfer': 'transfer'}.get(unit_type, 'sip')
 
@@ -1057,3 +1061,25 @@ def _parse_k_v_attributes(attributes):
     """
     return {pair.split(':')[0].strip(): pair.split(':')[1].strip() for
             pair in attributes.split(';') if pair.strip()}
+
+
+@when('the user attempts to import GPG key {key_fname}')
+def step_impl(context, key_fname):
+    key_path = get_gpg_key_path(key_fname)
+    context.scenario.import_gpg_key_result = context.am_sel_cli.import_gpg_key(key_path)
+
+
+@then('the user succeeds in importing the GPG key {key_name}')
+def step_impl(context, key_name):
+    assert context.scenario.import_gpg_key_result.startswith('New key')
+    assert context.scenario.import_gpg_key_result.endswith('created.')
+    assert len(context.am_sel_cli.get_gpg_key_search_matches(key_name)) == 1
+
+
+@then('the user fails to import the GPG key {key_name} because it requires a'
+      ' passphrase')
+def step_impl(context, key_name):
+    assert context.scenario.import_gpg_key_result == (
+        'Import failed. The GPG key provided requires a passphrase. GPG keys'
+        ' with passphrases cannot be imported')
+    assert len(context.am_sel_cli.get_gpg_key_search_matches(key_name)) == 0

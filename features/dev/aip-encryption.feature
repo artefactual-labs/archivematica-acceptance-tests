@@ -51,3 +51,13 @@ Feature: AIP Encryption
     # And the files of the encrypted transfer are browseable in the appraisal tab
     # And the files of the encrypted transfer are browseable in the ingest tab
     # And a SIP can be created from the encrypted transfer in backlog
+
+  @allow-passphraseless-key-import
+  Scenario: Richard wants to ensure that a passphrase-less GPG key can be imported into the storage service.
+    When the user attempts to import GPG key aadams-passphraseless.key
+    Then the user succeeds in importing the GPG key aadams
+
+  @prohibit-passphrased-key-import
+  Scenario: Richard wants to ensure that a GPG key with a passphrase cannot be imported into the storage service. Keys with passphrases would break the storage service's encryption functionality.
+    When the user attempts to import GPG key bbingo-passphrased.key
+    Then the user fails to import the GPG key bbingo because it requires a passphrase

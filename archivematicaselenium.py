@@ -387,6 +387,12 @@ class ArchivematicaSelenium:
         return '{}administration/processing/edit/default/'.format(
             self.am_url)
 
+    def get_import_gpg_key_url(self):
+        return '{}administration/keys/import/'.format(self.ss_url)
+
+    def get_gpg_keys_url(self):
+        return '{}administration/keys/'.format(self.ss_url)
+
     def get_default_ss_user_edit_url(self):
         return '{}administration/users/1/edit/'.format(self.ss_url)
 
@@ -2494,6 +2500,36 @@ class ArchivematicaSelenium:
                     self.mets_nsmap).text
             })
         return result
+
+    def import_gpg_key(self, key_path):
+        """Navigate to the GPG key import page and attempt to import the GPG
+        key whose private key ASCII armor is stored in the file at
+        ``key_path``. Return the alert message text displayed after the import
+        attempt.
+        """
+        self.navigate(self.get_import_gpg_key_url())
+        with open(key_path) as filei:
+            self.driver.find_element_by_id('id_ascii_armor').send_keys(filei.read())
+        self.driver.find_element_by_css_selector('input[type=submit]').click()
+        self.wait_for_presence('div.alert', 20)
+        return self.driver.find_element_by_css_selector('div.alert').text.strip()
+
+    def get_gpg_key_search_matches(self, search_string):
+        """Navigate to the GPG keys page and return the fingerprints of all
+        keys matching ``search_string``.
+        """
+        fingerprints = []
+        self.navigate(self.get_gpg_keys_url())
+        self.driver.find_element_by_css_selector('input[type=text]').send_keys(
+            search_string)
+        for row_el in self.driver.find_elements_by_css_selector(
+                'table#DataTables_Table_0 tbody tr'):
+            try:
+                fingerprints.append(
+                    row_el.find_elements_by_tag_name('td')[1].text.strip())
+            except IndexError:
+                pass
+        return fingerprints
 
     # =========================================================================
     # General Helpers.
