@@ -926,7 +926,8 @@ def step_impl(context, attributes):
     ``attributes``. These are :-delimited pairs delimited by ';'.
     """
     attributes = _parse_k_v_attributes(attributes)
-    context.scenario.space_uuid = context.am_sel_cli.ensure_ss_space_exists(attributes)
+    context.scenario.space_uuid = context.am_sel_cli.ensure_ss_space_exists(
+        attributes)
 
 
 @given('the user has disabled the default transfer backlog location')
@@ -1083,3 +1084,98 @@ def step_impl(context, key_name):
         'Import failed. The GPG key provided requires a passphrase. GPG keys'
         ' with passphrases cannot be imported')
     assert len(context.am_sel_cli.get_gpg_key_search_matches(key_name)) == 0
+
+
+@given('the user creates a new GPG key and assigns it to the standard'
+       ' GPG-encrypted space')
+def step_impl(context):
+    # Create the new GPG key
+    new_key_name, new_key_email = context.am_sel_cli.create_new_gpg_key()
+    context.scenario.new_key_name = new_key_name
+    # Edit the "standard GPG-encrypted space" to use the new GPG key
+    standard_encr_space_uuid = context.am_sel_cli.search_for_ss_space({
+        'Access protocol': 'GPG encryption on Local Filesystem',
+        'Path': '/',
+        'Staging path': '/var/archivematica/storage_service_encrypted',
+        'GnuPG Private Key': 'Archivematica Storage Service GPG Key'
+    })['uuid']
+    new_key_repr = '{} <{}>'.format(new_key_name, new_key_email)
+    logger.info('Created a new GPG key "%s"', new_key_repr)
+    context.am_sel_cli.change_encrypted_space_key(standard_encr_space_uuid,
+                                                  new_key_repr)
+
+
+@when('an encrypted AIP is created from the directory at {transfer_path}')
+def step_impl(context, transfer_path):
+    context.execute_steps(
+        'When a transfer is initiated on directory {}\n'
+        'And standard AIP-creation decisions are made\n'
+        'And the user waits for the "Store AIP location" decision point to'
+            ' appear and chooses "Store AIP Encrypted in standard Archivematica'
+            ' Directory" during ingest\n'
+        'And the user waits for the AIP to appear in archival storage'.format(
+            transfer_path))
+
+
+@when('the user attempts to delete the new GPG key')
+def step_impl(context):
+    new_key_name = context.scenario.new_key_name
+    logger.info('Attempting to delete GPG key "%s"', new_key_name)
+    (context.scenario.delete_gpg_key_success,
+        context.scenario.delete_gpg_key_msg) = (
+            context.am_sel_cli.delete_gpg_key(new_key_name))
+    if context.scenario.delete_gpg_key_success:
+        logger.info('Attempt to delete GPG key "%s" was SUCCESSFUL',
+                    new_key_name)
+    else:
+        logger.info('Attempt to delete GPG key "%s" FAILED: "%s"',
+                    new_key_name, context.scenario.delete_gpg_key_msg)
+
+
+@then('the user is prevented from deleting the key because {reason}')
+def step_impl(context, reason):
+    assert context.scenario.delete_gpg_key_success == False
+    if reason == 'it is attached to a space':
+        assert context.scenario.delete_gpg_key_msg.startswith(
+            'GPG key')
+        assert context.scenario.delete_gpg_key_msg.endswith(
+            'cannot be deleted because at least one GPG Space is using it for'
+            ' encryption.')
+    elif reason == 'it is attached to a package':
+        assert context.scenario.delete_gpg_key_msg.startswith(
+            'GPG key')
+        assert context.scenario.delete_gpg_key_msg.endswith(
+            'cannot be deleted because at least one package (AIP, transfer)'
+            ' needs it in order to be decrypted.'), ('Reason is actually'
+                ' {}'.format(context.scenario.delete_gpg_key_msg))
+
+
+@then('the user succeeds in deleting the GPG key')
+def step_impl(context):
+    assert context.scenario.delete_gpg_key_success == True, (
+        context.scenario.delete_gpg_key_msg)
+    assert context.scenario.delete_gpg_key_msg.endswith(
+        'successfully deleted.')
+
+
+@when('the user assigns a different GPG key to the standard GPG-encrypted'
+      ' space')
+def step_impl(context):
+    """Edit the standard GPG-encrypted space so that it is using a GPG key
+    other than the one stored in ``context.scenario.new_key_name``.
+    """
+    # Edit the "standard GPG-encrypted space" to use the new GPG key
+    standard_encr_space_uuid = context.am_sel_cli.search_for_ss_space({
+        'Access protocol': 'GPG encryption on Local Filesystem',
+        'Path': '/',
+        'Staging path': '/var/archivematica/storage_service_encrypted',
+        'GnuPG Private Key': context.scenario.new_key_name
+    })['uuid']
+    context.am_sel_cli.change_encrypted_space_key(standard_encr_space_uuid)
+
+
+@when('the AIP is deleted')
+def step_impl(context):
+    uuid_val = get_uuid_val(context, 'sip')
+    context.am_sel_cli.request_aip_delete(uuid_val)
+    context.am_sel_cli.approve_aip_delete_request(uuid_val)

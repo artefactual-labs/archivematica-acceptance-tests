@@ -90,8 +90,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import (
-    TimeoutException, WebDriverException, StaleElementReferenceException,
-    NoSuchElementException, MoveTargetOutOfBoundsException)
+    ElementNotVisibleException,
+    MoveTargetOutOfBoundsException,
+    NoSuchElementException,
+    StaleElementReferenceException,
+    TimeoutException,
+    WebDriverException
+)
 from selenium.webdriver.common.action_chains import ActionChains
 
 logger = logging.getLogger(__file__)
@@ -389,6 +394,9 @@ class ArchivematicaSelenium:
 
     def get_import_gpg_key_url(self):
         return '{}administration/keys/import/'.format(self.ss_url)
+ 
+    def get_create_gpg_key_url(self):
+        return '{}administration/keys/create/'.format(self.ss_url)
 
     def get_gpg_keys_url(self):
         return '{}administration/keys/'.format(self.ss_url)
@@ -468,11 +476,17 @@ class ArchivematicaSelenium:
     def get_spaces_create_url(self):
         return '{}spaces/create/'.format(self.ss_url)
 
+    def get_space_edit_url(self, space_uuid):
+        return '{}spaces/{}/edit/'.format(self.ss_url, space_uuid)
+
     def get_locations_create_url(self, space_uuid):
         return '{}spaces/{}/location_create/'.format(self.ss_url, space_uuid)
 
     def get_ss_login_url(self):
         return '{}login/'.format(self.ss_url)
+
+    def get_ss_package_delete_request_url(self):
+        return '{}packages/package_delete_request/'.format(self.ss_url)
 
     # CSS classes, selectors and other identifiers
     # =========================================================================
@@ -710,6 +724,53 @@ class ArchivematicaSelenium:
                 time.sleep(1)  # Sleep a little longer, for good measure
                 break
 
+    def request_aip_delete(self, aip_uuid):
+        """Request the deletion of the AIP with UUID ``aip_uuid`` using the
+        dashboard GUI.
+        """
+        self.navigate_to_aip_in_archival_storage(aip_uuid)
+        delete_tab_selector = 'a[href="#tab-delete"]'
+        self.wait_for_presence(delete_tab_selector, timeout=10)
+        while True:
+            try:
+                self.driver.find_element_by_id('id_delete-uuid').click()
+                break
+            except ElementNotVisibleException:
+                self.driver.find_element_by_css_selector(
+                    delete_tab_selector).click()
+                time.sleep(1)
+        self.driver.find_element_by_id('id_delete-uuid').send_keys(aip_uuid)
+        self.driver.find_element_by_id('id_delete-reason').send_keys(
+            'Cuz wanna')
+        self.driver.find_element_by_css_selector(
+            'button[name="submit-delete-form"]').click()
+        alert_text = self.driver.find_element_by_css_selector(
+            'div.alert-info').text.strip()
+        assert alert_text == 'Delete request created successfully.'
+
+    def approve_aip_delete_request(self, aip_uuid):
+        """Approve the deletion request of AIP with UUID ``aip_uuid`` via the
+        SS GUI.
+        """
+        self.navigate(self.get_ss_package_delete_request_url())
+        self.driver.find_element_by_id('DataTables_Table_0_filter').send_keys(aip_uuid)
+        matching_rows = []
+        for row_el in self.driver.find_elements_by_css_selector(
+                'table#DataTables_Table_0 tbody tr'):
+            if len(row_el.find_elements_by_tag_name('td')) == 7:
+                matching_rows.append(row_el)
+        if len(matching_rows) != 1:
+            raise ArchivematicaSeleniumError(
+                'More than one delete request row {} matches AIP'
+                ' {}'.format(len(matching_rows), aip_uuid))
+        matching_rows[0].find_element_by_tag_name('textarea').send_keys(
+            'Cuz wanna')
+        matching_rows[0].find_element_by_css_selector(
+            'input[name="approve"]').click()
+        assert self.driver.find_element_by_css_selector(
+            'div.alert-success').text.strip() == (
+                'Request approved: Package deleted successfully.')
+
     def wait_for_dip_in_transfer_backlog(self, dip_uuid):
         """Wait for the DIP with UUID ``dip_uuid`` to appear in the Backlog tab.
         """
@@ -736,7 +797,7 @@ class ArchivematicaSelenium:
                 time.sleep(1)  # Sleep a little longer, for good measure
                 break
 
-    def initiate_reingest(self, aip_uuid, reingest_type='metadata-only'):
+    def navigate_to_aip_in_archival_storage(self, aip_uuid):
         url = self.get_archival_storage_url(aip_uuid=aip_uuid)
         max_attempts = 10
         attempt = 0
@@ -755,6 +816,9 @@ class ArchivematicaSelenium:
             attempt += 1
             time.sleep(1)
         self.navigate(url)
+
+    def initiate_reingest(self, aip_uuid, reingest_type='metadata-only'):
+        self.navigate_to_aip_in_archival_storage(aip_uuid)
         reingest_tab_selector = 'a[href="#tab-reingest"]'
         self.wait_for_presence(reingest_tab_selector, timeout=10)
         try:
@@ -955,7 +1019,7 @@ class ArchivematicaSelenium:
                 select_el = action_div_el.find_element_by_css_selector('select')
             except NoSuchElementException:
                 time.sleep(0.5)
-                self.make_choice(choice_text, decision_point, uuid_val,
+                return self.make_choice(choice_text, decision_point, uuid_val,
                                  unit_type=unit_type)
             index = None
             for i, option_el in enumerate(
@@ -1913,24 +1977,29 @@ class ArchivematicaSelenium:
         """Ensure there is a Storage Service space with the attributes in the
         ``attributes`` dict.
         """
-        existing_spaces = self.get_existing_spaces()
-        matching_space = None
-        for ex_space in existing_spaces:
-            match = True
-            for key, val in attributes.items():
-                if ex_space.get(key.lower()) != val:
-                    match = False
-                    break
-            if match:
-                matching_space = ex_space
-                break
+        matching_space = self.search_for_ss_space(attributes)
         if matching_space:
-            space_uuid = matching_space['uuid']
+            logger.info('matching space:\n%s', pprint.pformat(matching_space))
+            return matching_space['uuid']
         else:
             logger.info('space with attributes {} does NOT'
                         ' exist'.format(attributes))
-            space_uuid = self.create_ss_space(attributes)
-        return space_uuid
+            return self.create_ss_space(attributes)
+
+    def search_for_ss_space(self, attributes):
+        """Return first SS space matching all attrs in ``attributes`` dict."""
+        for ex_space in self.get_existing_spaces():
+            match = True
+            for key, val in attributes.items():
+                if ex_space.get(key.lower()) != val:
+                    logger.debug('%s\ndoes NOT match\n%s',
+                                 ex_space.get(key.lower()), val)
+                    match = False
+                    break
+            if match:
+                return ex_space
+        logger.debug('No SS space matching attributes %s', pprint.pformat(attributes))
+        return None
 
     def create_ss_space(self, attributes):
         """Create an AM SS Space using ``attributes``."""
@@ -2531,6 +2600,38 @@ class ArchivematicaSelenium:
                 pass
         return fingerprints
 
+    def delete_gpg_key(self, key_name):
+        """Navigate to the GPG keys page, search for a key matching
+        ``key_name``, and attempt to delete it. Returns a 2-tuple:
+        ``(succeeded, msg)`` where ``succeeded`` is a boolean and ``msg`` is a
+        string.
+        """
+        self.navigate(self.get_gpg_keys_url())
+        self.driver.find_element_by_css_selector('input[type=text]').send_keys(
+            key_name)
+        matches = self.driver.find_elements_by_css_selector(
+            'table#DataTables_Table_0 tbody tr')
+        try:
+            assert len(matches) == 1
+        except AssertionError:
+            logger.info('Unable to delete GPG key with name "%s" because there'
+                        ' are %s keys matching that name', key_name,
+                        len(matches))
+            raise
+        else:
+            matches[0].find_element_by_xpath(
+                'td[3]/a[text() = "Delete"]').click()
+        try:
+            self.driver.find_element_by_css_selector('input[value=Delete]').click()
+            try:
+                return True, self.driver.find_element_by_css_selector(
+                    'div.alert-success').text.strip()
+            except NoSuchElementException:
+                return False, 'unknown'
+        except NoSuchElementException:
+            return False, self.driver.find_element_by_css_selector(
+                'div.alert-error').text.strip()
+
     # =========================================================================
     # General Helpers.
     # =========================================================================
@@ -2564,6 +2665,35 @@ class ArchivematicaSelenium:
                 ' transfer backlog location')
         if disable_a_el:
             disable_a_el.click()
+
+    def create_new_gpg_key(self):
+        """Create a new GPG key with a unique name."""
+        self.navigate(self.get_create_gpg_key_url())
+        new_key_name = 'GPGKey {}'.format(self.unixtimestamp())
+        new_key_email = '{}@example.com'.format(new_key_name.lower().replace(' ', ''))
+        self.driver.find_element_by_id('id_name_real').send_keys(new_key_name)
+        self.driver.find_element_by_id('id_name_email').send_keys(new_key_email)
+        self.driver.find_element_by_css_selector('input[type=submit]').click()
+        self.wait_for_presence('div.alert-success')
+        return new_key_name, new_key_email
+
+    def change_encrypted_space_key(self, space_uuid, new_key_repr=None):
+        """Edit the existing space with UUID ``space_uuid`` and set its GPG key
+        to the existing one matching ``new_key_repr``, if provided, or else to
+        any other key.
+        """
+        self.navigate(self.get_space_edit_url(space_uuid))
+        select = Select(self.driver.find_element_by_id('id_protocol-key'))
+        if new_key_repr:
+            select.select_by_visible_text(new_key_repr)
+        else:
+            currently_selected = select.first_selected_option.text
+            for option in select.options:
+                if option.text != currently_selected:
+                    select.select_by_visible_text(option.text)
+                    break
+        self.driver.find_element_by_css_selector('input[type=submit]').click()
+        self.wait_for_presence('div.alert-success')
 
 
 def _normalize_ms_name(ms_name, vn):

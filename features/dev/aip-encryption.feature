@@ -61,3 +61,19 @@ Feature: AIP Encryption
   Scenario: Richard wants to ensure that a GPG key with a passphrase cannot be imported into the storage service. Keys with passphrases would break the storage service's encryption functionality.
     When the user attempts to import GPG key bbingo-passphrased.key
     Then the user fails to import the GPG key bbingo because it requires a passphrase
+
+  @allow-orphaned-key-delete
+  Scenario: Richard wants to ensure that GPG deletion is never permitted if the key is associated to a space or if it is needed to decrypt an existing package. However, if all space associations are destroyed and all dependent packages deleted, then deletion of the (orphaned) key should be permitted.
+    Given there is a standard GPG-encrypted space in the storage service
+    And there is a standard GPG-encrypted AIP Storage location in the storage service
+    And the default processing config is in its default state
+    And the user creates a new GPG key and assigns it to the standard GPG-encrypted space
+    When an encrypted AIP is created from the directory at ~/easy
+    And the user attempts to delete the new GPG key
+    Then the user is prevented from deleting the key because it is attached to a space
+    When the user assigns a different GPG key to the standard GPG-encrypted space
+    And the user attempts to delete the new GPG key
+    Then the user is prevented from deleting the key because it is attached to a package
+    When the AIP is deleted
+    And the user attempts to delete the new GPG key
+    Then the user succeeds in deleting the GPG key
