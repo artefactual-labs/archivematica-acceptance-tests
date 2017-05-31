@@ -7,6 +7,7 @@ import archivematicaselenium
 AM_USERNAME = "test"
 AM_PASSWORD = "testtest"
 AM_URL = "http://192.168.168.192/"
+AM_VERSION = '1.6'
 AM_API_KEY = None
 SS_USERNAME = "test"
 SS_PASSWORD = "test"
@@ -17,6 +18,15 @@ TRANSFER_SOURCE_PATH = 'vagrant/archivematica-sampledata/TestTransfers/acceptanc
 HOME = 'vagrant'
 DRIVER_NAME = 'Chrome'
 
+# Set these constants if the AM client should be able to gain SSH access to the
+# server where AM is being served. This is needed in order to scp server files
+# to local, which some tests need. If SSH access is not possible, set
+# ``SSH_ACCESSIBLE`` to ``False``.
+SSH_ACCESSIBLE = True
+SSH_REQUIRES_PASSWORD = True
+SERVER_USER = 'vagrant'
+SERVER_PASSWORD = 'vagrant'
+
 
 def get_am_sel_cli(userdata):
     """Instantiate an ArchivematicaSelenium."""
@@ -24,12 +34,18 @@ def get_am_sel_cli(userdata):
         userdata.get('am_username', AM_USERNAME),
         userdata.get('am_password', AM_PASSWORD),
         userdata.get('am_url', AM_URL),
+        userdata.get('am_version', AM_VERSION),
         userdata.get('am_api_key', AM_API_KEY),
         userdata.get('ss_username', SS_USERNAME),
         userdata.get('ss_password', SS_PASSWORD),
         userdata.get('ss_url', SS_URL),
         userdata.get('ss_api_key', SS_API_KEY),
         userdata.get('driver_name', DRIVER_NAME),
+        ssh_accessible=bool(userdata.get('ssh_accessible', SSH_ACCESSIBLE)),
+        ssh_requires_password=bool(userdata.get(
+            'ssh_requires_password', SSH_REQUIRES_PASSWORD)),
+        server_user=userdata.get('server_user', SERVER_USER),
+        server_password=userdata.get('server_password', SERVER_PASSWORD)
     )
 
 
