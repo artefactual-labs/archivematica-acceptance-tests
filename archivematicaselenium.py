@@ -482,9 +482,6 @@ class ArchivematicaSelenium:
     def get_locations_create_url(self, space_uuid):
         return '{}spaces/{}/location_create/'.format(self.ss_url, space_uuid)
 
-    def get_ss_login_url(self):
-        return '{}login/'.format(self.ss_url)
-
     def get_ss_package_delete_request_url(self):
         return '{}packages/package_delete_request/'.format(self.ss_url)
 
@@ -523,7 +520,9 @@ class ArchivematicaSelenium:
         """Get the output---"Completed successfully", "Failed"---of the Job
         model representing the execution of micro-service ``ms_name`` in
         transfer ``transfer_uuid``.
+        FOX
         """
+        ms_name, group_name = self.micro_service2group(ms_name)
         ms_group_elem = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid)
         for job_elem in ms_group_elem.find_elements_by_css_selector('div.job'):
@@ -821,23 +820,26 @@ class ArchivematicaSelenium:
         self.navigate_to_aip_in_archival_storage(aip_uuid)
         reingest_tab_selector = 'a[href="#tab-reingest"]'
         self.wait_for_presence(reingest_tab_selector, timeout=10)
-        try:
-            self.driver.find_element_by_css_selector(
-                reingest_tab_selector).click()
-        except:
-            logger.warning('Unable to find Re-ingest tab using selector'
-                ' {}'.format(reingest_tab_selector))
-            time.sleep(20)
         type_selector = {
             'metadata-only': 'input#id_reingest-reingest_type_1',
             'metadata-and-objects': 'input#id_reingest-reingest_type_2'
-            }.get(reingest_type)
+        }.get(reingest_type)
         if not type_selector:
-            raise ArchivematicaSeleniumError('Unable to initiate a reingest of'
-                ' type {} on AIP {}'.format(reingest_type, aip_uuid))
+            raise ArchivematicaSeleniumError(
+                'Unable to initiate a reingest of type {} on AIP'
+                ' {}'.format(reingest_type, aip_uuid))
+        while True:
+            if self.driver.find_element_by_css_selector(
+                    type_selector).is_displayed():
+                break
+            else:
+                self.driver.find_element_by_css_selector(
+                    reingest_tab_selector).click()
+                time.sleep(1)
         self.driver.find_element_by_css_selector(type_selector).click()
         self.driver.find_element_by_css_selector(
             'button[name=submit-reingest-form]').click()
+        self.wait_for_visibility('div.alert-success')
         alert_text = self.driver.find_element_by_css_selector(
             'div.alert-success').text.strip()
         assert alert_text.startswith('Package {} sent to pipeline'.format(aip_uuid))
@@ -945,7 +947,7 @@ class ArchivematicaSelenium:
                 raise ArchivematicaSeleniumError(
                     'Unable to download AIP {}'.format(sip_uuid))
 
-    def download_aip_pointer_file(self, transfer_name, sip_uuid):
+    def download_aip_pointer_file(self, sip_uuid):
         """Use the AM SS to download the completed AIP's pointer file.
         Calls http://localhost:8000/api/v2/file/<SIP-UUID>/pointer_file/\
                   ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
@@ -2675,7 +2677,10 @@ class ArchivematicaSelenium:
         self.driver.find_element_by_id('id_name_email').send_keys(new_key_email)
         self.driver.find_element_by_css_selector('input[type=submit]').click()
         self.wait_for_presence('div.alert-success')
-        return new_key_name, new_key_email
+        alert_text = self.driver.find_element_by_css_selector(
+            'div.alert-success').text
+        new_key_fingerprint = alert_text.split()[2]
+        return new_key_name, new_key_email, new_key_fingerprint
 
     def change_encrypted_space_key(self, space_uuid, new_key_repr=None):
         """Edit the existing space with UUID ``space_uuid`` and set its GPG key

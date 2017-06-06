@@ -6,6 +6,7 @@ import os
 import pprint
 import re
 import tarfile
+import time
 
 from behave import when, then, given
 
@@ -46,10 +47,11 @@ def step_impl(context, microservice_name, unit_type):
 
 
 @given('the user waits for the "{microservice_name}" micro-service to complete'
-      ' during {unit_type}')
+       ' during {unit_type}')
 def step_impl(context, microservice_name, unit_type):
     context.execute_steps('When the user waits for the "{}" micro-service to'
-        ' complete during {}'.format(microservice_name, unit_type))
+                          ' complete during {}'.format(microservice_name,
+                                                       unit_type))
 
 
 @when('the user waits for the "{microservice_name}" decision point to appear'
@@ -66,7 +68,8 @@ def step_impl(context, microservice_name, unit_type):
        ' during {unit_type}')
 def step_impl(context, microservice_name, unit_type):
     context.execute_steps('When the user waits for the "{}" decision point to'
-        ' appear during {}'.format(microservice_name, unit_type))
+                          ' appear during {}'.format(microservice_name,
+                                                     unit_type))
 
 
 @when('the user waits for the "{microservice_name}" decision point to appear'
@@ -77,7 +80,6 @@ def step_impl(context, microservice_name, choice, unit_type):
         'When the user chooses "{}" at decision point "{}" during {}\n'
     ).format(microservice_name, unit_type, choice, microservice_name,
              unit_type)
-    #raise Exception('fuckyou, microservice_name {}, choice {}, unit_type {}\n\nsteps:\n{}'.format(microservice_name, choice, unit_type, steps))
     context.execute_steps(steps)
 
 
@@ -95,10 +97,11 @@ def step_impl(context, choice, decision_point, unit_type):
 
 
 @given('the user chooses "{choice}" at decision point "{decision_point}" during'
-      ' {unit_type}')
+       ' {unit_type}')
 def step_impl(context, choice, decision_point, unit_type):
     context.execute_steps('When the user chooses "{}" at decision point "{}"'
-        ' during {}'.format(choice, decision_point, unit_type))
+                          ' during {}'.format(choice, decision_point,
+                                              unit_type))
 
 
 @when('the user waits for the AIP to appear in archival storage')
@@ -118,9 +121,14 @@ def step_impl(context):
 @when('the user downloads the AIP pointer file')
 def step_impl(context):
     uuid_val = get_uuid_val(context, 'sip')
-    transfer_name = context.scenario.transfer_name
-    context.scenario.aip_pointer_path = context.am_sel_cli.download_aip_pointer_file(
-        transfer_name, uuid_val)
+    # For some reason, it is necessary to pause a moment before downloading the
+    # AIP pointer file because otherwise, e.g., after a re-ingest, it can be
+    # out of date. See @reencrypt-different-key.
+    time.sleep(5)
+    context.scenario.aip_pointer_path = app = (
+        context.am_sel_cli.download_aip_pointer_file(
+            uuid_val))
+    logger.info('downloaded AIP pointer file for AIP %s to %s', uuid_val, app)
 
 
 @then('the pointer file contains a PREMIS:EVENT element for the encryption event')
@@ -172,9 +180,10 @@ def step_impl(context):
         assert 'Status="encryption ok"' in premis_event_od_note
 
 
-@then('the pointer file contains a mets:transformFile element for the encryption event')
+@then('the pointer file contains a mets:transformFile element for the'
+      ' encryption event')
 def step_impl(context):
-    """Makes the following assertions abou the first (and presumably only)
+    """Makes the following assertions about the first (and presumably only)
     <mets:file> element in the AIP's pointer file:
     1. the xlink:href attribute's value of <mets:FLocat> is a path with
        extension .gpg
@@ -186,37 +195,7 @@ def step_impl(context):
     """
     pointer_path = context.scenario.aip_pointer_path
     ns = context.am_sel_cli.mets_nsmap
-    with open(pointer_path) as filei:
-        doc = etree.parse(filei)
-        file_el = doc.find(
-            'mets:fileSec/mets:fileGrp/mets:file', ns)
-        # <tranformFile> decryption element added, and decompression one
-        # modified.
-        deco_tran_el = file_el.find(
-            'mets:transformFile[@TRANSFORMTYPE="decompression"]', ns)
-        assert deco_tran_el is not None
-        assert deco_tran_el.get('TRANSFORMORDER', ns) == '2'
-        decr_tran_el = file_el.find(
-            'mets:transformFile[@TRANSFORMTYPE="decryption"]', ns)
-        assert decr_tran_el is not None
-        assert decr_tran_el.get('TRANSFORMORDER', ns) == '1'
-        assert decr_tran_el.get('TRANSFORMALGORITHM', ns) == 'gpg'
-        assert bool(decr_tran_el.get('TRANSFORMTYPE', ns)) is True
-        # premis:compositionLevel incremented
-        compos_lvl_el = doc.find(
-            'mets:amdSec/mets:techMD/mets:mdWrap/mets:xmlData/premis:object/'
-            'premis:objectCharacteristics/premis:compositionLevel', ns)
-        assert compos_lvl_el is not None
-        assert compos_lvl_el.text.strip() == '2'
-        # premis:inhibitors added
-        inhibitors_el = doc.find(
-            'mets:amdSec/mets:techMD/mets:mdWrap/mets:xmlData/premis:object/'
-            'premis:objectCharacteristics/premis:inhibitors', ns)
-        assert inhibitors_el is not None
-        assert inhibitors_el.find('premis:inhibitorType', ns).text.strip() == (
-            'GPG')
-        assert inhibitors_el.find('premis:inhibitorTarget', ns).text.strip() == (
-            'All content')
+    assert_pointer_transform_file_encryption(pointer_path, ns)
 
 
 @then('the AIP on disk is encrypted')
@@ -266,8 +245,8 @@ def step_impl(context):
         STDRD_GPG_TB_REL_PATH,
         context.scenario.transfer_name,
         context.scenario.transfer_uuid)
-    logger.debug('expecting encrypted transfer to be at %s on server',
-                 path_on_disk)
+    logger.info('expecting encrypted transfer to be at %s on server',
+                path_on_disk)
     dip_local_path = context.am_sel_cli.scp_server_file_to_local(
         path_on_disk)
     if dip_local_path is None:
@@ -339,13 +318,14 @@ def step_impl(context, contains, policy_file):
         policy_file)
     if contains in ('contains', 'does contain'):
         assert os.path.isfile(original_policy_path)
-        assert os.path.isfile(aip_policy_path), ('There is no MediaConch policy'
-            ' file in the AIP at {}!'.format(aip_policy_path))
+        assert os.path.isfile(aip_policy_path), (
+            'There is no MediaConch policy file in the AIP at'
+            ' {}!'.format(aip_policy_path))
         assert filecmp.cmp(original_policy_path, aip_policy_path)
     else:
-        assert not os.path.isfile(aip_policy_path), ('There is a MediaConch policy'
-            ' file in the AIP at {} but there shouldn\'t be!'.format(
-                aip_policy_path))
+        assert not os.path.isfile(aip_policy_path), (
+            'There is a MediaConch policy file in the AIP at {} but there'
+            ' shouldn\'t be!'.format( aip_policy_path))
 
 
 @then('the transfer logs directory of the AIP {contains} a copy of the'
@@ -361,13 +341,14 @@ def step_impl(context, contains, policy_file):
                                    policy_file_no_ext, policy_file)
     if contains in ('contains', 'does contain'):
         assert os.path.isfile(original_policy_path)
-        assert os.path.isfile(aip_policy_path), ('There is no MediaConch policy'
-            ' file in the AIP at {}!'.format(aip_policy_path))
+        assert os.path.isfile(aip_policy_path), (
+            'There is no MediaConch policy file in the AIP at'
+            ' {}!'.format(aip_policy_path))
         assert filecmp.cmp(original_policy_path, aip_policy_path)
     else:
-        assert not os.path.isfile(aip_policy_path), ('There is a MediaConch policy'
-            ' file in the AIP at {} but there shouldn\'t be!'.format(
-                aip_policy_path))
+        assert not os.path.isfile(aip_policy_path), (
+            'There is a MediaConch policy file in the AIP at {} but there'
+            ' shouldn\'t be!'.format( aip_policy_path))
 
 
 @then('the transfer logs directory of the AIP contains a MediaConch policy'
@@ -384,19 +365,19 @@ def step_impl(context, policy_file):
     assert os.path.isdir(aip_policy_outputs_path)
     contents = os.listdir(aip_policy_outputs_path)
     assert len(contents) > 0
-    file_paths = [x for x in [os.path.join(aip_policy_outputs_path, y) for y in
-                  contents] if os.path.isfile(x) and
-                  os.path.splitext(x)[1] == '.xml']
-    assert len(file_paths) > 0, ('There are no files in dir'
-        ' {}!'.format(aip_policy_outputs_path))
+    file_paths = [x for x in
+                  [os.path.join(aip_policy_outputs_path, y) for y in contents]
+                  if os.path.isfile(x) and os.path.splitext(x)[1] == '.xml']
+    assert len(file_paths) > 0, (
+        'There are no files in dir {}!'.format(aip_policy_outputs_path))
     for fp in file_paths:
         with open(fp) as f:
             doc = etree.parse(f)
             root_tag = doc.getroot().tag
             expected_root_tag = '{https://mediaarea.net/mediaconch}MediaConch'
-            assert root_tag == expected_root_tag, ('The root tag of file {} was'
-                ' expected to be {} but was actually {}'.format(
-                    fp, expected_root_tag, root_tag))
+            assert root_tag == expected_root_tag, (
+                'The root tag of file {} was expected to be {} but was actually'
+                ' {}'.format(fp, expected_root_tag, root_tag))
 
 
 @then('the logs directory of the AIP contains a MediaConch policy check output'
@@ -410,11 +391,12 @@ def step_impl(context, policy_file):
     assert os.path.isdir(aip_policy_outputs_path)
     contents = os.listdir(aip_policy_outputs_path)
     assert len(contents) > 0
-    file_paths = [x for x in [os.path.join(aip_policy_outputs_path, y) for y in
-                  contents] if os.path.isfile(x) and
+    file_paths = [x for x in
+                  [os.path.join(aip_policy_outputs_path, y) for y in contents]
+                  if os.path.isfile(x) and
                   os.path.splitext(x)[1] == '.xml']
-    assert len(file_paths) > 0, ('There are no files in dir'
-        ' {}!'.format(aip_policy_outputs_path))
+    assert len(file_paths) > 0, (
+        'There are no files in dir {}!'.format(aip_policy_outputs_path))
     for fp in file_paths:
         with open(fp) as f:
             doc = etree.parse(f)
@@ -442,9 +424,6 @@ def step_impl(context):
 
 @when('the user initiates a {reingest_type} re-ingest on the AIP')
 def step_impl(context, reingest_type):
-    # DEV DELETE
-    #context.scenario.sip_uuid = 'ededf16f-5877-4d22-b6ba-28520f999bce'
-    #context.scenario.transfer_name = 'BagTransfer_1478123709'
     uuid_val = get_uuid_val(context, 'sip')
     context.am_sel_cli.initiate_reingest(
         uuid_val, reingest_type=reingest_type)
@@ -1037,8 +1016,8 @@ def get_uuid_val(context, unit_type):
     else:
         uuid_val = getattr(context.scenario, 'sip_uuid', None)
         if not uuid_val:
-            uuid_val = context.scenario.sip_uuid = \
-                context.am_sel_cli.get_sip_uuid(context.scenario.transfer_name)
+            uuid_val = context.scenario.sip_uuid = (
+                context.am_sel_cli.get_sip_uuid(context.scenario.transfer_name))
     return uuid_val
 
 
@@ -1086,12 +1065,14 @@ def step_impl(context, key_name):
     assert len(context.am_sel_cli.get_gpg_key_search_matches(key_name)) == 0
 
 
-@given('the user creates a new GPG key and assigns it to the standard'
+@when('the user creates a new GPG key and assigns it to the standard'
        ' GPG-encrypted space')
 def step_impl(context):
     # Create the new GPG key
-    new_key_name, new_key_email = context.am_sel_cli.create_new_gpg_key()
+    new_key_name, new_key_email, new_key_fingerprint = (
+        context.am_sel_cli.create_new_gpg_key())
     context.scenario.new_key_name = new_key_name
+    context.scenario.new_key_fingerprint = new_key_fingerprint
     # Edit the "standard GPG-encrypted space" to use the new GPG key
     standard_encr_space_uuid = context.am_sel_cli.search_for_ss_space({
         'Access protocol': 'GPG encryption on Local Filesystem',
@@ -1103,6 +1084,58 @@ def step_impl(context):
     logger.info('Created a new GPG key "%s"', new_key_repr)
     context.am_sel_cli.change_encrypted_space_key(standard_encr_space_uuid,
                                                   new_key_repr)
+
+
+@then('the AIP pointer file references the fingerprint of the new GPG key')
+def step_impl(context):
+    pointer_path = context.scenario.aip_pointer_path
+    ns = context.am_sel_cli.mets_nsmap
+    fingerprint = context.scenario.new_key_fingerprint
+    assert_pointer_transform_file_encryption(pointer_path, ns, fingerprint)
+
+
+def assert_pointer_transform_file_encryption(pointer_path, ns,
+                                             fingerprint=None):
+    """Make standard assertions to confirm that the pointer file at
+    ``pointer_path`` has <mets:transformFile> element(s) that indicate that the
+    AIP has been encrypted via GPG.
+    """
+    with open(pointer_path) as filei:
+        doc = etree.parse(filei)
+        file_el = doc.find(
+            'mets:fileSec/mets:fileGrp/mets:file', ns)
+        # <tranformFile> decryption element added, and decompression one
+        # modified.
+        deco_tran_el = file_el.find(
+            'mets:transformFile[@TRANSFORMTYPE="decompression"]', ns)
+        assert deco_tran_el is not None
+        assert deco_tran_el.get('TRANSFORMORDER', ns) == '2'
+        decr_tran_el = file_el.find(
+            'mets:transformFile[@TRANSFORMTYPE="decryption"]', ns)
+        assert decr_tran_el is not None
+        assert decr_tran_el.get('TRANSFORMORDER', ns) == '1'
+        assert decr_tran_el.get('TRANSFORMALGORITHM', ns) == 'gpg'
+        assert bool(decr_tran_el.get('TRANSFORMTYPE', ns)) is True
+        if fingerprint:
+            transform_key = decr_tran_el.get('TRANSFORMKEY', ns)
+            assert transform_key == fingerprint, (
+                'TRANSFORMKEY fingerprint {} does not match expected'
+                ' fingerprint {}'.format(transform_key, fingerprint))
+        # premis:compositionLevel incremented
+        compos_lvl_el = doc.find(
+            'mets:amdSec/mets:techMD/mets:mdWrap/mets:xmlData/premis:object/'
+            'premis:objectCharacteristics/premis:compositionLevel', ns)
+        assert compos_lvl_el is not None
+        assert compos_lvl_el.text.strip() == '2'
+        # premis:inhibitors added
+        inhibitors_el = doc.find(
+            'mets:amdSec/mets:techMD/mets:mdWrap/mets:xmlData/premis:object/'
+            'premis:objectCharacteristics/premis:inhibitors', ns)
+        assert inhibitors_el is not None
+        assert inhibitors_el.find('premis:inhibitorType', ns).text.strip() == (
+            'GPG')
+        assert inhibitors_el.find('premis:inhibitorTarget', ns).text.strip() == (
+            'All content')
 
 
 @when('an encrypted AIP is created from the directory at {transfer_path}')
@@ -1179,3 +1212,47 @@ def step_impl(context):
     uuid_val = get_uuid_val(context, 'sip')
     context.am_sel_cli.request_aip_delete(uuid_val)
     context.am_sel_cli.approve_aip_delete_request(uuid_val)
+
+
+@when('the user performs a metadata-only re-ingest on the AIP')
+def step_impl(context):
+    """Perform a metadata-only AIP re-ingest on the AIP referenced in
+    ``context.scenario`` and wait for the re-ingested AIP to appear in archival
+    storage.
+    """
+    context.execute_steps(
+        'When the user initiates a metadata-only re-ingest on the AIP\n'
+        'And the user waits for the "Approve AIP reingest" decision point to'
+            ' appear and chooses "Approve AIP reingest" during ingest\n'
+        'And the user waits for the "Normalize" decision point to appear and'
+            ' chooses "Do not normalize" during ingest\n'
+        'And the user waits for the "Reminder: add metadata if desired"'
+            ' decision point to appear during ingest\n'
+        'And the user adds metadata\n'
+        'And the user chooses "Continue" at decision point "Reminder: add'
+            ' metadata if desired" during ingest\n'
+        'And the user waits for the "Select file format identification'
+            ' command|Process submission documentation" decision point to appear'
+            ' and chooses "Identify using Fido" during ingest\n'
+        'And the user waits for the "Store AIP (review)" decision point to'
+            ' appear and chooses "Store AIP" during ingest\n'
+        'And the user waits for the "Store AIP location" decision point to'
+            ' appear and chooses "Store AIP Encrypted in standard Archivematica'
+            ' Directory" during ingest\n'
+        'And the user waits for the AIP to appear in archival storage'
+    )
+
+
+@given('an encrypted AIP in the standard GPG-encrypted space')
+def step_impl(context):
+    """Create an AIP in the standard GPG-encrypted space and wait for it to
+    appear in archival storage.
+    """
+    context.execute_steps(
+        'Given the default processing config is in its default state\n'
+        'And there is a standard GPG-encrypted space in the storage service\n'
+        'And there is a standard GPG-encrypted AIP Storage location in the'
+            ' storage service\n'
+        'When an encrypted AIP is created from the directory at'
+            ' ~/archivematica-sampledata/SampleTransfers/BagTransfer'
+    )
