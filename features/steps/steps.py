@@ -321,7 +321,16 @@ def step_impl(context, contains, policy_file):
         assert os.path.isfile(aip_policy_path), (
             'There is no MediaConch policy file in the AIP at'
             ' {}!'.format(aip_policy_path))
-        assert filecmp.cmp(original_policy_path, aip_policy_path)
+        with open(original_policy_path) as filei:
+            original_policy = filei.read().strip()
+        with open(aip_policy_path) as filei:
+            aip_policy = filei.read().strip()
+        assert aip_policy == original_policy, (
+            'The local policy file at {} is different from the one in the AIP'
+            ' at {}'.format(original_policy_path, aip_policy_path))
+        # assert filecmp.cmp(original_policy_path, aip_policy_path), (
+        #     'The local policy file at {} is different from the one in the AIP'
+        #     ' at {}'.format(original_policy_path, aip_policy_path))
     else:
         assert not os.path.isfile(aip_policy_path), (
             'There is a MediaConch policy file in the AIP at {} but there'
@@ -344,7 +353,14 @@ def step_impl(context, contains, policy_file):
         assert os.path.isfile(aip_policy_path), (
             'There is no MediaConch policy file in the AIP at'
             ' {}!'.format(aip_policy_path))
-        assert filecmp.cmp(original_policy_path, aip_policy_path)
+        with open(original_policy_path) as filei:
+            original_policy = filei.read().strip()
+        with open(aip_policy_path) as filei:
+            aip_policy = filei.read().strip()
+        assert aip_policy == original_policy, (
+            'The local policy file at {} is different from the one in the AIP'
+            ' at {}'.format(original_policy_path, aip_policy_path))
+        # assert filecmp.cmp(original_policy_path, aip_policy_path)
     else:
         assert not os.path.isfile(aip_policy_path), (
             'There is a MediaConch policy file in the AIP at {} but there'
@@ -362,7 +378,9 @@ def step_impl(context, policy_file):
     aip_policy_outputs_path = os.path.join(
         aip_path, 'data', 'logs', 'transfers', transfer_dirname, 'logs',
         'policyChecks', policy_file_no_ext)
-    assert os.path.isdir(aip_policy_outputs_path)
+    assert os.path.isdir(aip_policy_outputs_path), (
+        'We expected {} to be a directory but it either does not exist or it is'
+        ' not a directory'.format(aip_policy_outputs_path))
     contents = os.listdir(aip_policy_outputs_path)
     assert len(contents) > 0
     file_paths = [x for x in
@@ -764,6 +782,104 @@ def step_impl(context, event_outcome):
 # INGEST POLICY CHECK
 ###############################################################################
 
+@given('a base processing configuration for MediaConch tests')
+def step_impl(context):
+    """Create a processing configuration that is a base for all policy
+    check-targetted workflows.
+    """
+    context.execute_steps(
+        'Given that the user has ensured that the default processing config is'
+            ' in its default state\n'
+        'And the processing config decision "Perform policy checks on'
+            ' preservation derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on access'
+            ' derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on'
+            ' originals" is set to "No"\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Transfer)" is set to "Identify using Fido"\n'
+        'And the processing config decision "Create SIP(s)" is set to "Create'
+            ' single SIP and continue processing"\n'
+        'And the processing config decision "Approve normalization" is set to'
+            ' "Yes"\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Submission documentation & metadata)" is set to'
+            ' "Identify using Fido"\n'
+        'And the processing config decision "Store AIP location" is set to'
+            ' "Store AIP in standard Archivematica Directory"\n'
+        'And the processing config decision "Upload DIP" is set to'
+            ' "Reject DIP"'
+    )
+
+
+@given('a processing configuration for policy checks on preservation'
+       ' derivatives')
+def step_impl(context):
+    context.execute_steps(
+        'Given a base processing configuration for MediaConch tests\n'
+        'And the processing config decision "Perform policy checks on'
+            ' preservation derivatives" is set to "Yes"\n'
+        'And the processing config decision "Normalize" is set to "Normalize'
+            ' for preservation"'
+    )
+
+
+@given('a processing configuration for conformance checks on preservation'
+       ' derivatives')
+def step_impl(context):
+    context.execute_steps(
+        'Given a base processing configuration for MediaConch tests\n'
+        'And the processing config decision "Approve normalization" is set to'
+            ' "None"\n'
+        'And the processing config decision "Normalize" is set to "Normalize'
+            ' for preservation"'
+    )
+
+
+@given('a processing configuration for conformance checks on access'
+       ' derivatives')
+def step_impl(context):
+    context.execute_steps(
+        'Given a base processing configuration for MediaConch tests\n'
+        'And the processing config decision "Approve normalization" is set to'
+            ' "None"\n'
+        'And the processing config decision "Normalize" is set to "Normalize'
+            ' for access"'
+    )
+
+
+@given('a processing configuration for policy checks on access derivatives')
+def step_impl(context):
+    context.execute_steps(
+        'Given a base processing configuration for MediaConch tests\n'
+        'And the processing config decision "Perform policy checks on'
+            ' access derivatives" is set to "Yes"\n'
+        'And the processing config decision "Normalize" is set to "Normalize'
+            ' for access"\n'
+        'And the processing config decision "Store AIP" is set to "Yes"'
+    )
+
+
+@given('a processing configuration for policy checks on originals')
+def step_impl(context):
+    context.execute_steps(
+        'Given a base processing configuration for MediaConch tests\n'
+        'And the processing config decision "Perform policy checks on'
+            ' originals" is set to "Yes"\n'
+        'And the processing config decision "Normalize" is set to "Do not'
+            ' normalize"\n'
+        'And the processing config decision "Store AIP" is set to "Yes"'
+    )
+
+
+@given('a processing configuration for conformance checks on originals')
+def step_impl(context):
+    context.execute_steps(
+        'Given a base processing configuration for MediaConch tests\n'
+        'And the processing config decision "Normalize" is set to "Do not'
+            ' normalize"\n'
+    )
+
 
 @given('MediaConch policy file {policy_file} is present in the local'
        ' etc/mediaconch-policies/ directory')
@@ -806,7 +922,8 @@ def step_impl(context, policy_file):
 @when('the user ensures there is an FPR command that uses policy file'
       ' {policy_file}')
 def step_impl(context, policy_file):
-    context.am_sel_cli.ensure_fpr_policy_check_command(policy_file)
+    policy_path = get_policy_path(policy_file)
+    context.am_sel_cli.ensure_fpr_policy_check_command(policy_file, policy_path)
 
 
 # TODO: this step could be generalized to support any purpose/format/command
@@ -819,6 +936,12 @@ def step_impl(context, purpose, policy_file):
         'Video: Matroska: Generic MKV',
         context.am_sel_cli.get_policy_command_description(policy_file)
     )
+
+
+@given('an FPR rule with purpose "{purpose}", format "{format}", and command'
+       ' "{command}"')
+def step_impl(context, purpose, format, command):
+    context.am_sel_cli.ensure_fpr_rule(purpose, format, command)
 
 
 @when('the user closes all {unit_type}')

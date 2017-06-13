@@ -31,7 +31,14 @@ turn, may interact with Archivematica GUI(s) by calling methods of an
 Installation
 ================================================================================
 
-Create a virualenv using Python 3 and activate it::
+In current development versions of Archivematica's public Vagrant/Ansible
+deployment tool `deploy pub`_, these acceptance tests can be installed
+automatically by setting the ``archivematica_src_install_acceptance_tests`` to
+``"yes"`` in the Ansible playbook's ``vars-`` file, e.g.,
+vars-singlenode-qa.yml
+
+To install these tests manually, first create a virualenv using Python 3 and
+activate it::
 
     $ virtualenv -p python3 env
     $ source env/bin/activate
@@ -51,7 +58,7 @@ Install the Python dependencies::
     $ pip install -r requirements.txt
 
 One way to run the tests headless, i.e., without a visible browser, is with
-vnc server. To install one of the available vnc servers on Ubuntu 14.04::
+VNC server. To install one of the available VNC servers on Ubuntu 14.04::
 
     $ sudo apt-get update
     $ sudo apt-get install -y tightvncserver
@@ -118,10 +125,10 @@ Basic usage::
 
     $ behave
 
-The above will launch many annoying browser windows. Use vnc to hide all that
-rubbish. Start vnc server on display port 42 and background the process::
+The above will launch many annoying browser windows. Use VNC to hide all that
+rubbish. Start VNC server on display port 42 and background the process::
 
-    $ tightvncserver -geometry 1920x1080 :42 
+    $ tightvncserver -geometry 1920x1080 :42
 
 The first time you run this command, TightVNC server will ask you to create a password.
 
@@ -134,7 +141,12 @@ events::
 
     $ behave --tags=premis-events --tags=standard --no-skipped
 
-If you want to connect to the vnc session to see the tests running, use any vnc client from your computer, and connect to the ip of the vm in display 42. As an example, with Ubuntu, you can do the follow:::
+The scenarios in the .feature files may be tagged with zero or more tags. The
+above command runs all scenarios tagged ``@premis-events`` and ``@standard``.
+
+If you want to connect to the VNC session to see the tests running, use any VNC
+client from your computer, and connect to the IP of the vm in display 42. As an
+example, with Ubuntu, you can do the follow:::
 
    $ sudo apt-get install xtightvncviewer
    $ xtightvncviewer 192.168.168.192:42
@@ -143,9 +155,6 @@ There is also a convenience script for running just the tests that target
 Archivematica version 1.6::
 
     $ ./runtests.sh
-
-The scenarios in the .feature files may be tagged with zero or more tags. The
-above command runs all scenarios tagged ``@premis-events`` and ``@standard``.
 
 There are two convenience scripts for closing all transfers and closing all
 ingests via the GUI (i.e., using Selenium)::
@@ -197,15 +206,17 @@ by altering the following constants in features/environment.py...::
 - ``TRANSFER_SOURCE_PATH``
 - ``HOME``
 - ``DRIVER_NAME``
+- ``AM_VERSION``
 
 ... or by passing the equivalent lowercased parameters as Behave "userdata"
 options. For example, the following would run the tests against an
-Archivematica instance at 123.456.123.456 using the Firefox driver::
+Archivematica version 1.7 instance at 123.456.123.456 using the Firefox driver::
 
     $ behave \
         -D am_url=http://192.168.168.16 \
         -D ss_url=http://192.168.168.16:8000/ \
         -D driver_name=Firefox
+        -D am_version=1.7
 
 
 .. _Archivematica: https://github.com/artefactual/archivematica
@@ -214,3 +225,4 @@ Archivematica instance at 123.456.123.456 using the Firefox driver::
 .. _Selenium: http://www.seleniumhq.org/
 .. _Requests: http://docs.python-requests.org/en/master/
 .. _TightVNC: http://www.tightvnc.com/vncserver.1.php
+.. _`deploy pub`: https://github.com/artefactual/deploy-pub.git

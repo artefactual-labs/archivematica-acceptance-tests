@@ -256,6 +256,11 @@ class ArchivematicaSelenium:
         elif self.driver_name == 'Chrome':
             driver = webdriver.Chrome()
             driver.set_window_size(1700, 900)
+        elif self.driver_name == 'Firefox':
+            fp = webdriver.FirefoxProfile()
+            fp.set_preference("dom.max_chrome_script_run_time", 0)
+            fp.set_preference("dom.max_script_run_time", 0)
+            driver = webdriver.Firefox(firefox_profile=fp)
         else:
             driver = getattr(webdriver, self.driver_name)()
         driver.set_script_timeout(10)
@@ -1082,11 +1087,17 @@ class ArchivematicaSelenium:
 
     def parse_tasks_table(self, tasks_url, table_dict):
         old_driver = self.driver
-        table_dict = self._parse_tasks_table(tasks_url, table_dict)
+        table_dict = self._parse_tasks_table(tasks_url, table_dict, self.vn)
         self.driver = old_driver
         return table_dict
 
-    def _parse_tasks_table(self, tasks_url, table_dict):
+    def _parse_tasks_table(self, tasks_url, table_dict, vn):
+        return {'1.6': self._parse_tasks_table_am_1_6,
+                '1.7': self._parse_tasks_table_am_1_7}.get(
+                    vn, self._parse_tasks_table_am_1_6)(
+                        tasks_url, table_dict)
+
+    def _parse_tasks_table_am_1_6(self, tasks_url, table_dict):
         old_driver = self.driver
         self.driver = self.get_driver()
         if self.driver.current_url != tasks_url:
@@ -1116,7 +1127,60 @@ class ArchivematicaSelenium:
                     self.am_url, link_button.get_attribute('href'))
         self.driver.close()
         if next_tasks_url:
-            table_dict = self._parse_tasks_table(next_tasks_url, table_dict)
+            table_dict = self._parse_tasks_table_am_1_6(
+                next_tasks_url, table_dict)
+        return table_dict
+
+    def _parse_tasks_table_am_1_7(self, tasks_url, table_dict):
+        """Parse all the Task <article> elements at ``task_url`` and return
+        them as a dict in ``table_dict``. Note: <table> elements are no longer
+        used in AM 1.7+ for this but we call the returned dict a ``table_dict``
+        anyway.
+        """
+        old_driver = self.driver
+        self.driver = self.get_driver()
+        if self.driver.current_url != tasks_url:
+            self.login()
+        self.driver.get(tasks_url)
+        self.wait_for_presence('article.task')
+        for task_art_elem in self.driver.find_elements_by_css_selector(
+                'article.task'):
+            row_dict = {}
+            try:
+                row_dict['stdout'] = task_art_elem.find_element_by_css_selector(
+                    '.panel-default pre').text.strip()
+            except NoSuchElementException:
+                row_dict['stdout'] = ''
+            try:
+                row_dict['stderr'] = task_art_elem.find_element_by_css_selector(
+                    '.panel-danger pre').text.strip()
+            except NoSuchElementException:
+                row_dict['stderr'] = ''
+            row_dict['command'] = task_art_elem.find_element_by_css_selector(
+                'h3.panel-title.panel-title-simple').text.strip()
+            arguments = task_art_elem.find_element_by_css_selector(
+                'div.panel-primary div.shell-output pre').text.strip()
+            row_dict['arguments'] = _parse_task_arguments_to_list(arguments)
+            for dl_el in task_art_elem.find_elements_by_css_selector(
+                    'div.row dl'):
+                for el in dl_el.find_elements_by_css_selector('*'):
+                    if el.tag_name == 'dt':
+                        attr = el.text.strip().lower().replace(' ', '_')
+                    else:
+                        val = el.text.strip()
+                        row_dict[attr] = val
+            row_dict['task_uuid'] = task_art_elem.find_element_by_css_selector(
+                'div.task-heading h4').text.strip().split()[1]
+            table_dict['tasks'][row_dict['task_uuid']] = row_dict
+        next_tasks_url = None
+        for link_button in self.driver.find_elements_by_css_selector('a.btn'):
+            if link_button.text.strip() == 'Next page':
+                next_tasks_url = '{}{}'.format(
+                    self.am_url, link_button.get_attribute('href'))
+        self.driver.close()
+        if next_tasks_url:
+            table_dict = self._parse_tasks_table_am_1_7(
+                next_tasks_url, table_dict)
         return table_dict
 
     def get_task_by_file_name(self, file_name, tasks):
@@ -1141,17 +1205,14 @@ class ArchivematicaSelenium:
 
     def process_task_command_row(self, row_elem, row_dict):
         """Parse the text in the second tasks <tr>, the one specifying command
-        and arguments."""
+        and arguments.
+        """
         command_text = \
             row_elem.find_element_by_tag_name('td').text.strip().split(':')[1]
         command, *arguments = command_text.split()
-        arguments = ' '.join(arguments)
-        if arguments[0] == '"':
-            arguments = arguments[1:]
-        if arguments[-1] == '"':
-            arguments = arguments[:-1]
         row_dict['command'] = command
-        row_dict['arguments'] = arguments.split('" "')
+        arguments = ' '.join(arguments)
+        row_dict['arguments'] = _parse_task_arguments_to_list(arguments)
         return row_dict
 
     def process_task_stdout_row(self, row_elem, row_dict):
@@ -1961,7 +2022,7 @@ class ArchivematicaSelenium:
         else:
             return []
 
-    def ensure_fpr_policy_check_command(self, policy_file):
+    def ensure_fpr_policy_check_command(self, policy_file, policy_path):
         """Ensure there is an FPR validation command that checks a file against
         the MediaConch policy ``policy_file``.
         """
@@ -1972,7 +2033,7 @@ class ArchivematicaSelenium:
         if description in existing_policy_command_descriptions:
             # This policy command already exists; no need to re-create it.
             return
-        policy_command = self.get_policy_command(policy_file)
+        policy_command = self.get_policy_command(policy_file, policy_path)
         self.save_policy_check_command(policy_command, description)
 
     def ensure_ss_space_exists(self, attributes):
@@ -2133,7 +2194,7 @@ class ArchivematicaSelenium:
             loc_uuid = self.create_ss_location(space_uuid, attributes)
         return loc_uuid
 
-    def get_policy_command(self, policy_file):
+    def get_policy_command(self, policy_file, policy_path):
         """Return a string representing a policy check validation command that
         references the policy file ``policy_file``. Assumes that we are
         viewing an existing validation-via-mediaconch-policy command.
@@ -2151,9 +2212,14 @@ class ArchivematicaSelenium:
                 next_el = True
         # Insert our policy file name into the command text.
         lines = []
+        with open(policy_path) as filei:
+            policy_lines = filei.read().splitlines()
         for line in policy_command.splitlines():
-            if line.strip().startswith('policy_filename = '):
-                lines.append('    policy_filename = \'{}\''.format(policy_file))
+            if line.strip().startswith('POLICY = """'):
+                lines.append(line)
+                lines += policy_lines
+            elif line.strip() == 'POLICY_NAME = \'\'':
+                lines.append('POLICY_NAME = \'{}\''.format(policy_file))
             else:
                 lines.append(line)
         return '\n'.join(lines)
@@ -2167,14 +2233,9 @@ class ArchivematicaSelenium:
         self.navigate(self.get_create_command_url())
         self.driver.find_element_by_id('id_tool').send_keys('MediaConch')
         self.driver.find_element_by_id('id_description').send_keys(description)
-
-        self.driver.find_element_by_id('id_command').send_keys(policy_command)
-        # TODO: the above is quite slow. It should be possible to do this using
-        # ``execute_script`` and some JavaScript but converting a Python module
-        # into a valid JavaScript string literal seems more trouble than it's
-        # worth right now... Something like the following:
-        # self.driver.execute_script('document.getElementById("id_command").value = "{}";'.format( policy_command.replace('"', '\\"'))
-
+        js_script = ('document.getElementById("id_command").value ='
+                     ' `{}`;'.format(policy_command))
+        self.driver.execute_script(js_script)
         self.driver.find_element_by_id('id_script_type').send_keys('Python')
         self.driver.find_element_by_id('id_command_usage').send_keys(
             'Validation')
@@ -2278,7 +2339,9 @@ class ArchivematicaSelenium:
         'Store AIP location':
             'id_b320ce81-9982-408a-9502-097d0daa48fa',
         'Store DIP location':
-            'id_b7a83da6-ed5a-47f7-a643-1e9f9f46e364'
+            'id_b7a83da6-ed5a-47f7-a643-1e9f9f46e364',
+        'Upload DIP':
+            'id_92879a29-45bf-4f0b-ac43-e64474f0f2f9'
     }
 
     def save_default_processing_config(self):
@@ -2438,6 +2501,16 @@ class ArchivematicaSelenium:
         self.set_processing_config_decision(
             decision_label='Store DIP location',
             choice_value='None')
+        if self.vn == '1.7':
+            self.set_processing_config_decision(
+                decision_label='Perform policy checks on access derivatives',
+                choice_value='None')
+            self.set_processing_config_decision(
+                decision_label='Perform policy checks on originals',
+                choice_value='None')
+            self.set_processing_config_decision(
+                decision_label='Perform policy checks on preservation derivatives',
+                choice_value='None')
         self.save_default_processing_config()
 
     # Wait/attempt count vars
@@ -2719,3 +2792,24 @@ def _normalize_ms_name(ms_name, vn):
         logger.warning('Treating microservice "{}" as "{}"'.format(
             ms_name, new_ms_name))
     return new_ms_name
+
+
+def _parse_task_arguments_to_list(arguments):
+    """Parse a string of Archivmatica task arguments to a list of arguments.
+    E.g., parse something like::
+
+        "a8e45bc1-eb35-4545-885c-dd552f1fde9a" "/var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/selectFormatIDToolTransfer/arkivum1-5d15337f-c5e9-434f-a40f-14646ee2d2a2/objects/easy.txt" "6d4cbcb8-d812-443c-8f02-2db113119518" "--disable-reidentify"
+
+    to::
+        ['a8e45bc1-eb35-4545-885c-dd552f1fde9a',
+         '/var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/selectFormatIDToolTransfer/arkivum1-5d15337f-c5e9-434f-a40f-14646ee2d2a2/objects/easy.txt',
+         '6d4cbcb8-d812-443c-8f02-2db113119518',
+         '--disable-reidentify']
+
+    WARNING: this function is flawed because not all arguments are enclosed in double quotes...
+    """
+    if arguments[0] == '"':
+        arguments = arguments[1:]
+    if arguments[-1] == '"':
+        arguments = arguments[:-1]
+    return arguments.split('" "')
