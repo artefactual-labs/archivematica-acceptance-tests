@@ -1,4 +1,4 @@
-@aip-encrypt @dev
+@aip-encrypt @am17
 Feature: AIP Encryption
   Archivematica users and administrators want to be able to store AIPs
   encrypted. One motivation for this is that multiple copies of AIPs may be
