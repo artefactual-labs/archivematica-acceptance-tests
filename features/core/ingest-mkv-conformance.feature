@@ -21,6 +21,7 @@ Feature: Ingest (i.e., post-normalization) conformance check
     When the user chooses "Approve" at decision point "Approve normalization (review)" during ingest
     And the user waits for the "Store AIP (review)" decision point to appear during ingest
     Then all PREMIS implementation-check-type validation events have eventOutcome = <event_outcome>
+
     Examples: Normalized for Preservation File Validity Possibilities
     | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                       |
     | valid         | Completed successfully | Passed            | pass          | preforma/when-normalized-all-valid  |

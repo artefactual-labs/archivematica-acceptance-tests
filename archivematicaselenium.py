@@ -490,6 +490,9 @@ class ArchivematicaSelenium:
     def get_ss_package_delete_request_url(self):
         return '{}packages/package_delete_request/'.format(self.ss_url)
 
+    def get_handle_config_url(self):
+        return '{}administration/handle/'.format(self.am_url)
+
     # CSS classes, selectors and other identifiers
     # =========================================================================
 
@@ -891,6 +894,39 @@ class ArchivematicaSelenium:
             if os.path.isfile(local_path):
                 return local_path
             logger.info('Failed to scp %s:%s to %s', AM_IP, server_file_path,
+                        local_path)
+            return False
+        else:
+            logger.info('You do not have SSH access to the Archivematica'
+                        ' server')
+            return None
+
+    def scp_server_dir_to_local(self, server_dir_path):
+        """Use scp to copy a directory from the server to our local tmp
+        directory.
+        """
+        if self.server_user and self.server_password and self.ssh_accessible:
+            if server_dir_path[-1] == '/':
+                server_dir_path = server_dir_path[:-1]
+            dirname = os.path.basename(server_dir_path)
+            local_path = os.path.join(self.tmp_path, dirname)
+            AM_IP = ''.join([x for x in self.am_url if x in string.digits + '.'])
+            cmd = ('scp'
+                   ' -r'
+                   ' -o UserKnownHostsFile=/dev/null'
+                   ' -o StrictHostKeyChecking=no'
+                   ' {}@{}:{} {}'.format(
+                        self.server_user, AM_IP, server_dir_path, local_path))
+            logger.info('Command for scp-ing a remote directory to local:\n%s',
+                        cmd)
+            child = pexpect.spawn(cmd)
+            if self.ssh_requires_password:
+                child.expect('assword:')
+                child.sendline(self.server_password)
+            child.expect(pexpect.EOF, timeout=20)
+            if os.path.isdir(local_path):
+                return local_path
+            logger.info('Failed to scp %s:%s to %s', AM_IP, server_dir_path,
                         local_path)
             return False
         else:
@@ -2296,6 +2332,10 @@ class ArchivematicaSelenium:
     # <select>/<input> elements that control those decisions in the processing
     # config edit interface.
     pc_decision2id = {
+        'Assign UUIDs to directories':
+            'id_bd899573-694e-4d33-8c9b-df0af802437d',
+        'Bind PIDs':
+            'id_05357876-a095-4c11-86b5-a7fff01af668',
         'Send transfer to quarantine':
             'id_755b4177-c587-41a7-8c52-015277568302',
         'Perform policy checks on access derivatives':
@@ -2527,6 +2567,7 @@ class ArchivematicaSelenium:
     mets_nsmap = {
         'mets': 'http://www.loc.gov/METS/',
         'premis': 'info:lc/xmlns/premis-v2',
+        'premis3': 'http://www.loc.gov/premis/v3',
         'dc': 'http://purl.org/dc/elements/1.1/',
         'dcterms': 'http://purl.org/dc/terms/',
         'xlink': 'http://www.w3.org/1999/xlink'
@@ -2772,6 +2813,187 @@ class ArchivematicaSelenium:
                     break
         self.driver.find_element_by_css_selector('input[type=submit]').click()
         self.wait_for_presence('div.alert-success')
+
+    def configure_handle(self, **kwargs):
+        """Navigate to the "Handle server config" page in the dashboard and
+        input all of the values in the ``**kwargs`` dict. Note: each key in
+        ``kwargs`` must be a valid id value of an <input> or <select> element
+        in the form when 'id_' is prefixed to it.
+        """
+        self.navigate(self.get_handle_config_url())
+        for key, val in kwargs.items():
+            dom_id = 'id_' + key
+            input_el = self.driver.find_element_by_id(dom_id)
+            if input_el.tag_name == 'select':
+                Select(input_el).select_by_visible_text(val)
+            else:
+                input_el.clear()
+                input_el.send_keys(val)
+        submit_button = self.driver.find_element_by_css_selector(
+            'input[type=submit]')
+        submit_button.click()
+        self.wait_for_visibility('div.alert-info')
+        assert self.driver.find_element_by_css_selector(
+            '.alert-info').text.strip() == 'Saved.', ('Unable to confirm saving'
+                ' of Handle configuration')
+
+    def validate_mets_for_pids(self, mets_doc, accession_no=None):
+        """Validate that the METS XML file represented by ``lxml.Element`` instance
+        ``mets_doc`` has PIDs and PURLs for all files, directories and for the AIP
+        itself. If ``accession_no`` is provided, assert that the PID for the AIP
+        directory is the accession number.
+        """
+        entities = _get_mets_entities(mets_doc, ns=self.mets_nsmap)
+        for entity in entities:
+            if entity['name'] == 'objects':
+                continue
+            # All entities have an id, i.e., DMDID or ADMID
+            assert entity.get('id'), ('Unable to find a DMDID/ADMID for entity'
+                                    ' {}'.format(entity['path']))
+            purls = []
+            # All entities should have the following types of identifier
+            for idfr_type in ('UUID', 'hdl', 'URI'):
+                try:
+                    idfr = [x for x in entity['identifiers'] if x[0] == idfr_type][0][1]
+                except IndexError:
+                    idfr = None
+                assert idfr, ('Unable to find an identifier of type {} for entity'
+                            ' {}'.format(idfr_type, entity['path']))
+                if idfr_type == 'UUID':
+                    assert _is_uuid(idfr), ('Identifier {} is not a'
+                                            ' UUID'.format(idfr))
+                elif idfr_type == 'hdl':
+                    assert _is_hdl(idfr, entity['type'], accession_no), (
+                        'Identifier {} is not a hdl'.format(idfr))
+                else:
+                    purls.append(idfr)
+            assert _all_purls_resolve(purls), ('At least one PURL does not resolve'
+                ' in\n  {}'.format('\n  '.join(purls)))
+
+
+def _add_entity_identifiers(entity, doc, ns):
+    """Find all of the identifiers for ``entity`` (a dict representing a file
+    or directory) in the lxml ``Element`` instance ``doc`` (which represents a
+    METS.xml file) and add them as a list value for the ``'identifiers'`` key
+    of ``entity``.
+    """
+    e_type = entity['type']
+    e_id = entity['id']
+    identifiers = []
+    if e_id is None:
+        return entity
+    elif e_type == 'file':
+        amd_sec_el = doc.xpath('mets:amdSec[@ID=\'{}\']'.format(e_id),
+                               namespaces=ns)[0]
+        obj_idfr_els = amd_sec_el.findall(
+            './/mets:mdWrap/'
+            'mets:xmlData/'
+            'premis:object/'
+            'premis:objectIdentifier', ns)
+        for obj_idfr_el in obj_idfr_els:
+            identifiers.append((
+                obj_idfr_el.find('premis:objectIdentifierType', ns).text,
+                obj_idfr_el.find('premis:objectIdentifierValue', ns).text))
+    else:
+        dmd_sec_el = doc.xpath('mets:dmdSec[@ID=\'{}\']'.format(e_id),
+                               namespaces=ns)[0]
+        for obj_idfr_el in dmd_sec_el.findall(
+                'mets:mdWrap/'
+                'mets:xmlData/'
+                'premis3:object/'
+                'premis3:objectIdentifier', ns):
+            identifiers.append((
+                obj_idfr_el.find('premis3:objectIdentifierType', ns).text,
+                obj_idfr_el.find('premis3:objectIdentifierValue', ns).text))
+    entity['identifiers'] = identifiers
+    return entity
+
+
+def _get_mets_entities(doc, root_el=None, entities=None, path='', ns=None):
+    """Find all entities (i.e., files and directories) in the physical
+    structmap of ``doc`` and return them as a list of dicts having a crucial
+    ``identifiers`` key which references a list of the entity's identifiers,
+    i.e. its UUID and potentially also its hdl (PID) and URI (PURL).
+    """
+    if not entities:
+        entities = []
+    if root_el is None:
+        root_el = doc.xpath('mets:structMap[@TYPE=\'physical\']',
+                            namespaces=ns)[0]
+    dir_els= root_el.xpath('mets:div[@TYPE=\'Directory\']', namespaces=ns)
+    for dir_el in dir_els:
+        dir_name = dir_el.get('LABEL')
+        dir_path = os.path.join(path, dir_name)
+        parent_is_structmap = root_el.get('ID') == 'structMap_1'
+        is_subm_docm = (
+            root_el.get('LABEL') == 'objects' and
+            dir_name == 'submissionDocumentation')
+        is_objects = (
+            parent_is_structmap and dir_name == 'objects')
+        if not (is_objects or is_subm_docm):
+            dir_id = dir_el.get('DMDID')
+            entities.append({
+                'type': parent_is_structmap and 'aip' or 'directory',
+                'id': dir_id,
+                'name': dir_name,
+                'path': dir_path})
+        if not is_subm_docm:
+            entities = _get_mets_entities(doc, dir_el, entities=entities,
+                                          path=dir_path, ns=ns)
+    file_els= root_el.xpath('mets:div[@TYPE=\'Item\']', namespaces=ns)
+    for file_el in file_els:
+        file_name = file_el.get('LABEL')
+        file_path = os.path.join(path, file_name)
+        file_id = file_el.find('mets:fptr', ns).get('FILEID')
+        file_id = doc.xpath(
+            '//mets:file[@ID=\'{}\']'.format(file_id),
+            namespaces=ns)[0].get('ADMID')
+        entities.append({
+            'type': 'file',
+            'id': file_id,
+            'name': file_name,
+            'path': file_path})
+    for entity in entities:
+        entity = _add_entity_identifiers(entity, doc, ns)
+    return entities
+
+
+def _is_uuid(idfr):
+    """Return true if ``idfr`` is a UUID."""
+    return (
+        [8, 4, 4, 4, 12] == [
+            len([x for x in y if x in '1234567890abcdef'])
+            for y in idfr.split('-')])
+
+
+def _is_hdl(idfr, entity_type, accession_no=None):
+    """Return ``True`` only if ``idfr`` is a handle, i.e. something like
+    '12345/7432cdc5-a66a-4149-aa44-ebd802323196'.
+    """
+    try:
+        naming_authority, pid = idfr.split('/')
+    except ValueError:
+        print('Unable to get exactly two values by splitting {} on a forward'
+              ' slash'.format(idfr))
+        return False
+    if accession_no and entity_type == 'aip':
+        print('PID {} should equal accession number {}'.format(pid, accession_no))
+        return pid == accession_no
+    else:
+        print('PID {} should be a UUID'.format(pid))
+        return _is_uuid(pid)
+
+
+def _all_purls_resolve(purls):
+    """Return ``True`` only if all URLs in ``purls`` return good status codes
+    when GET-requested.
+    """
+    for purl in purls:
+        r = requests.get(purl)
+        if r.status_code != 200:
+            return False
+    return True
+
 
 
 def _normalize_ms_name(ms_name, vn):
