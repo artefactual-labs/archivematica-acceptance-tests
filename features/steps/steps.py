@@ -302,6 +302,7 @@ def step_impl(context, aips_store_path):
     assert not os.path.isdir(aip_local_path)
     assert not tarfile.is_tarfile(aip_local_path)
 
+
 @when('the user decompresses the AIP')
 def step_impl(context):
     context.scenario.aip_path = context.am_sel_cli.decompress_aip(
@@ -512,16 +513,6 @@ def get_mets_from_scenario(context):
         context.am_sel_cli.get_sip_uuid(context.scenario.transfer_name))
 
 
-def get_mets_from_scenario_DEPRECATED(context):
-    try:
-        mets = context.scenario.mets
-    except AttributeError:
-        mets = context.scenario.mets = context.am_sel_cli.get_mets(
-            context.scenario.transfer_name,
-            context.am_sel_cli.get_sip_uuid(context.scenario.transfer_name))
-    return mets
-
-
 def assert_premis_event(event_type, event, context):
     """Make PREMIS-event-type-specific assertions about ``event``."""
     if event_type == 'unpacking':
@@ -725,6 +716,7 @@ def step_impl(context, transfer_path):
 
 @when('a transfer is initiated on directory {transfer_path} with accession number {accession_no}')
 def step_impl(context, transfer_path, accession_no):
+    context.scenario.accession_no = accession_no
     initiate_transfer(context, transfer_path, accession_no=accession_no)
 
 
@@ -778,9 +770,172 @@ def step_impl(context, event_outcome):
         assert e['event_outcome'] == event_outcome
 
 
-###############################################################################
-# INGEST POLICY CHECK
-###############################################################################
+@given('remote directory {dir_path} contains a hierarchy of subfolders'
+       ' containing digital objects')
+def step_impl(context, dir_path):
+    """Get a local copy of ``dir_path`` and assert that it contains at least
+    one subfolder (subdirectory) and at least one file in a subfolder and then
+    record the directory structure in ``context``.
+    """
+    if dir_path.startswith('~/'):
+        dir_path = dir_path[2:]
+    dir_local_path = context.am_sel_cli.scp_server_dir_to_local(
+        dir_path)
+    if dir_local_path is None:
+        msg = (
+            'Unable to copy dir {} from the server to the local file'
+            ' system. Server is not accessible via SSH.'.format(dir_path))
+        logger.warning(msg)
+        raise Exception(msg)
+    elif dir_local_path is False:
+        logger.info(
+            'Unable to copy dir {} from the server to the local file'
+            ' system. Attempt to scp the file failed.'.format(dir_path))
+        logger.warning(msg)
+        raise Exception(msg)
+    assert os.path.isdir(dir_local_path)
+    non_root_paths = []
+    non_root_file_paths = []
+    for path, dirs, files in os.walk(dir_local_path):
+        # The second condition means we are only looking for non-empty
+        # directories. This assumes that the METS file does not give UUIDs to
+        # (or even give any indication of the existence of) empty directories.
+        if path != dir_local_path and len(os.listdir(path)) > 0:
+            path = path.replace(dir_local_path, '', 1)
+            non_root_paths.append(path)
+            non_root_file_paths += [os.path.join(path, file_) for file_ in
+                                    files]
+    logger.info('\n' + '\n'.join(non_root_paths))
+    logger.info('\n' + '\n'.join(non_root_file_paths))
+    assert len(non_root_paths) > 0
+    assert len(non_root_file_paths) > 0
+    context.scenario.remote_dir_subfolders = non_root_paths
+    context.scenario.remote_dir_files = non_root_file_paths
+
+
+@then('the METS file includes the original directory structure')
+def step_impl(context):
+    """Asserts that the <mets:structMap> element of the AIP METS file correctly
+    encodes the directory structure of the transfer that was recorded in an
+    earlier step under the following attributes::
+
+        context.scenario.remote_dir_subfolders
+        context.scenario.remote_dir_files
+
+    NOTE: empty directories in the transfer are not indicated in the resulting
+    AIP METS.
+    """
+    context.scenario.mets = mets = get_mets_from_scenario(context)
+    ns = context.am_sel_cli.mets_nsmap
+    struct_map_el = mets.find('.//mets:structMap[@TYPE="physical"]', ns)
+    subpaths = _get_subpaths_from_struct_map(struct_map_el, ns)
+    subpaths = [p.replace('/objects', '', 1) for p in
+                filter(None, _remove_common_prefix(subpaths))]
+    for dirpath in context.scenario.remote_dir_subfolders:
+        assert dirpath in subpaths, (
+            'Expected directory path\n{}\nis not in METS structmap'
+            ' paths\n{}'.format(dirpath, pprint.pformat(subpaths)))
+    for filepath in context.scenario.remote_dir_files:
+        if os.path.basename(filepath) == '.gitignore':
+            continue
+        assert filepath in subpaths, (
+            'Expected file path\n{}\nis not in METS structmap'
+            ' paths\n{}'.format(filepath, pprint.pformat(subpaths)))
+
+
+@then('the UUIDs for the subfolders and digital objects are written to the METS'
+      ' file')
+def step_impl(context):
+    mets = context.scenario.mets
+    ns = context.am_sel_cli.mets_nsmap
+    struct_map_el = mets.find('.//mets:structMap[@TYPE="physical"]', ns)
+    for dirpath in context.scenario.remote_dir_subfolders:
+        dirname = os.path.basename(dirpath)
+        mets_div_el = struct_map_el.find(
+            './/mets:div[@LABEL="{}"]'.format(dirname), ns)
+        assert mets_div_el is not None, (
+            'Could not find a <mets:div> for directory at {}'.format(
+                dirpath))
+        dmdid = mets_div_el.get('DMDID')
+        dmdSec_el = mets.find('.//mets:dmdSec[@ID="{}"]'.format(dmdid), ns)
+        assert dmdSec_el is not None, (
+            'Could not find a <mets:dmdSec> for directory at {}'.format(
+                dirpath))
+        try:
+            id_type = dmdSec_el.find('.//premis3:objectIdentifierType', ns).text.strip()
+            id_val = dmdSec_el.find('.//premis3:objectIdentifierValue', ns).text.strip()
+        except AttributeError:
+            logger.info(ns)
+            msg = etree.tostring(dmdSec_el, pretty_print=True)
+            print(msg)
+            logger.info(msg)
+            #raise AssertionError('Unable to find objectIdentifierType/Value')
+            raise
+        assert id_type == 'UUID'
+        assert is_uuid(id_val)
+
+
+def is_uuid(val):
+    return (
+        (''.join(x for x in val if x in '-abcdef0123456789') == val) and
+        ([len(x) for x in val.split('-')] == [8, 4, 4, 4, 12]))
+
+
+def _remove_common_prefix(seq):
+    """Recursively remove a common prefix from all strings in a sequence of
+    strings.
+    """
+    try:
+        prefixes = set([x[0] for x in seq])
+    except IndexError:
+        return seq
+    if len(prefixes) == 1:
+        return _remove_common_prefix([x[1:] for x in seq])
+    return seq
+
+
+
+def _get_subpaths_from_struct_map(elem, ns, base_path='', paths=None):
+    if not paths:
+        paths = set()
+    for div_el in elem.findall('mets:div', ns):
+        path = os.path.join(base_path, div_el.get('LABEL'))
+        paths.add(path)
+        for subpath in _get_subpaths_from_struct_map(
+                div_el, ns, base_path=path, paths=paths):
+            paths.add(subpath)
+    return list(paths)
+
+
+@given('a processing configuration that assigns UUIDs to directories')
+def step_impl(context):
+    """Create a processing configuration that tells AM to assign UUIDs to
+    directories.
+    """
+    context.execute_steps(
+        'Given that the user has ensured that the default processing config is'
+            ' in its default state\n'
+        'And the processing config decision "Assign UUIDs to directories" is'
+            ' set to "Yes"\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Transfer)" is set to "Identify using Fido"\n'
+        'And the processing config decision "Create SIP(s)" is set to "Create'
+            ' single SIP and continue processing"\n'
+        'And the processing config decision "Normalize" is set to "Normalize'
+            ' for preservation"\n'
+        'And the processing config decision "Approve normalization" is set to'
+            ' "Yes"\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Submission documentation & metadata)" is set to'
+            ' "Identify using Fido"\n'
+        'And the processing config decision "Perform policy checks on'
+            ' preservation derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on access'
+            ' derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on'
+            ' originals" is set to "No"\n'
+    )
+
 
 @given('a base processing configuration for MediaConch tests')
 def step_impl(context):
@@ -1379,3 +1534,124 @@ def step_impl(context):
         'When an encrypted AIP is created from the directory at'
             ' ~/archivematica-sampledata/SampleTransfers/BagTransfer'
     )
+
+
+@given('a fully automated default processing config')
+def step_impl(context):
+    """Note: step description should be changed. This fully automates the
+    creation of a DIP and an AIP in the context of testing the PID binding
+    feature.
+    """
+    context.execute_steps(
+        'Given that the user has ensured that the default processing config is'
+            ' in its default state\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Transfer)" is set to "Identify using Fido"\n'
+        'And the processing config decision "Create SIP(s)" is set to "Create'
+            ' single SIP and continue processing"\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Ingest)" is set to "Identify using Fido"\n'
+        'And the processing config decision "Normalize" is set to "Normalize'
+            ' for preservation and access"\n'
+        'And the processing config decision "Approve normalization" is set to'
+            ' "Yes"\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Submission documentation & metadata)" is set to'
+            ' "Identify using Fido"\n'
+        'And the processing config decision "Perform policy checks on'
+            ' preservation derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on access'
+            ' derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on'
+            ' originals" is set to "No"\n'
+    )
+
+
+@given('default processing configured to assign UUIDs to directories')
+def step_impl(context):
+    context.execute_steps(
+        'Given the processing config decision "Assign UUIDs to directories" is'
+        ' set to "Yes"\n')
+
+
+@given('default processing configured to bind PIDs')
+def step_impl(context):
+    context.execute_steps(
+        'Given the processing config decision "Bind PIDs" is set to "Yes"\n')
+
+
+@given('a Handle server client configured to create qualified PURLs')
+def step_impl(context):
+    """Configure the handle server settings in the dashboard so that PIDs can
+    be minted and resolved (a.k.a. "bound").
+    NOTE: this step requires user-supplied values for runtime-specific
+    parameters like handle web service endpoint and web service key that must
+    be passed in as behave userdata (i.e., -D) arguments.
+    """
+    nodice = 'no dice'
+    # Runtime-specific parameters for the Handle configuration to test against
+    # must be passed in by the user at test runtime, e.g., as
+    # ``behave -D base_resolve_url='https://foobar.org'``, etc.
+    base_resolve_url = getattr(context.am_sel_cli, 'base_resolve_url', nodice)
+    pid_xml_namespace = getattr(context.am_sel_cli, 'pid_xml_namespace', nodice)
+    context.am_sel_cli.configure_handle(**{
+        # More runtime-specific parameters:
+        'pid_web_service_endpoint': getattr(
+            context.am_sel_cli, 'pid_web_service_endpoint', nodice),
+        'pid_web_service_key': getattr(
+            context.am_sel_cli, 'pid_web_service_key', nodice),
+        'handle_resolver_url': getattr(
+            context.am_sel_cli, 'handle_resolver_url', nodice),
+        'naming_authority': getattr(
+            context.am_sel_cli, 'naming_authority', '12345'),
+        # Baked in:
+        'resolve_url_template_archive': (
+            base_resolve_url + '/dip/{{ naming_authority }}/{{ pid }}'),
+        'resolve_url_template_mets': (
+            base_resolve_url + '/mets/{{ naming_authority }}/{{ pid }}'),
+        'resolve_url_template_file': (
+            base_resolve_url + '/access/{{ naming_authority }}/{{ pid }}'),
+        'resolve_url_template_file_access': (
+            base_resolve_url + '/access/{{ naming_authority }}/{{ pid }}'),
+        'resolve_url_template_file_preservation': (
+            base_resolve_url + '/preservation/{{ naming_authority }}/{{ pid }}'),
+        'resolve_url_template_file_original': (
+            base_resolve_url + '/original/{{ naming_authority }}/{{ pid }}'),
+        'pid_request_body_template': '''<?xml version='1.0' encoding='UTF-8'?>
+        <soapenv:Envelope
+            xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'
+            xmlns:pid='{pid_xml_namespace}'>
+            <soapenv:Body>
+                <pid:UpsertPidRequest>
+                    <pid:na>{{{{ naming_authority }}}}</pid:na>
+                    <pid:handle>
+                        <pid:pid>{{{{ naming_authority }}}}/{{{{ pid }}}}</pid:pid>
+                        <pid:locAtt>
+                            <pid:location weight='1' href='{{{{ base_resolve_url }}}}'/>
+                            {{% for qrurl in qualified_resolve_urls %}}
+                                <pid:location
+                                    weight='0'
+                                    href='{{{{ qrurl.url }}}}'
+                                    view='{{{{ qrurl.qualifier }}}}'/>
+                            {{% endfor %}}
+                        </pid:locAtt>
+                    </pid:handle>
+                </pid:UpsertPidRequest>
+            </soapenv:Body>
+        </soapenv:Envelope>'''.format(pid_xml_namespace=pid_xml_namespace)
+    })
+
+
+@given('a Handle server client configured to use the accession number as the'
+       ' PID for the AIP')
+def step_impl(context):
+    context.am_sel_cli.configure_handle(
+        handle_archive_pid_source='Accession number')
+
+
+@then('the AIP METS file documents PIDs, PURLs, and UUIDs for all files,'
+      ' directories and the package itself')
+def step_impl(context):
+    accession_no = getattr(context.scenario, 'accession_no', None)
+    mets = get_mets_from_scenario(context)
+    context.am_sel_cli.validate_mets_for_pids(mets, accession_no=accession_no)

@@ -30,23 +30,25 @@ SERVER_PASSWORD = 'vagrant'
 
 def get_am_sel_cli(userdata):
     """Instantiate an ArchivematicaSelenium."""
-    return archivematicaselenium.ArchivematicaSelenium(
-        userdata.get('am_username', AM_USERNAME),
-        userdata.get('am_password', AM_PASSWORD),
-        userdata.get('am_url', AM_URL),
-        userdata.get('am_version', AM_VERSION),
-        userdata.get('am_api_key', AM_API_KEY),
-        userdata.get('ss_username', SS_USERNAME),
-        userdata.get('ss_password', SS_PASSWORD),
-        userdata.get('ss_url', SS_URL),
-        userdata.get('ss_api_key', SS_API_KEY),
-        userdata.get('driver_name', DRIVER_NAME),
-        ssh_accessible=bool(userdata.get('ssh_accessible', SSH_ACCESSIBLE)),
-        ssh_requires_password=bool(userdata.get(
-            'ssh_requires_password', SSH_REQUIRES_PASSWORD)),
-        server_user=userdata.get('server_user', SERVER_USER),
-        server_password=userdata.get('server_password', SERVER_PASSWORD)
-    )
+    userdata.update({
+        'am_username': userdata.get('am_username', AM_USERNAME),
+        'am_password': userdata.get('am_password', AM_PASSWORD),
+        'am_url': userdata.get('am_url', AM_URL),
+        'am_version': userdata.get('am_version', AM_VERSION),
+        'am_api_key': userdata.get('am_api_key', AM_API_KEY),
+        'ss_username': userdata.get('ss_username', SS_USERNAME),
+        'ss_password': userdata.get('ss_password', SS_PASSWORD),
+        'ss_url': userdata.get('ss_url', SS_URL),
+        'ss_api_key': userdata.get('ss_api_key', SS_API_KEY),
+        'driver_name': userdata.get('driver_name', DRIVER_NAME),
+        'ssh_accessible': bool(
+            userdata.get('ssh_accessible', SSH_ACCESSIBLE)),
+        'ssh_requires_password': bool(
+            userdata.get('ssh_requires_password', SSH_REQUIRES_PASSWORD)),
+        'server_user': userdata.get('server_user', SERVER_USER),
+        'server_password': userdata.get('server_password', SERVER_PASSWORD)
+    })
+    return archivematicaselenium.ArchivematicaSelenium(**userdata)
 
 
 def before_scenario(context, scenario):
