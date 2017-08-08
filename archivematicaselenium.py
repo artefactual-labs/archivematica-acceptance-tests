@@ -2518,6 +2518,7 @@ class ArchivematicaSelenium:
         'Store AIP location':
             'id_b320ce81-9982-408a-9502-097d0daa48fa',
         'Store DIP location':
+            # 'id_b7a83da6-ed5a-47f7-a643-1e9f9f46e364',
             'id_cd844b6e-ab3c-4bc6-b34f-7103f88715de',
         'Upload DIP':
             'id_92879a29-45bf-4f0b-ac43-e64474f0f2f9'
