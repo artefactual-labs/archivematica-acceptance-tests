@@ -1227,7 +1227,7 @@ def step_impl(context):
         'And the processing config decision "Store AIP location" is set to'
             ' "Store AIP in standard Archivematica Directory"\n'
         'And the processing config decision "Upload DIP" is set to'
-            ' "Reject DIP"'
+            ' "Do not upload DIP"'
     )
 
 
