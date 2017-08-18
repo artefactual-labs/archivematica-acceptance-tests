@@ -788,7 +788,7 @@ def step_impl(context, dir_path):
         logger.warning(msg)
         raise Exception(msg)
     elif dir_local_path is False:
-        logger.info(
+        msg = (
             'Unable to copy dir {} from the server to the local file'
             ' system. Attempt to scp the file failed.'.format(dir_path))
         logger.warning(msg)
@@ -796,15 +796,20 @@ def step_impl(context, dir_path):
     assert os.path.isdir(dir_local_path)
     non_root_paths = []
     non_root_file_paths = []
+
+    # These are the names of the files that Archivematica will remove by
+    # default. See MCPClient/lib/settings/common.py,
+    # clientScripts/removeHiddenFilesAndDirectories.py, and
+    # clientScripts/removeUnneededFiles.py.
+    to_be_removed_files = [
+        e.strip() for e in 'Thumbs.db, Icon, Icon\r, .DS_Store'.split(',')]
+
     for path, dirs, files in os.walk(dir_local_path):
-        # The second condition means we are only looking for non-empty
-        # directories. This assumes that the METS file does not give UUIDs to
-        # (or even give any indication of the existence of) empty directories.
-        if path != dir_local_path and len(os.listdir(path)) > 0:
+        if path != dir_local_path:
             path = path.replace(dir_local_path, '', 1)
             non_root_paths.append(path)
             non_root_file_paths += [os.path.join(path, file_) for file_ in
-                                    files]
+                                    files if file_ not in to_be_removed_files]
     logger.info('\n' + '\n'.join(non_root_paths))
     logger.info('\n' + '\n'.join(non_root_file_paths))
     assert len(non_root_paths) > 0
@@ -1605,6 +1610,7 @@ def step_impl(context):
         'naming_authority': getattr(
             context.am_sel_cli, 'naming_authority', '12345'),
         # Baked in:
+        'pid_request_verify_certs': False,
         'resolve_url_template_archive': (
             base_resolve_url + '/dip/{{ naming_authority }}/{{ pid }}'),
         'resolve_url_template_mets': (

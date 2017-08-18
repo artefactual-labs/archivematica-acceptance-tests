@@ -2826,6 +2826,11 @@ class ArchivematicaSelenium:
             input_el = self.driver.find_element_by_id(dom_id)
             if input_el.tag_name == 'select':
                 Select(input_el).select_by_visible_text(val)
+            elif input_el.get_attribute('type') == 'checkbox':
+                state = input_el.get_attribute('checked')
+                if ((val is True and state != 'true') or
+                        (val is False and state == 'true')):
+                    input_el.click()
             else:
                 input_el.clear()
                 input_el.send_keys(val)
