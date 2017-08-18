@@ -2767,7 +2767,7 @@ class ArchivematicaSelenium:
         if len(row_els) != 1:
             raise ArchivematicaSeleniumError(
                 'Unable to find a unique default transfer backlog location')
-        cell_el = row_els[0].find_elements_by_css_selector('td')[8]
+        cell_el = row_els[0].find_elements_by_css_selector('td')[9]
         disable_a_el = enable_a_el = None
         for a_el in cell_el.find_elements_by_css_selector('a'):
             print(a_el.text)

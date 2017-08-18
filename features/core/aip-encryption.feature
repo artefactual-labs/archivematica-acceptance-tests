@@ -43,6 +43,7 @@ Feature: AIP Encryption
     And the default processing config is in its default state
     When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
     And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
+    And the user waits for the "Perform policy checks on originals?" decision point to appear and chooses "No" during transfer
     And the user waits for the "Create SIP(s)" decision point to appear and chooses "Send to backlog" during transfer
     And the user waits for the DIP to appear in transfer backlog
     Then the transfer on disk is encrypted
