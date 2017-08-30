@@ -459,7 +459,9 @@ def step_impl(context):
     - store AIP
     """
     context.execute_steps(
-        'When the user waits for the "Select file format identification command"'
+        'When the user waits for the "Assign UUIDs to directories?" decision'
+            ' point to appear and chooses "No" during transfer\n'
+        'And the user waits for the "Select file format identification command"'
             ' decision point to appear and chooses "Identify using Fido" during'
             ' transfer\n'
         'And the user waits for the "Perform policy checks on originals?"'
@@ -480,6 +482,8 @@ def step_impl(context):
         'And the user waits for the "Select file format identification'
             ' command|Process submission documentation" decision point to'
             ' appear and chooses "Identify using Fido" during ingest\n'
+        'And the user waits for the "Bind PIDs?" decision point to appear and'
+            ' chooses "No" during ingest\n'
         'And the user waits for the "Store AIP (review)" decision point to'
             ' appear and chooses "Store AIP" during ingest'
     )
@@ -1531,6 +1535,8 @@ def step_impl(context):
         'And the user waits for the "Select file format identification'
             ' command|Process submission documentation" decision point to appear'
             ' and chooses "Identify using Fido" during ingest\n'
+        'And the user waits for the "Bind PIDs?" decision point to appear'
+            ' and chooses "No" during ingest\n'
         'And the user waits for the "Store AIP (review)" decision point to'
             ' appear and chooses "Store AIP" during ingest\n'
         'And the user waits for the "Store AIP location" decision point to'
