@@ -1326,7 +1326,9 @@ class ArchivematicaSelenium:
         'Assign file UUIDs to metadata': ('Process metadata directory',),
         'Assign file UUIDs to objects': ('Assign file UUIDs and checksums',),
         'Assign file UUIDs to submission documentation': ('Process submission documentation',),
+        'Assign UUIDs to directories?': ('Assign file UUIDs and checksums',),
         'Attempt restructure for compliance': ('Verify transfer compliance',),
+        'Bind PIDs?': ('Bind PIDs',),
         'Characterize and extract metadata': ('Characterize and extract metadata',),
         'Characterize and extract metadata on metadata files': ('Process metadata directory',),
         'Characterize and extract metadata on submission documentation': ('Process submission documentation',),
@@ -2550,6 +2552,12 @@ class ArchivematicaSelenium:
                 choice_value='None')
             self.set_processing_config_decision(
                 decision_label='Perform policy checks on preservation derivatives',
+                choice_value='None')
+            self.set_processing_config_decision(
+                decision_label='Assign UUIDs to directories',
+                choice_value='None')
+            self.set_processing_config_decision(
+                decision_label='Bind PIDs',
                 choice_value='None')
         self.save_default_processing_config()
 
