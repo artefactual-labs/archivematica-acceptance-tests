@@ -75,16 +75,16 @@ import pprint
 import shlex
 import shutil
 import string
-import sys
 import subprocess
 import time
-import uuid
 
 from lxml import etree
 import pexpect
 import requests
 
 from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -257,11 +257,25 @@ class ArchivematicaSelenium:
         elif self.driver_name == 'Chrome':
             driver = webdriver.Chrome()
             driver.set_window_size(1700, 900)
+        elif self.driver_name == 'Chrome-Hub':
+            capabilities = DesiredCapabilities.CHROME.copy()
+            capabilities["chrome.switches"] = [
+                "--start-maximized",
+                '--ignore-certificate-errors',
+                '--test-type']
+            driver = webdriver.Remote(
+                command_executor=os.environ.get('HUB_ADDRESS'),
+                desired_capabilities=capabilities)
+            driver.set_window_size(1200, 900)
         elif self.driver_name == 'Firefox':
             fp = webdriver.FirefoxProfile()
             fp.set_preference("dom.max_chrome_script_run_time", 0)
             fp.set_preference("dom.max_script_run_time", 0)
             driver = webdriver.Firefox(firefox_profile=fp)
+        elif self.driver_name == 'Firefox-Hub':
+            driver = webdriver.Remote(
+                command_executor=os.environ.get('HUB_ADDRESS'),
+                desired_capabilities=DesiredCapabilities.FIREFOX)
         else:
             driver = getattr(webdriver, self.driver_name)()
         driver.set_script_timeout(10)
@@ -274,7 +288,8 @@ class ArchivematicaSelenium:
         - Firefox 47.01 (*note* does not work on v. 48.0)
         """
         self.driver = self.get_driver()
-        self.driver.maximize_window()
+        if self.driver_name not in ('Chrome-Hub',):
+            self.driver.maximize_window()
 
     def tear_down(self):
         # Close all the $%&@#! browser windows!
@@ -283,14 +298,15 @@ class ArchivematicaSelenium:
         # indefinitely.
         # For some reason Selenium with Firefox 47 hangs if you call
         # ``driver.window_handles`
-        if self.driver_name != 'Firefox':
+        #if self.driver_name != 'Firefox':
+        if False:
             for window_handle in self.driver.window_handles:
                 self.driver.switch_to.window(window_handle)
-                self.driver.close()
+                self.driver.quit()
         self.clear_tmp_dir()
         for driver in self.all_drivers:
             try:
-                driver.close()
+                driver.quit()
             except:
                 pass
 
@@ -425,7 +441,7 @@ class ArchivematicaSelenium:
 
     def get_import_gpg_key_url(self):
         return '{}administration/keys/import/'.format(self.ss_url)
- 
+
     def get_create_gpg_key_url(self):
         return '{}administration/keys/create/'.format(self.ss_url)
 

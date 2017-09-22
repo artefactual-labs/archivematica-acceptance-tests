@@ -2,4 +2,4 @@ behave>=1.0
 lxml
 pexpect
 requests<3.0
-selenium>=2.0,<3.0
+selenium==3.6.0
