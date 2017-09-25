@@ -504,6 +504,9 @@ class ArchivematicaSelenium:
     def get_locations_url(self):
         return '{}locations/'.format(self.ss_url)
 
+    def get_packages_url(self):
+        return '{}packages/'.format(self.ss_url)
+
     def get_spaces_create_url(self):
         return '{}spaces/create/'.format(self.ss_url)
 
@@ -981,7 +984,8 @@ class ArchivematicaSelenium:
             logger.info('7z is not installed; aborting decompression attempt')
             return False
         try:
-            stdout = subprocess.check_output(['7z', 'x', package_path])
+            stdout = subprocess.check_output(
+                ['7z', 'x', package_path, '-o{}'.format(TMP_DIR_NAME)])
         except subprocess.CalledProcessError:
             logger.info('7z extraction failed. File %s is not a .7z file or it'
                         ' is encrypted', package_path)
@@ -1050,12 +1054,34 @@ class ArchivematicaSelenium:
                 raise ArchivematicaSeleniumError(
                     'Unable to download AIP {} pointer file'.format(sip_uuid))
 
+    def search_for_aip_in_storage_service(self, aip_uuid):
+        self.navigate(self.get_packages_url())
+        self.driver.find_element_by_css_selector('input[type=text]').send_keys(
+            aip_uuid)
+        # DataTables_Table_0
+        row_els = self.driver.find_elements_by_css_selector(
+            '#DataTables_Table_0 tr')
+        result = []
+        header = row_els[0]
+        keys = [th_el.text.strip().lower().replace(' ', '_')
+                for th_el in header.find_elements_by_tag_name('th')]
+        for row_el in row_els[1:]:
+            row_dict = {}
+            for index, td_el in enumerate(row_el.find_elements_by_tag_name('td')):
+                row_dict[keys[index]] = td_el.text.strip()
+            result.append(row_dict)
+        return result
+
     def decompress_aip(self, aip_path):
-        aip_dir_path, _ = os.path.splitext(aip_path)
+        aip_parent_dir_path = os.path.dirname(aip_path)
         try:
             devnull = getattr(subprocess, 'DEVNULL')
         except AttributeError:
             devnull = open(os.devnull, 'wb')
+        cmd = shlex.split('7z l {}'.format(aip_path))
+        output=subprocess.check_output(cmd).decode('utf8')
+        aip_dir_name = output.splitlines()[-3].split()[-1]
+        aip_dir_path = os.path.join(aip_parent_dir_path, aip_dir_name)
         p = subprocess.Popen(
             shlex.split('7z x {} -aoa'.format(aip_path)),
             cwd=self.tmp_path,
@@ -1063,6 +1089,7 @@ class ArchivematicaSelenium:
             stderr=subprocess.STDOUT)
         p.wait()
         assert p.returncode == 0
+
         assert os.path.isdir(aip_dir_path), ('Failed to create dir {} from'
             ' compressed AIP at {}'.format(aip_dir_path, aip_path))
         return aip_dir_path
@@ -2287,6 +2314,47 @@ class ArchivematicaSelenium:
                         ' exist'.format(attributes))
             loc_uuid = self.create_ss_location(space_uuid, attributes)
         return loc_uuid
+
+    def add_replicator_to_default_aip_stor_loc(self, replicator_location_uuid):
+        """Add the replicator location with UUID ``replicator_location_uuid``
+        to the set of replicators of the default AIP Storage location. Assumes
+        that the first location that matches the search term "Store AIP in
+        standard Archivematica Directory" is THE default AIP Storage location.
+        """
+        self.navigate(self.get_locations_url())
+        search_el = self.driver.find_element_by_css_selector('input[type=text]')
+        search_el.send_keys('Store AIP in standard Archivematica Directory')
+        row_els = self.driver.find_elements_by_css_selector(
+            '#DataTables_Table_0 > tbody > tr')
+        if len(row_els) != 1:
+            raise ArchivematicaSeleniumError(
+                'Unable to find a unique default AIP storage location')
+        cell_el = row_els[0].find_elements_by_css_selector('td')[9]
+        edit_a_el = None
+        for a_el in cell_el.find_elements_by_css_selector('a'):
+            if a_el.text.strip() == 'Edit':
+                edit_a_el = a_el
+        if not edit_a_el:
+            raise ArchivematicaSeleniumError(
+                'Unable to find an edit button/link for the default'
+                ' AIP storage location')
+        edit_a_el.click()
+        self.wait_for_presence('select#id_replicators')
+        replicators_select_el = self.driver.find_element_by_css_selector(
+            'select#id_replicators')
+        replicators_select = Select(replicators_select_el)
+        found_replicator = False
+        for option in replicators_select.options:
+            if replicator_location_uuid in option.text:
+                replicators_select.select_by_visible_text(option.text)
+                found_replicator = True
+                break
+        if not found_replicator:
+            raise ArchivematicaSeleniumError(
+                'Unable to find replicator location {} as a possible replicator'
+                ' for the default AIP Storage'
+                ' location'.format(replicator_location_uuid))
+        self.driver.find_element_by_css_selector('input[type=submit]').click()
 
     def get_policy_command(self, policy_file, policy_path):
         """Return a string representing a policy check validation command that

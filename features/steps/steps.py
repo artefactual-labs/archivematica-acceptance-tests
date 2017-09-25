@@ -110,9 +110,62 @@ def step_impl(context):
     context.am_sel_cli.wait_for_aip_in_archival_storage(uuid_val)
 
 
-@when('the user downloads the AIP')
+@when('the user searches for the AIP UUID in the Storage Service')
 def step_impl(context):
-    uuid_val = get_uuid_val(context, 'sip')
+    the_aip_uuid = get_uuid_val(context, 'sip')
+    context.scenario.aip_search_results = (
+        context.am_sel_cli.search_for_aip_in_storage_service(the_aip_uuid))
+
+
+@then('the master AIP and its replica are returned by the search')
+def step_impl(context):
+    """Assert that ``context.scenario.aip_search_results`` is a list of exactly
+    two dicts, one of which represents "the master AIP" (whose UUID is in
+    ``context.scenariosip_uuid``) and the other representing the replica AIP.
+    Store both AIP representations in ``context.scenario``.
+    """
+    the_aip_uuid = get_uuid_val(context, 'sip')
+    search_results = context.scenario.aip_search_results
+    assert len(search_results) == 2
+    the_aips = [dct for dct in search_results if dct['uuid'] == the_aip_uuid]
+    not_the_aips = [dct for dct in search_results
+                    if dct['uuid'] != the_aip_uuid]
+    assert len(the_aips) == 1
+    assert len(not_the_aips) == 1
+    the_aip = the_aips[0]
+    replica = not_the_aips[0]
+    replica_uuid = replica['uuid']
+    assert the_aip['replicas'] == replica['uuid']
+    assert replica['is_replica_of'] == the_aip['uuid']
+    assert (set([x.strip() for x in replica['actions'].split()]) ==
+            set(['Download']))
+    assert (set([x.strip() for x in the_aip['actions'].split()]) ==
+            set(['Download', 'Re-ingest']))
+    context.scenario.master_aip_uuid = the_aip_uuid
+    context.scenario.replica_aip_uuid = replica_uuid
+
+
+def aip_descr_to_attr(aip_description):
+    return aip_description.lower().strip().replace(' ', '_') + '_uuid'
+
+
+def aip_descr_to_ptr_attr(aip_description):
+    return aip_description.lower().strip().replace(' ', '_') + '_ptr'
+
+
+def get_event_attr(event_type):
+    return '{}_event_uuid'.format(event_type)
+
+
+@when('the user downloads the {aip_description}AIP')
+def step_impl(context, aip_description):
+    aip_description = aip_description.strip()
+    if aip_description:
+        aip_description = aip_description + '_aip'
+        aip_attr = aip_descr_to_attr(aip_description)
+        uuid_val = getattr(context.scenario, aip_attr)
+    else:
+        uuid_val = get_uuid_val(context, 'sip')
     transfer_name = context.scenario.transfer_name
     context.scenario.aip_path = context.am_sel_cli.download_aip(
         transfer_name, uuid_val)
@@ -129,6 +182,117 @@ def step_impl(context):
         context.am_sel_cli.download_aip_pointer_file(
             uuid_val))
     logger.info('downloaded AIP pointer file for AIP %s to %s', uuid_val, app)
+
+
+@when('the user downloads the {aip_description} pointer file')
+def step_impl(context, aip_description):
+    aip_attr = aip_descr_to_attr(aip_description)
+    aip_ptr_attr = aip_descr_to_ptr_attr(aip_description)
+    aip_uuid = getattr(context.scenario, aip_attr)
+    time.sleep(5)
+    setattr(context.scenario, aip_ptr_attr,
+            context.am_sel_cli.download_aip_pointer_file(aip_uuid))
+    logger.info('downloaded AIP pointer file for %s AIP %s to %s',
+                aip_description, aip_uuid, getattr(context.scenario, aip_ptr_attr))
+
+
+@then('the {aip_description} pointer file contains a PREMIS:OBJECT with a'
+      ' derivation relationship pointing to the {second_aip_description} and'
+      ' the {event_type} PREMIS:EVENT')
+def step_impl(context, aip_description, second_aip_description, event_type):
+    aip_ptr_attr = aip_descr_to_ptr_attr(aip_description)
+    pointer_path = getattr(context.scenario, aip_ptr_attr)
+    aip_attr = aip_descr_to_attr(aip_description)
+    aip_uuid = getattr(context.scenario, aip_attr)
+    second_aip_attr = aip_descr_to_attr(second_aip_description)
+    second_aip_uuid = getattr(context.scenario, second_aip_attr)
+    event_uuid_attr = get_event_attr(event_type)
+    event_uuid = getattr(context.scenario, event_uuid_attr)
+
+    with open(pointer_path) as filei:
+        doc = etree.parse(filei)
+        premis_object_el = doc.find(
+            './/mets:mdWrap[@MDTYPE="PREMIS:OBJECT"]',
+            context.am_sel_cli.mets_nsmap)
+        premis_relationship = premis_object_el.find(
+            'mets:xmlData/premis:object/premis:relationship',
+            context.am_sel_cli.mets_nsmap)
+        premis_relationship_type = premis_relationship.find(
+            'premis:relationshipType',
+            context.am_sel_cli.mets_nsmap).text.strip()
+        assert premis_relationship_type == 'derivation'
+        premis_related_object_uuid = premis_relationship.find(
+            'premis:relatedObjectIdentification/'
+            'premis:relatedObjectIdentifierValue',
+            context.am_sel_cli.mets_nsmap).text.strip()
+        assert second_aip_uuid == premis_related_object_uuid
+        premis_related_event_uuid = premis_relationship.find(
+            'premis:relatedEventIdentification/'
+            'premis:relatedEventIdentifierValue',
+            context.am_sel_cli.mets_nsmap).text.strip()
+        assert event_uuid == premis_related_event_uuid
+
+
+@then('the {aip_description} pointer file contains a(n) {event_type}'
+      ' PREMIS:EVENT')
+def step_impl(context, aip_description, event_type):
+    aip_ptr_attr = aip_descr_to_ptr_attr(aip_description)
+    pointer_path = getattr(context.scenario, aip_ptr_attr)
+    event_uuid = assert_pointer_premis_event(
+        context, pointer_path, event_type, in_evt_out=['success'])
+    event_uuid_attr = get_event_attr(event_type)
+    setattr(context.scenario, event_uuid_attr, event_uuid)
+
+
+def assert_pointer_premis_event(context, mets_path, event_type, in_evt_dtl=None,
+                                in_evt_out=None, in_evt_out_dtl_nt=None):
+    """Make assertions about the PREMIS event of premis:eventType
+    ``event_type`` in the METS pointer file at ``mets_path``. Minimally assert
+    that such an event exists. The optional params should hold lists of strings
+    that are all expected to be in eventDetail, eventOutcome, and
+    eventOutcomeDetailNote, respectively. Return the UUID of the relevant event.
+    """
+    with open(mets_path) as filei:
+        doc = etree.parse(filei)
+        premis_event = None
+        for premis_event_el in doc.findall(
+                './/mets:mdWrap[@MDTYPE="PREMIS:EVENT"]',
+                context.am_sel_cli.mets_nsmap):
+            premis_event_type_el = premis_event_el.find(
+                'mets:xmlData/premis:event/premis:eventType',
+                context.am_sel_cli.mets_nsmap)
+            if premis_event_type_el.text.strip() == event_type:
+                premis_event = premis_event_el
+                break
+        assert premis_event is not None
+        premis_event_uuid = premis_event.find(
+            'mets:xmlData/premis:event/premis:eventIdentifier/'
+            'premis:eventIdentifierValue',
+            context.am_sel_cli.mets_nsmap).text.strip()
+        if in_evt_dtl:
+            in_evt_dtl = in_evt_dtl or []
+            premis_event_detail = premis_event.find(
+                'mets:xmlData/premis:event/premis:eventDetail',
+                context.am_sel_cli.mets_nsmap).text.strip()
+            for substr in in_evt_dtl:
+                assert substr in premis_event_detail
+        if in_evt_out:
+            in_evt_out = in_evt_out or []
+            premis_event_out = premis_event.find(
+                'mets:xmlData/premis:event/premis:eventOutcomeInformation/'
+                'premis:eventOutcome',
+                context.am_sel_cli.mets_nsmap).text.strip()
+            for substr in in_evt_out:
+                assert substr in premis_event_out
+        if in_evt_out_dtl_nt:
+            in_evt_out_dtl_nt = in_evt_out_dtl_nt or []
+            premis_event_od_note = premis_event.find(
+                'mets:xmlData/premis:event/premis:eventOutcomeInformation/'
+                'premis:eventOutcomeDetail/premis:eventOutcomeDetailNote',
+                context.am_sel_cli.mets_nsmap).text.strip()
+            for substr in in_evt_out_dtl_nt:
+                assert substr in premis_event_od_note
+        return premis_event_uuid
 
 
 @then('the pointer file contains a PREMIS:EVENT element for the encryption event')
@@ -180,9 +344,9 @@ def step_impl(context):
         assert 'Status="encryption ok"' in premis_event_od_note
 
 
-@then('the pointer file contains a mets:transformFile element for the'
-      ' encryption event')
-def step_impl(context):
+@then('the {aip_description}pointer file contains a mets:transformFile element'
+      ' for the encryption event')
+def step_impl(context, aip_description):
     """Makes the following assertions about the first (and presumably only)
     <mets:file> element in the AIP's pointer file:
     1. the xlink:href attribute's value of <mets:FLocat> is a path with
@@ -193,19 +357,39 @@ def step_impl(context):
     4. <premis:compositionLevel> incremented
     5. <premis:inhibitors> added
     """
-    pointer_path = context.scenario.aip_pointer_path
+    aip_description = aip_description.strip()
+    if aip_description:
+        aip_ptr_attr = aip_descr_to_ptr_attr(aip_description)
+        pointer_path = getattr(context.scenario, aip_ptr_attr)
+    else:
+        pointer_path = context.scenario.aip_pointer_path
     ns = context.am_sel_cli.mets_nsmap
     assert_pointer_transform_file_encryption(pointer_path, ns)
 
 
-@then('the AIP on disk is encrypted')
-def step_impl(context):
+@then('the {aip_description}AIP on disk is encrypted')
+def step_impl(context, aip_description):
     """Asserts that the AIP on the server (pointed to within the AIP pointer
     file stored in context.scenario.aip_pointer_path) is encrypted. To do this,
     we use scp to copy the remote AIP to a local directory and then we attempt
     to decompress it and expect to fail.
     """
-    pointer_path = context.scenario.aip_pointer_path
+    assert get_aip_is_encrypted(context, aip_description) is True
+
+
+@then('the {aip_description}AIP on disk is not encrypted')
+def step_impl(context, aip_description):
+    """Asserts that the AIP is NOT encrypted."""
+    assert get_aip_is_encrypted(context, aip_description) is False
+
+
+def get_aip_is_encrypted(context, aip_description):
+    aip_description = aip_description.strip()
+    if aip_description:
+        aip_ptr_attr = aip_descr_to_ptr_attr(aip_description + '_aip')
+        pointer_path = getattr(context.scenario, aip_ptr_attr)
+    else:
+        pointer_path = context.scenario.aip_pointer_path
     ns = context.am_sel_cli.mets_nsmap
     with open(pointer_path) as filei:
         doc = etree.parse(filei)
@@ -231,7 +415,8 @@ def step_impl(context):
     aip_local_path = context.am_sel_cli.decompress_package(aip_local_path)
     # ``decompress_package`` will attempt to decompress the package with 7z and
     # we expect it to fail because the AIP file is encrypted with GPG.
-    assert aip_local_path is None
+    aip_is_encrypted = aip_local_path is None
+    return aip_is_encrypted
 
 
 @then('the transfer on disk is encrypted')
@@ -1276,6 +1461,28 @@ def step_impl(context):
             ' Directory;'.format(STDRD_GPG_TB_REL_PATH))
 
 
+@given('there is a standard GPG-encrypted Replicator location in the storage'
+       ' service')
+def step_impl(context):
+    context.execute_steps(
+        'Given the user has ensured that there is a location in the GPG Space with'
+        ' attributes'
+        ' Purpose: Replicator;'
+        ' Relative path: var/archivematica/sharedDirectory/www/EncryptedReplicas;'
+        ' Description: Encrypted Replicas;')
+
+
+@given('the default AIP Storage location has the GPG-encrypted Replicator'
+       ' location as its replicator')
+def step_impl(context):
+    """Presumes that the GPG-encrypted replicator location's UUID is
+    in ``context.scenario.location_uuid``.
+    """
+    replicator_location_uuid = context.scenario.location_uuid
+    context.am_sel_cli.add_replicator_to_default_aip_stor_loc(
+        replicator_location_uuid)
+
+
 @given('the user has ensured that there is a location in the GPG Space with'
        ' attributes {attributes}')
 def step_impl(context, attributes):
@@ -1285,13 +1492,12 @@ def step_impl(context, attributes):
     """
     attributes = _parse_k_v_attributes(attributes)
     space_uuid = context.scenario.space_uuid
-    # space_uuid = '974987cb-ec8b-40e6-adac-055d5418679e'
     context.scenario.location_uuid = \
         context.am_sel_cli.ensure_ss_location_exists(space_uuid, attributes)
 
 
-@then('the downloaded AIP is not encrypted')
-def step_impl(context):
+@then('the downloaded {aip_description}AIP is not encrypted')
+def step_impl(context, aip_description):
     context.scenario.aip_path = context.am_sel_cli.decompress_aip(
         context.scenario.aip_path)
     assert os.path.isdir(context.scenario.aip_path)
@@ -1457,7 +1663,8 @@ def assert_pointer_transform_file_encryption(pointer_path, ns,
         deco_tran_el = file_el.find(
             'mets:transformFile[@TRANSFORMTYPE="decompression"]', ns)
         assert deco_tran_el is not None
-        assert deco_tran_el.get('TRANSFORMORDER', ns) == '2'
+        deco_transform_order = deco_tran_el.get('TRANSFORMORDER', ns)
+        assert deco_transform_order == '2'
         decr_tran_el = file_el.find(
             'mets:transformFile[@TRANSFORMTYPE="decryption"]', ns)
         assert decr_tran_el is not None
