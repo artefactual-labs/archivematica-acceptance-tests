@@ -8,7 +8,8 @@ import re
 import tarfile
 import time
 
-from behave import when, then, given
+from behave import when, then, given, use_step_matcher
+
 
 MC_EVENT_DETAIL_PREFIX = 'program="MediaConch"'
 MC_EVENT_OUTCOME_DETAIL_NOTE_IMPLEMENTATION_CHECK_PREFIX = \
@@ -157,7 +158,10 @@ def get_event_attr(event_type):
     return '{}_event_uuid'.format(event_type)
 
 
-@when('the user downloads the {aip_description}AIP')
+use_step_matcher('re')
+
+
+@when('the user downloads the (?P<aip_description>.*)AIP')
 def step_impl(context, aip_description):
     aip_description = aip_description.strip()
     if aip_description:
@@ -171,9 +175,16 @@ def step_impl(context, aip_description):
         transfer_name, uuid_val)
 
 
+use_step_matcher('parse')
+
+
 @when('the user downloads the AIP pointer file')
 def step_impl(context):
     uuid_val = get_uuid_val(context, 'sip')
+    # FOR DEV
+    # uuid_val = 'c20be1aa-0e7a-434e-a67d-07978360437c'
+    # context.scenario.transfer_name = 'BagTransfer_1506466171'
+
     # For some reason, it is necessary to pause a moment before downloading the
     # AIP pointer file because otherwise, e.g., after a re-ingest, it can be
     # out of date. See @reencrypt-different-key.
@@ -301,7 +312,7 @@ def step_impl(context):
     MDTYPE="PREMIS:EVENT">`` element with the following type of descendants:
     - <mets:xmlData>
     - <premis:eventType>encryption</premis:eventType>
-    - <premis:eventDetail>program=gpg (GnuPG); version=1.4.16; python-gnupg; version=0.4.0</premis:eventDetail>
+    - <premis:eventDetail>program=gpg (GPG); version=1.4.16; python-gnupg; version=0.4.0</premis:eventDetail>
     - <premis:eventOutcomeInformation>
           <premis:eventOutcome/>
           <premis:eventOutcomeDetail>
@@ -331,11 +342,11 @@ def step_impl(context):
                 premis_event = premis_event_el
                 break
         assert premis_event is not None
-        # <premis:eventDetail>program=gpg (GnuPG); version=1.4.16; python-gnupg; version=0.4.0</premis:eventDetail>
+        # <premis:eventDetail>program=gpg (GPG); version=1.4.16; python-gnupg; version=0.4.0</premis:eventDetail>
         premis_event_detail = premis_event.find(
             'mets:xmlData/premis:event/premis:eventDetail',
             context.am_sel_cli.mets_nsmap).text
-        assert 'GnuPG' in premis_event_detail
+        assert 'GPG' in premis_event_detail
         assert 'version=' in premis_event_detail
         premis_event_od_note = premis_event.find(
             'mets:xmlData/premis:event/premis:eventOutcomeInformation/'
@@ -344,7 +355,10 @@ def step_impl(context):
         assert 'Status="encryption ok"' in premis_event_od_note
 
 
-@then('the {aip_description}pointer file contains a mets:transformFile element'
+use_step_matcher('re')
+
+
+@then('the (?P<aip_description>.*)pointer file contains a mets:transformFile element'
       ' for the encryption event')
 def step_impl(context, aip_description):
     """Makes the following assertions about the first (and presumably only)
@@ -367,7 +381,8 @@ def step_impl(context, aip_description):
     assert_pointer_transform_file_encryption(pointer_path, ns)
 
 
-@then('the {aip_description}AIP on disk is encrypted')
+
+@then('the (?P<aip_description>.*)AIP on disk is encrypted')
 def step_impl(context, aip_description):
     """Asserts that the AIP on the server (pointed to within the AIP pointer
     file stored in context.scenario.aip_pointer_path) is encrypted. To do this,
@@ -377,7 +392,7 @@ def step_impl(context, aip_description):
     assert get_aip_is_encrypted(context, aip_description) is True
 
 
-@then('the {aip_description}AIP on disk is not encrypted')
+@then('the (?P<aip_description>.*)AIP on disk is not encrypted')
 def step_impl(context, aip_description):
     """Asserts that the AIP is NOT encrypted."""
     assert get_aip_is_encrypted(context, aip_description) is False
@@ -417,6 +432,9 @@ def get_aip_is_encrypted(context, aip_description):
     # we expect it to fail because the AIP file is encrypted with GPG.
     aip_is_encrypted = aip_local_path is None
     return aip_is_encrypted
+
+
+use_step_matcher('parse')
 
 
 @then('the transfer on disk is encrypted')
@@ -1496,11 +1514,17 @@ def step_impl(context, attributes):
         context.am_sel_cli.ensure_ss_location_exists(space_uuid, attributes)
 
 
-@then('the downloaded {aip_description}AIP is not encrypted')
+use_step_matcher('re')
+
+
+@then('the downloaded (?P<aip_description>.*)AIP is not encrypted')
 def step_impl(context, aip_description):
     context.scenario.aip_path = context.am_sel_cli.decompress_aip(
         context.scenario.aip_path)
     assert os.path.isdir(context.scenario.aip_path)
+
+
+use_step_matcher('parse')
 
 
 @then('the downloaded uncompressed AIP is an unencrypted tarfile')
@@ -1669,7 +1693,7 @@ def assert_pointer_transform_file_encryption(pointer_path, ns,
             'mets:transformFile[@TRANSFORMTYPE="decryption"]', ns)
         assert decr_tran_el is not None
         assert decr_tran_el.get('TRANSFORMORDER', ns) == '1'
-        assert decr_tran_el.get('TRANSFORMALGORITHM', ns) == 'gpg'
+        assert decr_tran_el.get('TRANSFORMALGORITHM', ns) == 'GPG'
         assert bool(decr_tran_el.get('TRANSFORMTYPE', ns)) is True
         if fingerprint:
             transform_key = decr_tran_el.get('TRANSFORMKEY', ns)
