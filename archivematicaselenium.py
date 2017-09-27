@@ -2326,9 +2326,22 @@ class ArchivematicaSelenium:
         search_el.send_keys('Store AIP in standard Archivematica Directory')
         row_els = self.driver.find_elements_by_css_selector(
             '#DataTables_Table_0 > tbody > tr')
-        if len(row_els) != 1:
+        if len(row_els) == 0:
             raise ArchivematicaSeleniumError(
-                'Unable to find a unique default AIP storage location')
+                'Unable to find a default AIP storage location')
+        if len(row_els) > 1:
+            new_row_els = []
+            for row_el in row_els:
+                row_text = []
+                for td_el in row_el.find_elements_by_css_selector('td'):
+                    row_text.append(td_el.text.strip().lower())
+                if 'encrypted' not in ''.join(row_text):
+                    new_row_els.append(row_el)
+            if len(new_row_els) == 1:
+                row_els = new_row_els
+            else:
+                raise ArchivematicaSeleniumError(
+                    'Unable to find a unique default AIP storage location')
         cell_el = row_els[0].find_elements_by_css_selector('td')[9]
         edit_a_el = None
         for a_el in cell_el.find_elements_by_css_selector('a'):
