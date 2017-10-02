@@ -1,0 +1,1 @@
+Phase 1 description: Archivematica uses ElasticSearch to index detailed metadata about each Transfer and AIP that is produced. For organizations that have an existing repository with its own indexing solution, this extra indexing work in ElasticSearch is redundant and ends up being both a scalability and performance bottleneck.
