@@ -111,6 +111,7 @@ logger.setLevel(logging.DEBUG)
 
 # Assuming we don't switch JS frameworks :), DOM selectors should be constants.
 SELECTOR_INPUT_TRANSFER_NAME = 'input[ng-model="vm.transfer.name"]'
+SELECTOR_INPUT_TRANSFER_TYPE = 'select[ng-model="vm.transfer.type"]'
 SELECTOR_INPUT_TRANSFER_ACCESSION = 'input[ng-model="vm.transfer.accession"]'
 SELECTOR_DIV_TRANSFER_SOURCE_BROWSE = 'div.transfer-tree-container'
 SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER = 'button.pull-right[type=submit]'
@@ -303,7 +304,8 @@ class ArchivematicaSelenium:
     # These methods let you do high-level things in the AM GUI like logging in
     # or starting a transfer with a given name and transfer directory.
 
-    def start_transfer(self, transfer_path, transfer_name, accession_no=None):
+    def start_transfer(self, transfer_path, transfer_name, accession_no=None,
+                       transfer_type=None):
         """Start a new transfer with name ``transfer_name``, transfering the
         directory at ``transfer_path``.
         :param str transfer_path: the path to the transfer to be started as it
@@ -315,15 +317,39 @@ class ArchivematicaSelenium:
             Should match /[a-zA-Z0-9_]+/.
         """
         self.navigate_to_transfer_tab()
-        self.enter_transfer_name(transfer_name)
+        name_is_prefix = False
+        if transfer_type:
+            self.set_transfer_type(transfer_type)
+            # For some reason selecting a transfer type can cause the window to
+            # scroll and will prevent Selenium from clicking the "Browse" button
+            # so the following line is necessary.
+            self.driver.execute_script('window.scrollTo(0, 0);')
+            if transfer_type == 'Zipped bag':
+                name_is_prefix = True
+                transfer_name = os.path.splitext(
+                    os.path.basename(transfer_path))[0]
+        else:
+            transfer_type = 'Standard'
+        if transfer_type != 'Zipped bag':
+            self.enter_transfer_name(transfer_name)
         if accession_no:
             self.enter_accession_no(accession_no)
         self.add_transfer_directory(transfer_path)
         self.click_start_transfer_button()
-        transfer_uuid, transfer_div_elem = self.wait_for_transfer_to_appear(
-            transfer_name)
-        self.approve_transfer(transfer_div_elem)
-        return transfer_uuid
+        transfer_uuid, transfer_div_elem, transfer_name = (
+            self.wait_for_transfer_to_appear(
+                transfer_name, name_is_prefix=name_is_prefix))
+
+        # UUID for the "Approve transfer" option
+        approve_option_uuid = {
+            'Standard': self.approve_standard_transfer_uuid,
+            'Zipped bag': self.approve_zipped_bagit_transfer_uuid,
+            'Unzipped bag': self.approve_bagit_transfer_uuid,
+            'DSpace': self.approve_dspace_transfer_uuid
+        }[transfer_type]
+
+        self.approve_transfer(transfer_div_elem, approve_option_uuid)
+        return transfer_uuid, transfer_name
 
     def login(self):
         """Login to Archivematica."""
@@ -506,8 +532,14 @@ class ArchivematicaSelenium:
     # CSS selector for the <div> holding the gear icon, the roport icon, etc.
     transfer_actions_selector = 'div.job-detail-actions'
 
-    # UUID for the "Approve transfer" option
-    approve_transfer_uuid = '6953950b-c101-4f4c-a0c3-0cd0684afe5e'
+    # UUIDs for various "Approve transfer" options
+    approve_standard_transfer_uuid = '6953950b-c101-4f4c-a0c3-0cd0684afe5e'
+    approve_zipped_bagit_transfer_uuid = '167dc382-4ab1-4051-8e22-e7f1c1bf3e6f'
+    # Note: the UUIDs below are incorrect...
+    approve_bagit_transfer_uuid = 'df1c53e4-1b69-441e-bdc9-6d08c3b47c9b'
+    approve_maildir_transfer_uuid = 'acf7bd62-1587-4bff-b640-5b34b7196386'
+    approve_dspace_transfer_uuid = 'fa3e0099-b891-43f6-a4bc-390d544fa3e9'
+    approve_trim_transfer_uuid = '07bf7432-fd9b-456e-9d17-5b387087723a'
 
     # Archivematica methods
     # =========================================================================
@@ -528,7 +560,6 @@ class ArchivematicaSelenium:
         """Get the output---"Completed successfully", "Failed"---of the Job
         model representing the execution of micro-service ``ms_name`` in
         transfer ``transfer_uuid``.
-        FOX
         """
         ms_name, group_name = self.micro_service2group(ms_name)
         ms_group_elem = self.get_transfer_micro_service_group_elem(
@@ -549,8 +580,8 @@ class ArchivematicaSelenium:
         if self.driver.current_url != ingest_url:
             self.login()
         self.driver.get(ingest_url)
-        sip_uuid, ingest_div_elem = self.wait_for_transfer_to_appear(
-            transfer_name)
+        sip_uuid, _, _ = (
+            self.wait_for_transfer_to_appear(transfer_name))
         return sip_uuid
 
     def get_mets(self, transfer_name, sip_uuid=None, parse_xml=True):
@@ -1648,7 +1679,7 @@ class ArchivematicaSelenium:
         else:
             return None
 
-    def approve_transfer(self, transfer_div_elem):
+    def approve_transfer(self, transfer_div_elem, approve_option_uuid):
         """Click the "Approve transfer" select option to initiate the transfer
         process.
 
@@ -1658,12 +1689,22 @@ class ArchivematicaSelenium:
         again.
         """
         approve_transfer_option_selector = "option[value='{}']".format(
-            self.approve_transfer_uuid)
-        approve_transfer_option = transfer_div_elem\
-            .find_element_by_css_selector(approve_transfer_option_selector)
+            approve_option_uuid)
+        while True:
+            try:
+                approve_transfer_option = (
+                    transfer_div_elem.find_element_by_css_selector(
+                        approve_transfer_option_selector))
+            except NoSuchElementException:
+                logger.info('NoSuchElementException raised when attempting to'
+                            ' retrieve element with css selector {}'.format(
+                                approve_transfer_option_selector))
+                time.sleep(1)
+            else:
+                break
         approve_transfer_option.click()
 
-    def wait_for_transfer_to_appear(self, transfer_name):
+    def wait_for_transfer_to_appear(self, transfer_name, name_is_prefix=False):
         """Wait until the transfer appears in the transfer tab (after "Start
         transfer" has been clicked). The only way to do this seems to be to
         check each row for our unique ``transfer_name`` and do
@@ -1688,7 +1729,14 @@ class ArchivematicaSelenium:
             transfer_name_in_dom = transfer_name_div_elem.text.strip()
             if transfer_name_in_dom.endswith('UUID'):
                 transfer_name_in_dom = transfer_name_in_dom[:-4].strip()
-            if transfer_name_in_dom == transfer_name:
+            if name_is_prefix:
+                cond = transfer_name_in_dom.startswith(transfer_name)
+            else:
+                cond = transfer_name_in_dom == transfer_name
+            if cond:
+                logger.info('Changed transfer name from {} to {}'.format(
+                    transfer_name, transfer_name_in_dom))
+                transfer_name = transfer_name_in_dom
                 abbr_elem = transfer_name_div_elem.find_element_by_tag_name(
                     'abbr')
                 if abbr_elem and abbr_elem.is_displayed():
@@ -1701,13 +1749,14 @@ class ArchivematicaSelenium:
             if (self.wait_for_transfer_to_appear_waits <
                     self.wait_for_transfer_to_appear_max_waits):
                 time.sleep(0.5)
-                transfer_uuid, correct_transfer_div_elem = \
-                    self.wait_for_transfer_to_appear(transfer_name)
+                transfer_uuid, correct_transfer_div_elem, transfer_name = (
+                    self.wait_for_transfer_to_appear(
+                        transfer_name, name_is_prefix=name_is_prefix))
             else:
                 self.wait_for_transfer_to_appear_waits = 0
-                return None, None
+                return None, None, None
         time.sleep(0.5)
-        return transfer_uuid, correct_transfer_div_elem
+        return transfer_uuid, correct_transfer_div_elem, transfer_name
 
     def click_start_transfer_button(self):
         start_transfer_button_elem = self.driver.find_element_by_css_selector(
@@ -1731,6 +1780,13 @@ class ArchivematicaSelenium:
         transfer_name_elem = self.driver.find_element_by_css_selector(
             SELECTOR_INPUT_TRANSFER_NAME)
         transfer_name_elem.send_keys(transfer_name)
+
+    def set_transfer_type(self, transfer_type):
+        """Select transfer type ``transfer_type`` in the <select> input."""
+        transfer_type_select_el = self.driver.find_element_by_css_selector(
+            SELECTOR_INPUT_TRANSFER_TYPE)
+        transfer_type_select = Select(transfer_type_select_el)
+        transfer_type_select.select_by_visible_text(transfer_type)
 
     def enter_accession_no(self, accession_no):
         accession_no_elem = self.driver.find_element_by_css_selector(

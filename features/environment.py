@@ -1,4 +1,6 @@
 import archivematicaselenium
+import utils
+
 
 # Change these to match your test environment
 # These may also be overridden as Behave userdata options
@@ -60,6 +62,7 @@ def before_scenario(context, scenario):
     """
     userdata = context.config.userdata
     context.am_sel_cli = get_am_sel_cli(userdata)
+    context.utils = utils
     context.am_sel_cli.set_up()
     context.TRANSFER_SOURCE_PATH = userdata.get(
         'transfer_source_path', TRANSFER_SOURCE_PATH)
