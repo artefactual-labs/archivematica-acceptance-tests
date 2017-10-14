@@ -732,6 +732,11 @@ def step_impl(context, transfer_path, accession_no):
     initiate_transfer(context, transfer_path, accession_no=accession_no)
 
 
+@when('a {transfer_type} transfer is initiated on directory {transfer_path}')
+def step_impl(context, transfer_type, transfer_path):
+    initiate_transfer(context, transfer_path, transfer_type=transfer_type)
+
+
 @when('a transfer is initiated on directory {transfer_path}')
 def step_impl(context, transfer_path):
     initiate_transfer(context, transfer_path)
@@ -782,6 +787,29 @@ def step_impl(context, event_outcome):
         assert e['event_outcome'] == event_outcome
 
 
+def debag(paths):
+    """Given an array of paths like::
+
+        >>> ['/BagTransfer/bag-info.txt',
+        ...  '/BagTransfer/bagit.txt',
+        ...  '/BagTransfer/manifest-sha512.txt',
+        ...  '/BagTransfer/data/bagTest/LICENSE',
+        ...  '/BagTransfer/data/bagTest/README',
+        ...  '/BagTransfer/data/bagTest/TRADEMARK']
+
+    return an array like::
+
+        >>> ['/bagTest/LICENSE', '/bagTest/README', '/bagTest/TRADEMARK']
+
+    """
+    new_paths = []
+    for path in paths:
+        parts = path.split(os.path.sep)
+        if len(parts) > 3 and parts[2] == 'data':
+            new_paths.append(os.path.sep.join([''] + parts[3:]))
+    return new_paths
+
+
 @given('remote directory {dir_path} contains a hierarchy of subfolders'
        ' containing digital objects')
 def step_impl(context, dir_path):
@@ -791,20 +819,29 @@ def step_impl(context, dir_path):
     """
     if dir_path.startswith('~/'):
         dir_path = dir_path[2:]
-    dir_local_path = context.am_sel_cli.scp_server_dir_to_local(
-        dir_path)
-    if dir_local_path is None:
+
+    dir_is_zipped = bool(os.path.splitext(dir_path)[1])
+    if dir_is_zipped:
+        local_path = context.am_sel_cli.scp_server_file_to_local(
+            dir_path)
+    else:
+        local_path = context.am_sel_cli.scp_server_dir_to_local(
+            dir_path)
+    if local_path is None:
         msg = (
-            'Unable to copy dir {} from the server to the local file'
+            'Unable to copy item {} from the server to the local file'
             ' system. Server is not accessible via SSH.'.format(dir_path))
         logger.warning(msg)
         raise Exception(msg)
-    elif dir_local_path is False:
+    elif local_path is False:
         msg = (
-            'Unable to copy dir {} from the server to the local file'
+            'Unable to copy item {} from the server to the local file'
             ' system. Attempt to scp the file failed.'.format(dir_path))
         logger.warning(msg)
         raise Exception(msg)
+    dir_local_path = local_path
+    if dir_is_zipped:
+        dir_local_path = context.utils.unzip(local_path)
     assert os.path.isdir(dir_local_path)
     non_root_paths = []
     non_root_file_paths = []
@@ -822,8 +859,14 @@ def step_impl(context, dir_path):
             non_root_paths.append(path)
             non_root_file_paths += [os.path.join(path, file_) for file_ in
                                     files if file_ not in to_be_removed_files]
-    logger.info('\n' + '\n'.join(non_root_paths))
-    logger.info('\n' + '\n'.join(non_root_file_paths))
+
+    if dir_is_zipped:
+        # If the "directory" from the server was a zip file, assume it is a
+        # zipped bag and simulate "debagging" it, i.e., removing everything not
+        # under data/ and removing the data/ prefix.
+        non_root_paths = debag(non_root_paths)
+        non_root_file_paths = debag(non_root_file_paths)
+
     assert len(non_root_paths) > 0
     assert len(non_root_file_paths) > 0
     context.scenario.remote_dir_subfolders = non_root_paths
@@ -942,6 +985,7 @@ def step_impl(context):
             ' for preservation"\n'
         'And the processing config decision "Approve normalization" is set to'
             ' "Yes"\n'
+        'And the processing config decision "Bind PIDs" is set to "No"\n'
         'And the processing config decision "Select file format identification'
             ' command (Submission documentation & metadata)" is set to'
             ' "Identify using Fido"\n'
@@ -1311,12 +1355,20 @@ def get_uuid_val(context, unit_type):
     else:
         uuid_val = getattr(context.scenario, 'sip_uuid', None)
         if not uuid_val:
+            # If we are getting a SIP UUID from a transfer name, it is possible
+            # that the transfer name is a .zip file name, in which case we must
+            # remove the '.zip'. This is possible because zipped bag type
+            # transfers are named after the transfer source file yet when they
+            # become SIPs the extension is removed.
+            context.scenario.transfer_name = (
+                context.scenario.transfer_name.rstrip('.zip'))
             uuid_val = context.scenario.sip_uuid = (
                 context.am_sel_cli.get_sip_uuid(context.scenario.transfer_name))
     return uuid_val
 
 
-def initiate_transfer(context, transfer_path, accession_no=None):
+def initiate_transfer(context, transfer_path, accession_no=None,
+                      transfer_type=None):
     if transfer_path.startswith('~'):
         context.scenario.transfer_path = os.path.join(
             context.HOME, transfer_path[2:])
@@ -1325,9 +1377,10 @@ def initiate_transfer(context, transfer_path, accession_no=None):
             context.TRANSFER_SOURCE_PATH, transfer_path)
     context.scenario.transfer_name = context.am_sel_cli.unique_name(
         transfer_path2name(transfer_path))
-    context.scenario.transfer_uuid = context.am_sel_cli.start_transfer(
-        context.scenario.transfer_path, context.scenario.transfer_name,
-        accession_no=accession_no)
+    context.scenario.transfer_uuid, context.scenario.transfer_name = (
+        context.am_sel_cli.start_transfer(
+            context.scenario.transfer_path, context.scenario.transfer_name,
+            accession_no=accession_no, transfer_type=transfer_type))
 
 
 def _parse_k_v_attributes(attributes):
