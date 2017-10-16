@@ -1,3 +1,4 @@
+@wip
 Feature: Archivematica is deployed without Indexing feature
   When deploying Archivematica, users want to be able to decide whether or not
   to install Elasticsearch, and all related components.  Installing without

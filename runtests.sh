@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-behave --tags=am16 --no-skipped $@
+behave --tags=-wip --tags=am16 --no-skipped $@
