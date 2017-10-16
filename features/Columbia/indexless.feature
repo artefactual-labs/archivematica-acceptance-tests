@@ -1,8 +1,8 @@
 Feature: Archivematica is deployed without Indexing feature
   When deploying Archivematica, users want to be able to decide whether or not
-  to install ElasticSearch, and all related components.  Installing without 
-  ElasticSearch allows an Archivematica deployment to consume less compute
-  resources and requires less administrative oversight.  It is an important 
+  to install Elasticsearch, and all related components.  Installing without
+  Elasticsearch allows an Archivematica deployment to consume less compute
+  resources and requires less administrative oversight.  It is an important
   step towards running a 'headless', completely automated Archivematica.
 
   Scenario: Tony wants to deploy a new Archivematica instance without Elasticsearch
@@ -14,12 +14,12 @@ Feature: Archivematica is deployed without Indexing feature
     And Elasticsearch is not installed.
 
 #| method | repository | change |
-#| manual | archivematica-docs | Installation instructions need to demonstrate how to deploy with and without ElasticSearch |
+#| manual | archivematica-docs | Installation instructions need to demonstrate how to deploy with and without Elasticsearch |
 #| ansible | deploy-pub | singlenode-headless.yml script required - showing how to deploy without ES |
 
 # indexing disabled = ElasticSearchDisabled configuration paramter is set
 # Elasticsearch is not running = operating system command to verify elasticsearch is not running
-# Elasticsearch is not installed = operating system command to verify package is not installed 
+# Elasticsearch is not installed = operating system command to verify package is not installed
 
   Scenario: Dina wants to run a create an AIP without indexing it
     Given an Archivematica instance with Indexing disabled
