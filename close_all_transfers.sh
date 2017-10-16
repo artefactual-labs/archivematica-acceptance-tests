@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-behave --tags=close-all-transfers --no-skipped $@
+behave --tags=-wip --tags=close-all-transfers --no-skipped $@

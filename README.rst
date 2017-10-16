@@ -123,7 +123,7 @@ Usage
 
 Basic usage::
 
-    $ behave
+    $ behave --tags=-@wip
 
 The above will launch many annoying browser windows. Use VNC to hide all that
 rubbish. Start VNC server on display port 42 and background the process::
@@ -139,7 +139,7 @@ Tell the terminal session to use the display port::
 Run the tests, this time just those targetting the correct creation of PREMIS
 events::
 
-    $ behave --tags=premis-events --tags=standard --no-skipped
+    $ behave --tags=-@wip --tags=premis-events --tags=standard --no-skipped
 
 The scenarios in the .feature files may be tagged with zero or more tags. The
 above command runs all scenarios tagged ``@premis-events`` and ``@standard``.
@@ -161,6 +161,12 @@ ingests via the GUI (i.e., using Selenium)::
 
     $ ./close_all_transfers.sh
     $ ./close_all_ingests.sh
+
+Some scenarios are tagged as work in progress (``@wip``). behave_ implements a
+``--wip`` command-line flag to make testing such scenarios simpler. It only
+runs scenarios tagged with ``@wip``.
+
+    $ behave --wip
 
 
 Configuration
