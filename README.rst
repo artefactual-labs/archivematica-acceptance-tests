@@ -123,7 +123,7 @@ Usage
 
 Basic usage::
 
-    $ behave --tags=-@wip
+    $ behave --tags=-wip
 
 The above will launch many annoying browser windows. Use VNC to hide all that
 rubbish. Start VNC server on display port 42 and background the process::
@@ -139,7 +139,7 @@ Tell the terminal session to use the display port::
 Run the tests, this time just those targetting the correct creation of PREMIS
 events::
 
-    $ behave --tags=-@wip --tags=premis-events --tags=standard --no-skipped
+    $ behave --tags=-wip --tags=premis-events --tags=standard --no-skipped
 
 The scenarios in the .feature files may be tagged with zero or more tags. The
 above command runs all scenarios tagged ``@premis-events`` and ``@standard``.
