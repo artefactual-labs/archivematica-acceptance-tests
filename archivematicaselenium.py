@@ -830,7 +830,9 @@ class ArchivematicaSelenium:
         self.wait_for_presence(reingest_tab_selector, timeout=10)
         type_selector = {
             'metadata-only': 'input#id_reingest-reingest_type_1',
-            'metadata-and-objects': 'input#id_reingest-reingest_type_2'
+            'metadata-and-objects': 'input#id_reingest-reingest_type_2',
+            'partial': 'input#id_reingest-reingest_type_2',
+            'full': 'input#id_reingest-reingest_type_3'
         }.get(reingest_type)
         if not type_selector:
             raise ArchivematicaSeleniumError(

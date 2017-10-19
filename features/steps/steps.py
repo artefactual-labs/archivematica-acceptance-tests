@@ -5,6 +5,7 @@ from lxml import etree
 import os
 import pprint
 import re
+import subprocess
 import tarfile
 import time
 
@@ -87,6 +88,7 @@ def step_impl(context, microservice_name, choice, unit_type):
 @when('the user chooses "{choice}" at decision point "{decision_point}" during'
       ' {unit_type}')
 def step_impl(context, choice, decision_point, unit_type):
+
     step = ('when the user waits for the "{}" decision point to appear during'
             ' {}'.format(decision_point, unit_type))
     context.execute_steps(step)
@@ -336,6 +338,25 @@ def step_impl(context, contains, policy_file):
         assert not os.path.isfile(aip_policy_path), (
             'There is a MediaConch policy file in the AIP at {} but there'
             ' shouldn\'t be!'.format( aip_policy_path))
+
+
+@then('{dir_path} is not in the AIP')
+def step_impl(context, dir_path):
+    aip_path = context.scenario.aip_path
+    full_path = os.path.join(
+        aip_path,
+        'data',
+        'objects',
+        dir_path)
+    assert not os.path.exists(full_path)
+    # Assert that the parent of dir_path DOES exist. This is not guaranteed to
+    # be the case but it is true in the case of the empty-directories.feature.
+    assert os.path.exists(os.path.dirname(full_path))
+    # tree = subprocess.check_output(['tree', aip_path]).decode('utf8')
+    # logger.info('Contents of AIP:')
+    # logger.info(tree)
+    # logger.info('Looking for path:')
+    # logger.info(dir_path)
 
 
 @then('the transfer logs directory of the AIP {contains} a copy of the'
@@ -782,6 +803,107 @@ def step_impl(context, event_outcome):
         assert e['event_outcome'] == event_outcome
 
 
+def copy_remote_dir_path_to_local(context, remote_dir_path):
+    if remote_dir_path.startswith('~/'):
+        remote_dir_path = remote_dir_path[2:]
+    local_dir_path = context.am_sel_cli.scp_server_dir_to_local(
+        remote_dir_path)
+    if local_dir_path is None:
+        msg = (
+            'Unable to copy dir {} from the server to the local file'
+            ' system. Server is not accessible via SSH.'.format(remote_dir_path))
+        logger.warning(msg)
+        raise Exception(msg)
+    elif local_dir_path is False:
+        msg = (
+            'Unable to copy dir {} from the server to the local file'
+            ' system. Attempt to scp the file failed.'.format(remote_dir_path))
+        logger.warning(msg)
+        raise Exception(msg)
+    assert os.path.isdir(local_dir_path)
+    return local_dir_path
+
+def remove_files_am_removes(files_list):
+    to_be_removed_files = [
+        e.strip() for e in 'Thumbs.db, Icon, Icon\r, .DS_Store'.split(',')]
+    return [f for f in files_list if f not in to_be_removed_files]
+
+
+@given('remote directory {dir_path} contains an empty directory at'
+       ' {empty_dir_path}')
+def step_impl(context, dir_path, empty_dir_path):
+    local_dir_path = copy_remote_dir_path_to_local(context, dir_path)
+    full_empty_dir_path = os.path.join(local_dir_path, empty_dir_path)
+    assert os.path.isdir(full_empty_dir_path)
+    assert not remove_files_am_removes(os.listdir(full_empty_dir_path))
+
+
+
+@then('{path} is {inness} the METS file\'s {structmap_type} structMap')
+def step_impl(context, path, inness, structmap_type):
+
+    mets = get_mets_from_scenario(context)
+    ns = context.am_sel_cli.mets_nsmap
+    if structmap_type == 'physical':
+        structmap_xpath = './/mets:structMap[@TYPE="physical"]'
+    else:
+        structmap_xpath = ('.//mets:structMap[@TYPE="logical"]'
+                           '[@LABEL="Normative Directory Structure"]')
+    struct_map_el = mets.find(structmap_xpath, ns)
+    logger.info(etree.tostring(struct_map_el, pretty_print=True).decode('utf8'))
+    path = os.path.normpath('{}-{}/objects/{}'.format(
+        context.scenario.transfer_name,
+        context.scenario.sip_uuid,
+        path))
+    parts = path.split('/')
+    xpath = 'mets:div[@LABEL="' + '"]/mets:div[@LABEL="'.join(parts) + '"]'
+    logger.info(xpath)
+    el = struct_map_el.find(xpath, ns)
+    if inness == 'in':
+        assert el is not None
+    else:
+        assert el is None
+    """
+    <mets:structMap xmlns:mets="http://www.loc.gov/METS/" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="structMap_1" LABEL="Archivematica default" TYPE="physical">
+       <mets:div LABEL="hierarchy_with_empty_dir_1508357212-9d46b1e1-af5b-4675-8cb3-acc177fddd15" TYPE="Directory" DMDID="dmdSec_3">
+         <mets:div LABEL="objects" TYPE="Directory">
+           <mets:div LABEL="dir1" TYPE="Directory">
+             <mets:div LABEL="dir1a" TYPE="Directory">
+               <mets:div LABEL="dir1ai" TYPE="Directory">
+                 <mets:div LABEL="file.txt" TYPE="Item">
+                   <mets:fptr FILEID="file-9ce60880-debf-4802-a069-7ea456888534"/>
+                 </mets:div>
+               </mets:div>
+             </mets:div>
+           </mets:div>
+           <mets:div LABEL="dir2" TYPE="Directory">
+             <mets:div LABEL="dir2a" TYPE="Directory">
+               <mets:div LABEL="dir2ai" TYPE="Directory">
+                 <mets:div LABEL="file.txt" TYPE="Item">
+                   <mets:fptr FILEID="file-cd4644c6-611d-439d-927d-12ceecf30202"/>
+                 </mets:div>
+               </mets:div>
+               <mets:div LABEL="dir2aii" TYPE="Directory">
+                 <mets:div LABEL="file.txt" TYPE="Item">
+                   <mets:fptr FILEID="file-8a330936-12f6-4709-bfaf-344102b88411"/>
+                 </mets:div>
+               </mets:div>
+             </mets:div>
+           </mets:div>
+           <mets:div LABEL="submissionDocumentation" TYPE="Directory">
+             <mets:div LABEL="transfer-hierarchy_with_empty_dir_1508357212-b5be34b2-c891-40f8-99da-8e818b66ebed" TYPE="Directory">
+               <mets:div LABEL="METS.xml" TYPE="Item">
+                 <mets:fptr FILEID="file-7488dffb-369c-422b-907c-6b10f1d56ba0"/>
+               </mets:div>
+             </mets:div>
+           </mets:div>
+         </mets:div>
+       </mets:div>
+     </mets:structMap>
+     """
+
+
+
 @given('remote directory {dir_path} contains a hierarchy of subfolders'
        ' containing digital objects')
 def step_impl(context, dir_path):
@@ -789,25 +911,9 @@ def step_impl(context, dir_path):
     one subfolder (subdirectory) and at least one file in a subfolder and then
     record the directory structure in ``context``.
     """
-    if dir_path.startswith('~/'):
-        dir_path = dir_path[2:]
-    dir_local_path = context.am_sel_cli.scp_server_dir_to_local(
-        dir_path)
-    if dir_local_path is None:
-        msg = (
-            'Unable to copy dir {} from the server to the local file'
-            ' system. Server is not accessible via SSH.'.format(dir_path))
-        logger.warning(msg)
-        raise Exception(msg)
-    elif dir_local_path is False:
-        msg = (
-            'Unable to copy dir {} from the server to the local file'
-            ' system. Attempt to scp the file failed.'.format(dir_path))
-        logger.warning(msg)
-        raise Exception(msg)
-    assert os.path.isdir(dir_local_path)
     non_root_paths = []
     non_root_file_paths = []
+    local_dir_path = copy_remote_dir_path_to_local(context, dir_path)
 
     # These are the names of the files that Archivematica will remove by
     # default. See MCPClient/lib/settings/common.py,
@@ -816,9 +922,9 @@ def step_impl(context, dir_path):
     to_be_removed_files = [
         e.strip() for e in 'Thumbs.db, Icon, Icon\r, .DS_Store'.split(',')]
 
-    for path, dirs, files in os.walk(dir_local_path):
-        if path != dir_local_path:
-            path = path.replace(dir_local_path, '', 1)
+    for path, dirs, files in os.walk(local_dir_path):
+        if path != local_dir_path:
+            path = path.replace(local_dir_path, '', 1)
             non_root_paths.append(path)
             non_root_file_paths += [os.path.join(path, file_) for file_ in
                                     files if file_ not in to_be_removed_files]
@@ -1558,6 +1664,38 @@ def step_impl(context):
             ' storage service\n'
         'When an encrypted AIP is created from the directory at'
             ' ~/archivematica-sampledata/SampleTransfers/BagTransfer'
+    )
+
+
+@given('a default processing config that gets to the Store AIP decision point')
+def step_impl(context):
+    context.execute_steps(
+        'Given that the user has ensured that the default processing config is'
+            ' in its default state\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Transfer)" is set to "Identify using Fido"\n'
+        'And the processing config decision "Create SIP(s)" is set to "Create'
+            ' single SIP and continue processing"\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Ingest)" is set to "Identify using Fido"\n'
+        'And the processing config decision "Normalize" is set to "Normalize'
+            ' for preservation"\n'
+        'And the processing config decision "Approve normalization" is set to'
+            ' "Yes"\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Submission documentation & metadata)" is set to'
+            ' "Identify using Fido"\n'
+        'And the processing config decision "Assign UUIDs to directories" is'
+            ' set to "No"\n'
+        'And the processing config decision "Bind PIDs" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on'
+            ' preservation derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on access'
+            ' derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on'
+            ' originals" is set to "No"\n'
+        'And the processing config decision "Store AIP location" is set to'
+            ' "Store AIP in standard Archivematica Directory"\n'
     )
 
 
