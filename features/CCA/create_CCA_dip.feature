@@ -20,7 +20,7 @@ Then the DIP Creation script will retrieve the AIP
   And creates a DIP-METS.xml file that describes the contents of the DIP
   And creates an objects directory containing one zip container with all objects from the   original transfer
   And ensures each object has it's original directory or file name in their original order
-  And updates the 'last modified date' to reflect the value captured during Transfer
+  And updates the 'last modified date' of each file using the fslastmodified property from the AIP METS file (if available)
   And includes a copy of the submissionDocumentation included in the original Transfer
   And includes a copy of the AIP METS file generated during ingest
   And stores the DIP (locally... where?)
