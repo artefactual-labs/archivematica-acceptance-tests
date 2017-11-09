@@ -823,19 +823,31 @@ def step_impl(context, conj_quant):
     # del context.scenario.mets
 
 
-@then('in the METS file the metsHdr element has {quant} dmdSec element as a next'
-      ' sibling')
+@then('in the METS file the metsHdr element has {quant} dmdSec next sibling'
+      ' element(s)')
 def step_impl(context, quant):
     mets = get_mets_from_scenario(context)
     mets_dmd_sec_els = mets.findall('.//mets:dmdSec', context.am_sel_cli.mets_nsmap)
-    if quant == 'no':
-        assert len(mets_dmd_sec_els) == 0
-    elif quant == 'one':
-        assert len(mets_dmd_sec_els) == 1
-    else:
+    try:
+        quant = {
+            'no': 0,
+            'zero': 0,
+            'one': 1,
+            'two': 2,
+            'three': 3,
+            'four': 4,
+            'five': 5,
+            'six': 6,
+            'seven': 7,
+            'eight': 8,
+            'nine': 9,
+        }[quant]
+    except KeyError:
         raise ArchivematicaSeleniumStepsError('Unable to recognize the'
             ' quantifier {} when checking for dmdSec elements in the METS'
             ' file'.format(quant))
+    else:
+        assert len(mets_dmd_sec_els) == quant
 
 
 @then('in the METS file the dmdSec element contains the metadata added')
