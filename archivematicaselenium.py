@@ -921,9 +921,6 @@ class ArchivematicaSelenium:
                    ' {}@{}:{} {}'.format(
                         self.server_user, AM_IP, server_file_path, local_path))
             child = pexpect.spawn(cmd)
-            if self.ssh_requires_password:
-                child.expect('assword:')
-                child.sendline(self.server_password)
             child.expect(pexpect.EOF, timeout=20)
             if os.path.isfile(local_path):
                 return local_path
@@ -954,9 +951,6 @@ class ArchivematicaSelenium:
             logger.info('Command for scp-ing a remote directory to local:\n%s',
                         cmd)
             child = pexpect.spawn(cmd)
-            if self.ssh_requires_password:
-                child.expect('assword:')
-                child.sendline(self.server_password)
             child.expect(pexpect.EOF, timeout=20)
             if os.path.isdir(local_path):
                 return local_path
