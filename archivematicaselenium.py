@@ -2687,10 +2687,10 @@ class ArchivematicaSelenium:
                 choice_value='None')
             self.set_processing_config_decision(
                 decision_label='Assign UUIDs to directories',
-                choice_value='None')
+                choice_value='No')
             self.set_processing_config_decision(
                 decision_label='Bind PIDs',
-                choice_value='None')
+                choice_value='No')
         self.save_default_processing_config()
 
     # Wait/attempt count vars
