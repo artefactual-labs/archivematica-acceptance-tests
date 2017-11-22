@@ -15,5 +15,5 @@ Feature: Transfer (i.e., pre-ingest) Conformance Check
 
     Examples: File Validity Possibilities
     | file_validity | microservice_output    | event_outcome | transfer_path          |
-    | valid         | Completed successfully | pass          | preforma/all-valid     |
-    | not valid     | Failed                 | fail          | preforma/none-valid    |
+    | valid         | Completed successfully | pass          | ~/archivematica-sampledata/TestTransfers/acceptance-tests/preforma/all-valid     |
+    | not valid     | Failed                 | fail          | ~/archivematica-sampledata/TestTransfers/acceptance-tests/preforma/none-valid    |

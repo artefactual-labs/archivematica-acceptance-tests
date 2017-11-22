@@ -24,8 +24,8 @@ Feature: Ingest (i.e., post-normalization) conformance check
 
     Examples: Normalized for Preservation File Validity Possibilities
     | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                        |
-    | valid         | Completed successfully | Passed            | pass          | preforma/when-normalized-all-valid   |
-    | not valid     | Failed                 | Failed            | fail          | preforma/when-normalized-none-valid  |
+    | valid         | Completed successfully | Passed            | pass          | ~/archivematica-sampledata/TestTransfers/acceptance-tests/preforma/when-normalized-all-valid   |
+    | not valid     | Failed                 | Failed            | fail          | ~/archivematica-sampledata/TestTransfers/acceptance-tests/preforma/when-normalized-none-valid  |
 
   @access
   Scenario Outline: Isla wants to confirm that normalization to .mkv for access is successful
@@ -40,4 +40,4 @@ Feature: Ingest (i.e., post-normalization) conformance check
 
     Examples: Normalized for Access File Validity Possibilities
     | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                              |
-    | valid         | Completed successfully | Passed            | pass          | preforma/when-normalized-access-all-valid  |
+    | valid         | Completed successfully | Passed            | pass          | ~/archivematica-sampledata/TestTransfers/acceptance-tests/preforma/when-normalized-access-all-valid  |
