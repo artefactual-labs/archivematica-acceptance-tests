@@ -662,8 +662,6 @@ def step_impl(context):
     - store AIP
     """
     context.execute_steps(
-        'When the user waits for the "Assign UUIDs to directories?" decision'
-            ' point to appear and chooses "No" during transfer\n'
         'And the user waits for the "Select file format identification command"'
             ' decision point to appear and chooses "Identify using Fido" during'
             ' transfer\n'
