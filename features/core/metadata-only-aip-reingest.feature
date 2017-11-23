@@ -9,7 +9,6 @@ Feature: Metadata-only AIP re-ingest
     Given that the user has ensured that the default processing config is in its default state
     And the reminder to add metadata is enabled
     When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
-    And the user waits for the "Assign UUIDs to directories?" decision point to appear and chooses "No" during transfer
     And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
     And the user waits for the "Perform policy checks on originals?" decision point to appear and chooses "No" during transfer
     And the user waits for the "Create SIP(s)" decision point to appear and chooses "Create single SIP and continue processing" during transfer
