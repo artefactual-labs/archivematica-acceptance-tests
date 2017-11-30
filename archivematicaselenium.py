@@ -489,6 +489,9 @@ class ArchivematicaSelenium:
     def get_policies_url(self):
         return '{}administration/policies/'.format(self.am_url)
 
+    def get_admin_general_url(self):
+        return '{}administration/general/'.format(self.am_url)
+
     def get_validation_commands_url(self):
         return '{}fpr/fpcommand/validation/'.format(self.am_url)
 
@@ -3037,6 +3040,15 @@ class ArchivematicaSelenium:
             assert _all_purls_resolve(purls), ('At least one PURL does not resolve'
                 ' in\n  {}'.format('\n  '.join(purls)))
 
+    def get_es_indexing_config_text(self):
+        self.navigate(self.get_admin_general_url())
+        try:
+            el = self.driver.find_element_by_css_selector(
+                'p.es-indexing-configuration')
+        except NoSuchElementException:
+            return None
+        else:
+            return el.text
 
 def _add_entity_identifiers(entity, doc, ns):
     """Find all of the identifiers for ``entity`` (a dict representing a file
