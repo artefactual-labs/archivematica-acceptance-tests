@@ -287,7 +287,7 @@ class ArchivematicaSelenium:
             for window_handle in self.driver.window_handles:
                 self.driver.switch_to.window(window_handle)
                 self.driver.close()
-        self.clear_tmp_dir()
+        #self.clear_tmp_dir()
         for driver in self.all_drivers:
             try:
                 driver.close()
@@ -576,6 +576,7 @@ class ArchivematicaSelenium:
         return None
 
     def get_sip_uuid(self, transfer_name):
+        logger.info('Getting SIP UUID from transfer name {}'.format(transfer_name))
         self.driver.close()
         self.driver = self.get_driver()
         ingest_url = self.get_ingest_url()
@@ -585,6 +586,7 @@ class ArchivematicaSelenium:
         self.driver.get(ingest_url)
         sip_uuid, _, _ = (
             self.wait_for_transfer_to_appear(transfer_name))
+        logger.info('Got SIP UUID {}'.format(sip_uuid))
         return sip_uuid
 
     def get_mets(self, transfer_name, sip_uuid=None, parse_xml=True):

@@ -17,7 +17,7 @@ SS_URL = "http://192.168.168.192:8000/"
 SS_API_KEY = None
 # Path relative to /home where transfer sources live.
 TRANSFER_SOURCE_PATH = 'vagrant/archivematica-sampledata/TestTransfers/acceptance-tests'
-HOME = 'vagrant'
+HOME = ''
 DRIVER_NAME = 'Chrome'
 
 # Set these constants if the AM client should be able to gain SSH access to the
@@ -36,6 +36,7 @@ def get_am_sel_cli(userdata):
         'am_username': userdata.get('am_username', AM_USERNAME),
         'am_password': userdata.get('am_password', AM_PASSWORD),
         'am_url': userdata.get('am_url', AM_URL),
+        'alt_am_url': userdata.get('alt_am_url', AM_URL),
         'am_version': userdata.get('am_version', AM_VERSION),
         'am_api_key': userdata.get('am_api_key', AM_API_KEY),
         'ss_username': userdata.get('ss_username', SS_USERNAME),

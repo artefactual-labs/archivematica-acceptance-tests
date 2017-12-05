@@ -1,3 +1,5 @@
+import contextlib
+import datetime
 import filecmp
 import json
 import logging
@@ -5,6 +7,8 @@ from lxml import etree
 import os
 import pprint
 import re
+import shlex
+import subprocess
 import tarfile
 import time
 
@@ -32,6 +36,17 @@ formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
+
+
+@contextlib.contextmanager
+def alt_am_url(am_sel_cli):
+    """Monkeypatch the AM Selenium client into thinking the alternative AM URL
+    is the real one.
+    """
+    original_am_url = am_sel_cli.am_url
+    am_sel_cli.am_url = am_sel_cli.alt_am_url
+    yield
+    am_sel_cli.am_url = original_am_url
 
 
 class ArchivematicaSeleniumStepsError(Exception):
@@ -656,7 +671,7 @@ def step_impl(context):
     """Standard AIP-creation decisions after a transfer is initiated and up
     until (but not including) the "Store AIP location" decision:
 
-    - file identification via Fido
+    - file identification via Siegfried
     - create SIP
     - normalize for preservation
     - store AIP
@@ -665,7 +680,7 @@ def step_impl(context):
         'When the user waits for the "Assign UUIDs to directories?" decision'
             ' point to appear and chooses "No" during transfer\n'
         'And the user waits for the "Select file format identification command"'
-            ' decision point to appear and chooses "Identify using Fido" during'
+            ' decision point to appear and chooses "Identify using Siegfried" during'
             ' transfer\n'
         'And the user waits for the "Perform policy checks on originals?"'
             ' decision point to appear and chooses "No" during transfer\n'
@@ -684,7 +699,7 @@ def step_impl(context):
             ' ingest\n'
         'And the user waits for the "Select file format identification'
             ' command|Process submission documentation" decision point to'
-            ' appear and chooses "Identify using Fido" during ingest\n'
+            ' appear and chooses "Identify using Siegfried" during ingest\n'
         'And the user waits for the "Bind PIDs?" decision point to appear and'
             ' chooses "No" during ingest\n'
         'And the user waits for the "Store AIP (review)" decision point to'
@@ -1977,3 +1992,133 @@ def step_impl(context):
     accession_no = getattr(context.scenario, 'accession_no', None)
     mets = get_mets_from_scenario(context)
     context.am_sel_cli.validate_mets_for_pids(mets, accession_no=accession_no)
+
+
+@given('an Archivematica instance at {commit_hash} that passes client script'
+       ' output streams to MCPServer')
+def step_impl(context, commit_hash):
+    am_src_path = context.am_sel_cli.am_src_path
+    git_dir = os.path.join(am_src_path, '.git')
+    git_hash_cmd = 'git --git-dir={} --work-tree={} rev-parse HEAD'.format(
+        git_dir, am_src_path)
+    retrieved_commit_hash = subprocess.check_output(
+        shlex.split(git_hash_cmd)).decode('utf8').strip()
+    assert retrieved_commit_hash == commit_hash, (
+        logger.warning('{} is not equal to {}'.format(
+            retrieved_commit_hash, commit_hash)))
+
+
+@when('performance statistics are saved to {filename}')
+def step_impl(context, filename):
+    sip_uuid = context.scenario.sip_uuid
+    sql_query = (
+        'SELECT t.fileUUID as file_uuid,'
+            ' f.fileSize as file_size,'
+            ' LENGTH(t.stdOut) as len_std_out,'
+            ' LENGTH(t.stdError) as len_std_err,'
+            ' t.exec,'
+            ' t.endTime,'
+            ' t.startTime,'
+            ' TIMEDIFF(t.endTime,t.startTime) as duration'
+            ' FROM Tasks t'
+            ' INNER JOIN Files f ON f.fileUUID=t.fileUUID'
+            ' WHERE f.sipUUID=\'{}\''
+            ' ORDER by endTime-startTime, exec;'.format(sip_uuid))
+    cmd_str = (
+        'docker-compose exec mysql mysql -u root -p12345 MCP -e "{}"'.format(
+            sql_query))
+    res = subprocess.check_output(
+        shlex.split(cmd_str),
+        cwd=context.am_sel_cli.docker_compose_path).decode('utf8')
+    tasks = []
+    lines = [l for l in res.splitlines() if l.startswith('|')]
+    keys = [k.strip() for k in lines[0].strip(' |').split('|')]
+    for line in lines[1:]:
+        vals = [v.strip() for v in line.strip(' |').split('|')]
+        tasks.append(dict(zip(keys, vals)))
+    path = os.path.join(context.am_sel_cli.tmp_path, filename)
+    with open(path, 'w') as fo:
+        json.dump({'tasks': tasks}, fo, indent=4)
+
+
+def get_duration_as_float(duration_string):
+    dt = datetime.datetime.strptime(duration_string, '%H:%M:%S.%f')
+    delta = datetime.timedelta(
+        hours=dt.hour, minutes=dt.minute, seconds=dt.second,
+        microseconds=dt.microsecond)
+    return delta.total_seconds()
+
+
+def add_duration_float(tasks):
+    for task in tasks:
+        task['duration_float'] = get_duration_as_float(task['duration'])
+    return tasks
+
+
+@then('the runtime of client scripts in {without_outputs_fname} is less'
+      ' than the runtime of client scripts in {with_outputs_fname}')
+def step_impl(context, without_outputs_fname, with_outputs_fname):
+    without_outputs_fpath = os.path.join(
+        context.am_sel_cli.tmp_path, without_outputs_fname)
+    with_outputs_fpath = os.path.join(
+        context.am_sel_cli.tmp_path, with_outputs_fname)
+    with open(without_outputs_fpath) as fi:
+        without_outputs_stats = json.load(fi)
+    with open(with_outputs_fpath) as fi:
+        with_outputs_stats = json.load(fi)
+    without_outputs_tasks = without_outputs_stats['tasks']
+    with_outputs_tasks = with_outputs_stats['tasks']
+    assert len(without_outputs_tasks) == len(with_outputs_tasks)
+    without_outputs_tasks = add_duration_float(without_outputs_tasks)
+    with_outputs_tasks = add_duration_float(with_outputs_tasks)
+    wo_o_sum_tasks = sum(t['duration_float'] for t in without_outputs_tasks)
+    w_o_sum_tasks = sum(t['duration_float'] for t in with_outputs_tasks)
+    logger.info('Total runtime for without output tasks: %f' % wo_o_sum_tasks)
+    logger.info('Total runtime for with output tasks: %f' % w_o_sum_tasks)
+    assert wo_o_sum_tasks < w_o_sum_tasks
+
+
+@then('performance statistics at {filename} show output streams {verb} saved to'
+      ' the database')
+def step_impl(context, filename, verb):
+    path = os.path.join(context.am_sel_cli.tmp_path, filename)
+    with open(path) as fi:
+        stats = json.load(fi)
+    std_out_len_set = set([x['len_std_out'] for x in stats['tasks']])
+    std_err_len_set = set([x['len_std_err'] for x in stats['tasks']])
+    if verb == 'are':
+        assert len(std_out_len_set) > 1
+        assert len(std_err_len_set) > 1
+    else:
+        assert len(std_out_len_set) == 1, print(std_out_len_set)
+        assert len(std_err_len_set) == 1, print(std_err_len_set)
+
+
+@when('the user switches to using an Archivematica instance at commit'
+      ' {commit_hash} that {blablabla}')
+def step_impl(context, commit_hash, blablabla):
+    del context.scenario.sip_uuid
+    am_src_path = context.am_sel_cli.am_src_path
+    git_dir = os.path.join(am_src_path, '.git')
+    git_co_cmd = 'git --git-dir={} --work-tree={} checkout {}'.format(
+        git_dir, am_src_path, commit_hash)
+    docker_compose_path = os.path.join(
+        context.am_sel_cli.docker_compose_path, 'docker-compose.yml')
+    dc_restart_cmd = (
+        'docker-compose -f {} restart archivematica-mcp-server'
+        ' archivematica-mcp-client'.format(docker_compose_path))
+    subprocess.check_output(shlex.split(git_co_cmd))
+    subprocess.check_output(shlex.split(dc_restart_cmd))
+    context.am_sel_cli.driver.close()
+    context.am_sel_cli.driver = context.am_sel_cli.get_driver()
+
+
+@then('there is no stdout or stderr for the client scripts in {filename}')
+def step_impl(context, filename):
+    pass
+
+
+@then('there is non-zero stdout and stderr for the client scripts in'
+      ' {filename}')
+def step_impl(context, filename):
+    pass
