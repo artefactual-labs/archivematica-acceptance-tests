@@ -41,10 +41,12 @@
 #         -D docker_compose_path=/abs/path/to/am/compose \
 #         -D am_src_path=/abs/path/to/am/src/archivematica
 #
+#
+
 # Results
 # ==============================================================================
 #
-# Results from 4 Runs of this test
+# Results against archivematica-sampledata/SampleTransfers/Images (11 MB)
 # ------------------------------------------------------------------------------
 #
 # 1. Total runtime for without output tasks: 412.99 seconds
@@ -63,11 +65,29 @@
 #
 #
 # Analysis
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# Average runtime for without output tasks:  337.10 seconds
+# Average runtime for with output tasks:     359.04 seconds
+# Average time reduction:                      6.11 %
+
+
+# Results against CUL-Transfer-1 (1.8 GB)
 # ------------------------------------------------------------------------------
 #
-# Average runtime for without output tasks: 412.30 seconds
-# Average runtime for with output tasks:    439.40 seconds
-# Average time reduction of 6%
+# This transfer contains 9 129 MB .tif files and 9 70 MB .tif files.
+#
+# 1. Total runtime for without output tasks: 514.10 seconds
+#    Total runtime for with output tasks:    553.88 seconds
+#
+#
+# Analysis
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# Average runtime for without output tasks: 514.10 seconds
+# Average runtime for with output tasks:    535.88 seconds
+# Average time reduction:                     7.18 %
+
 
 @performance-no-stdout @developer
 Feature: Performance increase: stop saving stdout/stderr
@@ -104,7 +124,7 @@ Feature: Performance increase: stop saving stdout/stderr
     Examples: Archivematica git hashes and transfer sources
     | transfer_source                                   | commit_with_outputs                      | commit_without_outputs                   |
     #| ~/archivematica-sampledata/SampleTransfers/Images | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
-    | ~/CUL-transfer                                    | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
+    | ~/CUL-transfer-1                                  | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
 
     # Listed below are possible metrics of performance increase. Those checked
     # off are relatively easy to measure and are described in the scenario
