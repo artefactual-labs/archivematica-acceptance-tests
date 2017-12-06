@@ -2704,7 +2704,7 @@ class ArchivematicaSelenium:
     # Wait/attempt count vars
     # =========================================================================
 
-    wait_for_transfer_to_appear_max_waits = 200
+    wait_for_transfer_to_appear_max_waits = 1000
     wait_for_transfer_to_appear_waits = 0
     max_click_transfer_directory_tries = 5
     click_transfer_directory_tries = 0
