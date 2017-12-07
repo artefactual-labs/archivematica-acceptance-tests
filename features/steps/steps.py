@@ -707,6 +707,34 @@ def step_impl(context):
     )
 
 
+@given('the default processing config is set to automate a transfer through to'
+       ' "Store AIP"')
+def step_impl(context):
+    context.execute_steps(
+        'Given the default processing config is in its default state\n'
+        'And the processing config decision "Assign UUIDs to directories" is'
+            ' set to "No"\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Transfer)" is set to "Identify using Siegfried"\n'
+        'And the processing config decision "Perform policy checks on'
+            ' originals" is set to "No"\n'
+        'And the processing config decision "Create SIP(s)" is set to "Create'
+            ' single SIP and continue processing"\n'
+        'And the processing config decision "Normalize" is set to "Normalize'
+            ' for preservation"\n'
+        'And the processing config decision "Approve normalization" is set to'
+            ' "Yes"\n'
+        'And the processing config decision "Perform policy checks on'
+            ' preservation derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on access'
+            ' derivatives" is set to "No"\n'
+        'And the processing config decision "Select file format identification'
+            ' command (Submission documentation & metadata)" is set to'
+            ' "Identify using Siegfried"\n'
+        'And the processing config decision "Bind PIDs" is set to "No"'
+    )
+
+
 @given('the default processing config is in its default state')
 def step_impl(context):
     context.execute_steps(

@@ -36,11 +36,10 @@
 #         -D driver_name=Firefox \
 #         -D am_url=http://127.0.0.1:62080/ \
 #         -D am_password=test \
-#         -D home=archivematica \
+#         -D home="" \
 #         -D am_version=1.7 \
 #         -D docker_compose_path=/abs/path/to/am/compose \
 #         -D am_src_path=/abs/path/to/am/src/archivematica
-#
 #
 
 # Results
@@ -97,21 +96,20 @@ Feature: Performance increase: stop saving stdout/stderr
 
   Scenario Outline: Joel creates an AIP on an Archivematica instance that saves stdout/err and on one that does not. He expects that the processing time of the AIP on the first instance will be less than that of the AIP on the second one.
     Given an Archivematica instance at <commit_with_outputs> that passes client script output streams to MCPServer
-    And the default processing config is in its default state
+    And the default processing config is set to automate a transfer through to "Store AIP"
 
     When a transfer is initiated on directory <transfer_source>
-    And standard AIP-creation decisions are made
-    And the user waits for the "Store AIP location" decision point to appear during ingest
+    And the user waits for the "Store AIP (review)" decision point to appear during ingest
     And performance statistics are saved to with_outputs_stats.json
+
     Then performance statistics at with_outputs_stats.json show output streams are saved to the database
 
     When the user switches to using an Archivematica instance at commit <commit_without_outputs> that does not pass client script output streams to MCPServer
 
-    Given the default processing config is in its default state
+    Given the default processing config is set to automate a transfer through to "Store AIP"
 
     When a transfer is initiated on directory <transfer_source>
-    And standard AIP-creation decisions are made
-    And the user waits for the "Store AIP location" decision point to appear during ingest
+    And the user waits for the "Store AIP (review)" decision point to appear during ingest
     And performance statistics are saved to without_outputs_stats.json
 
     Then performance statistics at without_outputs_stats.json show output streams are not saved to the database
@@ -123,8 +121,10 @@ Feature: Performance increase: stop saving stdout/stderr
 
     Examples: Archivematica git hashes and transfer sources
     | transfer_source                                   | commit_with_outputs                      | commit_without_outputs                   |
+    | ~/small                                           | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
     #| ~/archivematica-sampledata/SampleTransfers/Images | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
-    | ~/CUL-transfer-1                                  | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
+    #| ~/images-100M-each-2G-total                       | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
+    #| ~/video-500M-each-10G-total                       | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
 
     # Listed below are possible metrics of performance increase. Those checked
     # off are relatively easy to measure and are described in the scenario
