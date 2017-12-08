@@ -1,3 +1,4 @@
+from features.steps.steps import docker_recreate_am_capture_output
 import archivematicaselenium
 import utils
 
@@ -75,8 +76,14 @@ def after_scenario(context, scenario):
     # In the following scenario, we've created a weird FPR rule. Here we put
     # things back as they were: make access .mov files normalize to .mp4
     if scenario.name == ('Isla wants to confirm that normalization to .mkv for'
-            ' access is successful'):
+                         ' access is successful'):
         context.am_sel_cli.change_normalization_rule_command(
             'Access Generic MOV',
             'Transcoding to mp4 with ffmpeg')
+    if scenario.name == (
+            'Joel creates an AIP on an Archivematica instance that saves'
+            ' stdout/err and on one that does not. He expects that the'
+            ' processing time of the AIP on the first instance will be less'
+            ' than that of the AIP on the second one.'):
+        docker_recreate_am_capture_output(context, True)
     context.am_sel_cli.tear_down()

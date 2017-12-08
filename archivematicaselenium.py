@@ -142,6 +142,7 @@ JOB_OUTPUTS_COMPLETE = (
     'Completed successfully',
     'Awaiting decision')
 TMP_DIR_NAME = '.amsc-tmp'
+PERM_DIR_NAME = 'data'
 
 
 def varvn(varname, vn):
@@ -229,6 +230,7 @@ class ArchivematicaSelenium:
         self.ss_url = ss_url
         self._ss_api_key = ss_api_key
         self._tmp_path = None
+        self._permanent_path = None
         self.metadata_attrs = METADATA_ATTRS
         self.dummy_val = DUMMY_VAL
         for k, v in kwargs.items():
@@ -718,6 +720,15 @@ class ArchivematicaSelenium:
             ms_name, group_name, transfer_uuid,
             job_outputs=('Awaiting decision',))
         return job_uuid, job_output
+
+    @property
+    def permanent_path(self):
+        if not self._permanent_path:
+            here = os.path.dirname(os.path.abspath(__file__))
+            self._permanent_path = os.path.join(here, PERM_DIR_NAME)
+            if not os.path.isdir(self._permanent_path):
+                os.makedirs(self._permanent_path)
+        return self._permanent_path
 
     @property
     def tmp_path(self):

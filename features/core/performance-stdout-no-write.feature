@@ -3,31 +3,26 @@
 #
 # Warning: this feature file should only be run in development. It requires a
 # docker-compose-based Archivematica deploy. The test itself must be able to
-# alter the deployment, i.e., check the source code out to a new revision and
-# # restart Archivematica. This feature was developed against an AM deploy
-# created using https://github.com/artefactual-labs/am and Archivematica at
-# branch dev/1.8.x (be8fdee61851e180cd4dbab0af54fad3f5766066). The test itself
-# checks out a locally accessible dev/1.8.x-without-logs branch at the hash
-# provided under `commit_without_outputs` below and restarts Archivematica using
-# docker-compose.
+# alter the deployment by changing an environment variable and recreating a
+# docker container. This feature was developed against an AM deploy created
+# using https://github.com/artefactual-labs/am on branch
+# dev/issue-11443-performance-no-capture-output.
 #
-# To run the test, deploy Archivematica locally using 
+# To run the test, deploy Archivematica locally using
 # https://github.com/artefactual-labs/am::
 #
 #     $ git clone https://github.com/artefactual-labs/am
+#     $ git checkout dev/issue-11443-performance-no-capture-output
 #     $ cd am/compose
 #     $ git submodule update --init --recursive
-#     $ cd ../src/archivematica
-#     $ git checkout be8fdee61851e180cd4dbab0af54fad3f5766066
-#     $ cd ../../compose
 #     $ make create-volumes
 #     $ docker-compose up -d --build
 #     $ make bootstrap
 #     $ make restart-am-services
 #
 # Then run the following `behave` command, after replacing the
-# `docker_compose_path` and `am_src_path` userdata options with the appropriate
-# values for your development system::
+# `docker_compose_path` userdata option with the appropriate value for your
+# development system::
 #
 #     behave \
 #         --tags=performance-no-stdout \
@@ -38,9 +33,9 @@
 #         -D am_password=test \
 #         -D home="" \
 #         -D am_version=1.7 \
-#         -D docker_compose_path=/abs/path/to/am/compose \
-#         -D am_src_path=/abs/path/to/am/src/archivematica
+#         -D docker_compose_path=/abs/path/to/am/compose
 #
+#     behave --tags=performance-no-stdout --no-skipped --no-capture -D driver_name=Firefox -D am_url=http://127.0.0.1:62080/ -D am_password=test -D home="" -D am_version=1.7 -D docker_compose_path=/Users/joeldunham/Documents/Artefactual/am/compose
 
 # Results
 # ==============================================================================
@@ -95,36 +90,31 @@ Feature: Performance increase: stop saving stdout/stderr
   will result in a significant performance increase.
 
   Scenario Outline: Joel creates an AIP on an Archivematica instance that saves stdout/err and on one that does not. He expects that the processing time of the AIP on the first instance will be less than that of the AIP on the second one.
-    Given an Archivematica instance at <commit_with_outputs> that passes client script output streams to MCPServer
+    Given an Archivematica instance that passes client script output streams to MCPServer
     And the default processing config is set to automate a transfer through to "Store AIP"
 
     When a transfer is initiated on directory <transfer_source>
     And the user waits for the "Store AIP (review)" decision point to appear during ingest
     And performance statistics are saved to with_outputs_stats.json
 
-    Then performance statistics at with_outputs_stats.json show output streams are saved to the database
+    Then performance statistics show output streams are saved to the database
 
-    When the user switches to using an Archivematica instance at commit <commit_without_outputs> that does not pass client script output streams to MCPServer
-
-    Given the default processing config is set to automate a transfer through to "Store AIP"
-
-    When a transfer is initiated on directory <transfer_source>
+    When the user alters the Archivematica instance to not pass client script output streams to MCPServer
+    And a transfer is initiated on directory <transfer_source>
     And the user waits for the "Store AIP (review)" decision point to appear during ingest
     And performance statistics are saved to without_outputs_stats.json
 
-    Then performance statistics at without_outputs_stats.json show output streams are not saved to the database
+    Then performance statistics show output streams are not saved to the database
     And the runtime of client scripts in without_outputs_stats.json is less than the runtime of client scripts in with_outputs_stats.json
     And there is no stdout or stderr for the client scripts in without_outputs_stats.json
     And there is non-zero stdout and stderr for the client scripts in with_outputs_stats.json
 
-    When the user switches to using an Archivematica instance at commit <commit_with_outputs> that does pass client script output streams to MCPServer
-
-    Examples: Archivematica git hashes and transfer sources
-    | transfer_source                                   | commit_with_outputs                      | commit_without_outputs                   |
-    | ~/small                                           | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
-    #| ~/archivematica-sampledata/SampleTransfers/Images | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
-    #| ~/images-100M-each-2G-total                       | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
-    #| ~/video-500M-each-10G-total                       | c1a144ea9eb2dd2858a6deb583d32d5a97eb4b30 | 0b3ee00ec9cdce1ad3d3777768666edee4ef9d03 |
+    Examples: Archivematica transfer sources
+    | transfer_source                                   |
+    | ~/small                                           |
+    #| ~/archivematica-sampledata/SampleTransfers/Images |
+    #| ~/images-100M-each-2G-total                       |
+    #| ~/video-500M-each-10G-total                       |
 
     # Listed below are possible metrics of performance increase. Those checked
     # off are relatively easy to measure and are described in the scenario

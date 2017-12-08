@@ -2022,22 +2022,31 @@ def step_impl(context):
     context.am_sel_cli.validate_mets_for_pids(mets, accession_no=accession_no)
 
 
-@given('an Archivematica instance at {commit_hash} that passes client script'
-       ' output streams to MCPServer')
-def step_impl(context, commit_hash):
-    am_src_path = context.am_sel_cli.am_src_path
-    git_dir = os.path.join(am_src_path, '.git')
-    git_hash_cmd = 'git --git-dir={} --work-tree={} rev-parse HEAD'.format(
-        git_dir, am_src_path)
-    retrieved_commit_hash = subprocess.check_output(
-        shlex.split(git_hash_cmd)).decode('utf8').strip()
-    assert retrieved_commit_hash == commit_hash, (
-        logger.warning('{} is not equal to {}'.format(
-            retrieved_commit_hash, commit_hash)))
+@given('an Archivematica instance that {capture_output} client script output'
+       ' streams to MCPServer')
+def step_impl(context, capture_output):
+    capture_output = {'passes': True}.get(capture_output, False)
+    docker_recreate_am_capture_output(context, capture_output)
+
+
+def docker_recreate_am_capture_output(context, capture_output):
+    docker_compose_path = os.path.join(
+        context.am_sel_cli.docker_compose_path, 'docker-compose.yml')
+    capture_output = {True: 'true'}.get(capture_output, 'false')
+    dc_recreate_cmd = 'docker-compose -f {} up -d'.format(
+        docker_compose_path)
+    env = dict(os.environ,
+               AM_CAPTURE_CLIENT_SCRIPT_OUTPUT=capture_output)
+    subprocess.check_output(shlex.split(dc_recreate_cmd), env=env)
 
 
 @when('performance statistics are saved to {filename}')
 def step_impl(context, filename):
+    """Saves task statistics for a transfer/AIP to a JSON file at ``filename``
+    suffixed with Unix timestamp in the permanent directory. Makes MySQL
+    queries to do this.  In future iterations, this should use AM's API. Also
+    saves the mets file to that same JSON file.
+    """
     sip_uuid = context.scenario.sip_uuid
     sql_query = (
         'SELECT t.fileUUID as file_uuid,'
@@ -2064,9 +2073,11 @@ def step_impl(context, filename):
     for line in lines[1:]:
         vals = [v.strip() for v in line.strip(' |').split('|')]
         tasks.append(dict(zip(keys, vals)))
-    path = os.path.join(context.am_sel_cli.tmp_path, filename)
+    filename = '{}-{}'.format(filename, int(time.time()))
+    path = os.path.join(context.am_sel_cli.permanent_path, filename)
     with open(path, 'w') as fo:
         json.dump({'tasks': tasks}, fo, indent=4)
+    context.scenario.performance_stats_path = path
 
 
 def get_duration_as_float(duration_string):
@@ -2086,10 +2097,10 @@ def add_duration_float(tasks):
 @then('the runtime of client scripts in {without_outputs_fname} is less'
       ' than the runtime of client scripts in {with_outputs_fname}')
 def step_impl(context, without_outputs_fname, with_outputs_fname):
-    without_outputs_fpath = os.path.join(
-        context.am_sel_cli.tmp_path, without_outputs_fname)
-    with_outputs_fpath = os.path.join(
-        context.am_sel_cli.tmp_path, with_outputs_fname)
+    without_outputs_fpath = get_newest_file_with_prefix(
+        context.am_sel_cli.permanent_path, without_outputs_fname)
+    with_outputs_fpath = get_newest_file_with_prefix(
+        context.am_sel_cli.permanent_path, with_outputs_fname)
     with open(without_outputs_fpath) as fi:
         without_outputs_stats = json.load(fi)
     with open(with_outputs_fpath) as fi:
@@ -2106,10 +2117,14 @@ def step_impl(context, without_outputs_fname, with_outputs_fname):
     assert wo_o_sum_tasks < w_o_sum_tasks
 
 
-@then('performance statistics at {filename} show output streams {verb} saved to'
-      ' the database')
-def step_impl(context, filename, verb):
-    path = os.path.join(context.am_sel_cli.tmp_path, filename)
+def get_newest_file_with_prefix(dirpath, filename_prefix):
+    files = [f for f in os.listdir(dirpath) if f.startswith(filename_prefix)]
+    return os.path.join(dirpath, sorted(files)[-1])
+
+
+@then('performance statistics show output streams {verb} saved to the database')
+def step_impl(context, verb):
+    path = context.scenario.performance_stats_path
     with open(path) as fi:
         stats = json.load(fi)
     std_out_len_set = set([x['len_std_out'] for x in stats['tasks']])
@@ -2122,23 +2137,12 @@ def step_impl(context, filename, verb):
         assert len(std_err_len_set) == 1, print(std_err_len_set)
 
 
-@when('the user switches to using an Archivematica instance at commit'
-      ' {commit_hash} that {blablabla}')
-def step_impl(context, commit_hash, blablabla):
+@when('the user alters the Archivematica instance to {capture_output} client'
+      ' script output streams to MCPServer')
+def step_impl(context, capture_output):
     del context.scenario.sip_uuid
-    am_src_path = context.am_sel_cli.am_src_path
-    git_dir = os.path.join(am_src_path, '.git')
-    git_co_cmd = 'git --git-dir={} --work-tree={} checkout {}'.format(
-        git_dir, am_src_path, commit_hash)
-    docker_compose_path = os.path.join(
-        context.am_sel_cli.docker_compose_path, 'docker-compose.yml')
-    dc_restart_cmd = (
-        'docker-compose -f {} restart archivematica-mcp-server'
-        ' archivematica-mcp-client'.format(docker_compose_path))
-    subprocess.check_output(shlex.split(git_co_cmd))
-    subprocess.check_output(shlex.split(dc_restart_cmd))
-    context.am_sel_cli.driver.close()
-    context.am_sel_cli.driver = context.am_sel_cli.get_driver()
+    capture_output = {'passes': True}.get(capture_output, False)
+    docker_recreate_am_capture_output(context, capture_output)
 
 
 @then('there is no stdout or stderr for the client scripts in {filename}')
