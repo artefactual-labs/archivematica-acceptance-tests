@@ -225,6 +225,47 @@ Archivematica version 1.7 instance at 123.456.123.456 using the Firefox driver::
         -D am_version=1.7
 
 
+Contributors Guide
+================================================================================
+
+This section provides advice on how to contribute to this repository. At
+present, this repo does not conform to the following principles, but it should
+be made to.
+
+1. Write step functions in the correct place.
+
+   - General (i.e., reusable) step functions should be defined in steps/steps.py.
+   - Feature-specific step functions should be defined in sister modules to
+     steps/steps.py that are named after the feature, e.g.,
+     steps/aip-encryption-steps.py.
+
+2. Place re-usable logic in steps files in steps/utils.py and import it in
+   steps files.
+
+3. Use tags for works in progress and non-executable features.
+
+   - Tag work-in-progress features or scenarios with `@wip`.
+   - Tag features/scenarios that are documentation only, i.e., not implemented
+     and not intended to be executed as tests, using `@unexecutable`.
+
+4. Store user data and functionality in the ``ArchivematicaUser`` class of
+   amuser.py.
+
+5. Define browser-dependent abilities of the AM user as attributes of
+   ``ArchivematicaBrowserClient`` in ambrowserclient.py.
+
+6. Define API-dependent abilities of the AM user as attributes of
+   ``ArchivematicaAPIClient`` in amapiclient.py. (Potentially move amclient.py
+   from automation-tools to its own repo/library and make it a dependency of
+   the automation tools.)
+
+7. Use the steps catalog to view the available steps, i.e., those that have
+   been defined in steps files in the steps/ directory::
+
+    $ behave --steps-catalog
+
+
+
 .. _Archivematica: https://github.com/artefactual/archivematica
 .. _behave: http://pythonhosted.org/behave/
 .. _Gherkin: https://github.com/cucumber/cucumber/wiki/Gherkin
