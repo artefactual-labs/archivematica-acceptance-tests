@@ -288,7 +288,9 @@ class ArchivematicaSelenium:
         - Firefox 47.01 (*note* does not work on v. 48.0)
         """
         self.driver = self.get_driver()
-        if self.driver_name not in ('Chrome-Hub',):
+        # Do not maximize window in Chrome to workaround:
+        # https://bugs.chromium.org/p/chromedriver/issues/detail?id=1901
+        if self.driver_name not in ('Chrome-Hub', 'Chrome'):
             self.driver.maximize_window()
 
     def tear_down(self):
@@ -595,7 +597,7 @@ class ArchivematicaSelenium:
         return None
 
     def get_sip_uuid(self, transfer_name):
-        self.driver.close()
+        self.driver.quit()
         self.driver = self.get_driver()
         ingest_url = self.get_ingest_url()
         self.driver.get(ingest_url)
@@ -1238,7 +1240,7 @@ class ArchivematicaSelenium:
             if link_button.text.strip() == 'Next Page':
                 next_tasks_url = '{}{}'.format(
                     self.am_url, link_button.get_attribute('href'))
-        self.driver.close()
+        self.driver.quit()
         if next_tasks_url:
             table_dict = self._parse_tasks_table_am_1_6(
                 next_tasks_url, table_dict)
@@ -1290,7 +1292,7 @@ class ArchivematicaSelenium:
             if link_button.text.strip() == 'Next page':
                 next_tasks_url = '{}{}'.format(
                     self.am_url, link_button.get_attribute('href'))
-        self.driver.close()
+        self.driver.quit()
         if next_tasks_url:
             table_dict = self._parse_tasks_table_am_1_7(
                 next_tasks_url, table_dict)
@@ -1561,7 +1563,7 @@ class ArchivematicaSelenium:
         normalization report, parse it and return a list of dicts.
         """
         report = []
-        self.driver.close()
+        self.driver.quit()
         self.driver = self.get_driver()
         url = self.get_ingest_url()
         self.driver.get(url)

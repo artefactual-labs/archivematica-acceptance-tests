@@ -1,4 +1,5 @@
 env/
+.env/
 sandbox/
 am-mc-commands/
 test-transfers-sandbox/

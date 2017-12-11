@@ -19,7 +19,7 @@ SS_API_KEY = None
 TRANSFER_SOURCE_PATH = 'vagrant/archivematica-sampledata/TestTransfers/acceptance-tests'
 HOME = 'vagrant'
 DRIVER_NAME = 'Chrome'
-
+AUTOMATION_TOOLS_PATH = '/etc/archivematica/automation-tools'
 # Set these constants if the AM client should be able to gain SSH access to the
 # server where AM is being served. This is needed in order to scp server files
 # to local, which some tests need. If SSH access is not possible, set
@@ -67,6 +67,8 @@ def before_scenario(context, scenario):
     context.TRANSFER_SOURCE_PATH = userdata.get(
         'transfer_source_path', TRANSFER_SOURCE_PATH)
     context.HOME = userdata.get('home', HOME)
+    context.AUTOMATION_TOOLS_PATH = userdata.get(
+        'automation_tools_path', AUTOMATION_TOOLS_PATH)
 
 
 def after_scenario(context, scenario):
