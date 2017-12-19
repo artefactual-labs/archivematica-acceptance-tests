@@ -19,9 +19,9 @@ def step_impl(context, count, event_type, properties):
     mets = utils.get_mets_from_scenario(context)
     events = []
     properties = json.loads(properties)
-    for premis_evt_el in mets.findall('.//premis:event', context.am_sel_cli.mets_nsmap):
+    for premis_evt_el in mets.findall('.//premis:event', context.am_user.amba.mets_nsmap):
         premis_evt_type_el = premis_evt_el.find(
-            'premis:eventType', context.am_sel_cli.mets_nsmap)
+            'premis:eventType', context.am_user.amba.mets_nsmap)
         if premis_evt_type_el.text == event_type:
             events.append(premis_evt_el)
             utils.assert_premis_event(event_type, premis_evt_el, context)
@@ -34,9 +34,9 @@ def step_impl(context, count, event_type, properties):
 def step_impl(context, count, event_type):
     mets = utils.get_mets_from_scenario(context)
     events = []
-    for premis_evt_el in mets.findall('.//premis:event', context.am_sel_cli.mets_nsmap):
+    for premis_evt_el in mets.findall('.//premis:event', context.am_user.amba.mets_nsmap):
         premis_evt_type_el = premis_evt_el.find(
-            'premis:eventType', context.am_sel_cli.mets_nsmap)
+            'premis:eventType', context.am_user.amba.mets_nsmap)
         if premis_evt_type_el.text == event_type:
             events.append(premis_evt_el)
             utils.assert_premis_event(event_type, premis_evt_el, context)
@@ -50,7 +50,7 @@ def step_impl(context, conj_quant):
     quantifier, of course.
     """
     mets = utils.get_mets_from_scenario(context)
-    mets_hdr_els = mets.findall('.//mets:metsHdr', context.am_sel_cli.mets_nsmap)
+    mets_hdr_els = mets.findall('.//mets:metsHdr', context.am_user.amba.mets_nsmap)
     assert len(mets_hdr_els) == 1
     mets_hdr_el = mets_hdr_els[0]
     assert mets_hdr_el.get('CREATEDATE')
@@ -71,7 +71,7 @@ def step_impl(context, conj_quant):
       ' element(s)')
 def step_impl(context, quant):
     mets = utils.get_mets_from_scenario(context)
-    mets_dmd_sec_els = mets.findall('.//mets:dmdSec', context.am_sel_cli.mets_nsmap)
+    mets_dmd_sec_els = mets.findall('.//mets:dmdSec', context.am_user.amba.mets_nsmap)
     try:
         quant = {
             'no': 0,
@@ -87,7 +87,7 @@ def step_impl(context, quant):
             'nine': 9,
         }[quant]
     except KeyError:
-        raise utils.ArchivematicaSeleniumStepsError(
+        raise utils.ArchivematicaStepsError(
             'Unable to recognize the quantifier {} when checking for dmdSec'
             ' elements in the METS file'.format(quant))
     else:
@@ -99,10 +99,10 @@ def step_impl(context):
     mets = utils.get_mets_from_scenario(context)
     dublincore_el = mets.find(
         './/mets:dmdSec/mets:mdWrap/mets:xmlData/dcterms:dublincore',
-        context.am_sel_cli.mets_nsmap)
+        context.am_user.amba.mets_nsmap)
     assert dublincore_el
-    for attr in context.am_sel_cli.metadata_attrs:
+    for attr in context.am_user.amba.metadata_attrs:
         dc_el = dublincore_el.find('dc:{}'.format(attr),
-                                   context.am_sel_cli.mets_nsmap)
+                                   context.am_user.amba.mets_nsmap)
         assert dc_el is not None
-        assert dc_el.text == context.am_sel_cli.dummy_val
+        assert dc_el.text == context.am_user.amba.dummy_val

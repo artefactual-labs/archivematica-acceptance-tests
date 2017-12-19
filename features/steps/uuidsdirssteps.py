@@ -27,10 +27,10 @@ def step_impl(context, dir_path):
 
     dir_is_zipped = bool(os.path.splitext(dir_path)[1])
     if dir_is_zipped:
-        local_path = context.am_sel_cli.scp_server_file_to_local(
+        local_path = context.am_user.amcla.scp_server_file_to_local(
             dir_path)
     else:
-        local_path = context.am_sel_cli.scp_server_dir_to_local(
+        local_path = context.am_user.amcla.scp_server_dir_to_local(
             dir_path)
     if local_path is None:
         msg = (
@@ -132,7 +132,7 @@ def step_impl(context):
     AIP METS.
     """
     context.scenario.mets = mets = utils.get_mets_from_scenario(context)
-    ns = context.am_sel_cli.mets_nsmap
+    ns = context.am_user.amba.mets_nsmap
     struct_map_el = mets.find('.//mets:structMap[@TYPE="physical"]', ns)
     subpaths = utils.get_subpaths_from_struct_map(struct_map_el, ns)
     subpaths = [p.replace('/objects', '', 1) for p in
@@ -153,7 +153,7 @@ def step_impl(context):
       ' file')
 def step_impl(context):
     mets = context.scenario.mets
-    ns = context.am_sel_cli.mets_nsmap
+    ns = context.am_user.amba.mets_nsmap
     struct_map_el = mets.find('.//mets:structMap[@TYPE="physical"]', ns)
     for dirpath in context.scenario.remote_dir_subfolders:
         dirname = os.path.basename(dirpath)

@@ -29,18 +29,18 @@ def step_impl(context):
     # Runtime-specific parameters for the Handle configuration to test against
     # must be passed in by the user at test runtime, e.g., as
     # ``behave -D base_resolve_url='https://foobar.org'``, etc.
-    base_resolve_url = getattr(context.am_sel_cli, 'base_resolve_url', nodice)
-    pid_xml_namespace = getattr(context.am_sel_cli, 'pid_xml_namespace', nodice)
-    context.am_sel_cli.configure_handle(**{
+    base_resolve_url = getattr(context.am_user.amba, 'base_resolve_url', nodice)
+    pid_xml_namespace = getattr(context.am_user.amba, 'pid_xml_namespace', nodice)
+    context.am_user.amba.configure_handle(**{
         # More runtime-specific parameters:
         'pid_web_service_endpoint': getattr(
-            context.am_sel_cli, 'pid_web_service_endpoint', nodice),
+            context.am_user.amba, 'pid_web_service_endpoint', nodice),
         'pid_web_service_key': getattr(
-            context.am_sel_cli, 'pid_web_service_key', nodice),
+            context.am_user.amba, 'pid_web_service_key', nodice),
         'handle_resolver_url': getattr(
-            context.am_sel_cli, 'handle_resolver_url', nodice),
+            context.am_user.amba, 'handle_resolver_url', nodice),
         'naming_authority': getattr(
-            context.am_sel_cli, 'naming_authority', '12345'),
+            context.am_user.amba, 'naming_authority', '12345'),
         # Baked in:
         'pid_request_verify_certs': False,
         'resolve_url_template_archive': (
@@ -83,7 +83,7 @@ def step_impl(context):
 @given('a Handle server client configured to use the accession number as the'
        ' PID for the AIP')
 def step_impl(context):
-    context.am_sel_cli.configure_handle(
+    context.am_user.amba.configure_handle(
         handle_archive_pid_source='Accession number')
 
 
@@ -99,4 +99,4 @@ def step_impl(context):
 def step_impl(context):
     accession_no = getattr(context.scenario, 'accession_no', None)
     mets = utils.get_mets_from_scenario(context)
-    context.am_sel_cli.validate_mets_for_pids(mets, accession_no=accession_no)
+    context.am_user.ammetsa.validate_mets_for_pids(mets, accession_no=accession_no)

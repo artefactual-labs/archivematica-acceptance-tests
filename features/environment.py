@@ -1,4 +1,4 @@
-import archivematicaselenium
+import amuser
 import utils
 
 
@@ -30,8 +30,8 @@ SERVER_USER = 'vagrant'
 SERVER_PASSWORD = 'vagrant'
 
 
-def get_am_sel_cli(userdata):
-    """Instantiate an ArchivematicaSelenium."""
+def get_am_user(userdata):
+    """Instantiate an ArchivematicaUser."""
     userdata.update({
         'am_username': userdata.get('am_username', AM_USERNAME),
         'am_password': userdata.get('am_password', AM_PASSWORD),
@@ -50,20 +50,19 @@ def get_am_sel_cli(userdata):
         'server_user': userdata.get('server_user', SERVER_USER),
         'server_password': userdata.get('server_password', SERVER_PASSWORD)
     })
-    return archivematicaselenium.ArchivematicaSelenium(**userdata)
+    return amuser.ArchivematicaUser(**userdata)
 
 
 def before_scenario(context, scenario):
-    """Instantiate an Archivematica Selenium browser instance. The
-    ArchivematicaSelenium instance creates many drivers/browsers. If we don't
-    destroy then in between scenarios, we end up with too many and it causes
-    the tests to fail. That is why we are using ``before_scenario`` here and
-    not ``before_all``.
+    """Instantiate an ``ArchivematicaUser`` instance. The ``ArchivematicaUser``
+    instance creates many drivers/browsers. If we don't destroy then in between
+    scenarios, we end up with too many and it causes the tests to fail. That is
+    why we are using ``before_scenario`` here and not ``before_all``.
     """
     userdata = context.config.userdata
-    context.am_sel_cli = get_am_sel_cli(userdata)
+    context.am_user = get_am_user(userdata)
     context.utils = utils
-    context.am_sel_cli.set_up()
+    context.am_user.amba.set_up()
     context.TRANSFER_SOURCE_PATH = userdata.get(
         'transfer_source_path', TRANSFER_SOURCE_PATH)
     context.HOME = userdata.get('home', HOME)
@@ -76,8 +75,8 @@ def after_scenario(context, scenario):
     # In the following scenario, we've created a weird FPR rule. Here we put
     # things back as they were: make access .mov files normalize to .mp4
     if scenario.name == ('Isla wants to confirm that normalization to .mkv for'
-            ' access is successful'):
-        context.am_sel_cli.change_normalization_rule_command(
+                         ' access is successful'):
+        context.am_user.amba.change_normalization_rule_command(
             'Access Generic MOV',
             'Transcoding to mp4 with ffmpeg')
-    context.am_sel_cli.tear_down()
+    context.am_user.amba.tear_down()

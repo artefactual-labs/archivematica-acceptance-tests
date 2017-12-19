@@ -24,8 +24,8 @@ Consider the following snippet from the premis-events.feature file::
 
 The ``Given``, ``When`` and ``Then`` statements in the .feature files are
 implemented by "step" functions in the features/steps/steps.py file, which, in
-turn, may interact with Archivematica GUI(s) by calling methods of an
-``archivematicaselenium.py::ArchivematicaSelenium`` instance.
+turn, may interact with Archivematica GUI(s) and APIs by calling methods of an
+``amuser::ArchivematicaUser`` instance.
 
 
 Installation
@@ -237,9 +237,9 @@ be made to.
    - General (i.e., reusable) step functions should be defined in steps/steps.py.
    - Feature-specific step functions should be defined in sister modules to
      steps/steps.py that are named after the feature, e.g.,
-     steps/aip-encryption-steps.py.
+     steps/aipencryptsteps.py.
 
-2. Place re-usable logic in steps files in steps/utils.py and import it in
+2. Place reusable logic in steps files in steps/utils.py and import it in
    steps files.
 
 3. Use tags for works in progress and non-executable features.
@@ -264,6 +264,10 @@ be made to.
 
     $ behave --steps-catalog
 
+
+Linting::
+
+    $ pylint --disable=function-redefined,no-name-in-module,too-many-locals,unused-argument,fixme,duplicate-code,redefined-variable-type,too-many-ancestors,too-many-branches
 
 
 .. _Archivematica: https://github.com/artefactual/archivematica
