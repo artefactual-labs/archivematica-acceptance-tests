@@ -1,0 +1,17 @@
+{
+    "features/core/metadata-only-aip-reingest.feature": {
+        "behave_command": "behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=${AM_SS_API_KEY} -D home=archivematica -D driver_name=Firefox",
+        "environments": {
+            [
+                {
+                    "archivematica_version": "1.7.0",
+                    "archivematica_branch": "qa/1.x",
+                    "archivematica_commit": "924fbb397ad58d334c0495f7cec4ed872535a983",
+                    "storage_service_version": "0.11.0",
+                    "storage_service_branch": "qa/0.x",
+                    "storage_service_commit": "edc78d40340a153ddba879291364463c06e4e4a2"
+                }
+            ]
+        }
+    }
+}
