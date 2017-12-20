@@ -25,12 +25,12 @@ class ArchivematicaAPIAbility(base.Base):
     interact with AM.
     """
 
-    def download_aip(self, transfer_name, sip_uuid):
+    def download_aip(self, transfer_name, sip_uuid, ss_api_key):
         """Use the AM SS API to download the completed AIP.
         Calls http://localhost:8000/api/v2/file/<SIP-UUID>/download/\
                   ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
         """
-        payload = {'username': self.ss_username, 'api_key': self.ss_api_key}
+        payload = {'username': self.ss_username, 'api_key': ss_api_key}
         url = '{}api/v2/file/{}/download/'.format(self.ss_url, sip_uuid)
         aip_name = '{}-{}.7z'.format(transfer_name, sip_uuid)
         aip_path = os.path.join(self.tmp_path, aip_name)
@@ -55,12 +55,12 @@ class ArchivematicaAPIAbility(base.Base):
                 raise ArchivematicaAPIAbilityError(
                     'Unable to download AIP {}'.format(sip_uuid))
 
-    def download_aip_pointer_file(self, sip_uuid):
+    def download_aip_pointer_file(self, sip_uuid, ss_api_key):
         """Use the AM SS API to download the completed AIP's pointer file.
         Calls http://localhost:8000/api/v2/file/<SIP-UUID>/pointer_file/\
                   ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
         """
-        payload = {'username': self.ss_username, 'api_key': self.ss_api_key}
+        payload = {'username': self.ss_username, 'api_key': ss_api_key}
         url = '{}api/v2/file/{}/pointer_file/'.format(self.ss_url, sip_uuid)
         pointer_file_name = 'pointer.{}.xml'.format(sip_uuid)
         pointer_file_path = os.path.join(self.tmp_path, pointer_file_name)

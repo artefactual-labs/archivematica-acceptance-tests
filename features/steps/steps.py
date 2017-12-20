@@ -169,7 +169,7 @@ def step_impl(context, aip_description):
         uuid_val = utils.get_uuid_val(context, 'sip')
     transfer_name = context.scenario.transfer_name
     context.scenario.aip_path = context.am_user.api.download_aip(
-        transfer_name, uuid_val)
+        transfer_name, uuid_val, context.am_user.browser.ss_api_key)
 
 
 use_step_matcher('parse')
@@ -184,7 +184,7 @@ def step_impl(context):
     time.sleep(5)
     context.scenario.aip_pointer_path = app = (
         context.am_user.api.download_aip_pointer_file(
-            uuid_val))
+            uuid_val, context.am_user.browser.ss_api_key))
     utils.logger.info('downloaded AIP pointer file for AIP %s to %s', uuid_val,
                       app)
 
@@ -196,7 +196,8 @@ def step_impl(context, aip_description):
     aip_uuid = getattr(context.scenario, aip_attr)
     time.sleep(5)
     setattr(context.scenario, aip_ptr_attr,
-            context.am_user.api.download_aip_pointer_file(aip_uuid))
+            context.am_user.api.download_aip_pointer_file(
+                aip_uuid, context.am_user.browser.ss_api_key))
     utils.logger.info('downloaded AIP pointer file for %s AIP %s to %s',
                       aip_description, aip_uuid,
                       getattr(context.scenario, aip_ptr_attr))
