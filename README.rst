@@ -265,11 +265,6 @@ be made to.
     $ behave --steps-catalog
 
 
-Linting::
-
-    $ pylint --disable=function-redefined,no-name-in-module,too-many-locals,unused-argument,fixme,duplicate-code,redefined-variable-type,too-many-ancestors,too-many-branches
-
-
 .. _Archivematica: https://github.com/artefactual/archivematica
 .. _behave: http://pythonhosted.org/behave/
 .. _Gherkin: https://github.com/cucumber/cucumber/wiki/Gherkin

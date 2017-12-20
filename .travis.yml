@@ -1,0 +1,18 @@
+---
+
+sudo: false
+
+language: python
+cache: pip
+
+script: tox
+
+notifications:
+  email: false
+
+matrix:
+  fast_finish: true
+  include:
+
+    - python: "3.6"
+      env: TOXENV=py36

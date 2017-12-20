@@ -8,6 +8,7 @@ mediaconch-policies-sandbox/
 mediaconch-policies/video-MKV-FFV1-Intra-PCM-or-FLAC-CRC32-everywhere.xml
 test-files/
 .amsc-tmp/
+.tox/
 .python-version
 __pycache__
 behave-tutorial/
