@@ -7,7 +7,7 @@ Gherkin_ language. Deploying an Archivematica system to test against is a
 necessary separate step. The tests use Selenium_ to launch a browser in order to
 interact with Archivematica's web GUI. (They also make vanilla requests to AM's
 API using Python's Requests_ library). They have been run successfully with
-Firefox and Chrome, and in CI scenarios using TightVNC_ .
+Firefox and Chrome, and in CI scenarios using TightVNC_.
 
 Using Gherkin to express tests makes them quite readable to non-programmers.
 Consider the following snippet from the premis-events.feature file::
