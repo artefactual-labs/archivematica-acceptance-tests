@@ -6,7 +6,7 @@ import tarfile
 from lxml import etree
 from behave import when, then, given, use_step_matcher
 
-from . import utils
+from features.steps import utils
 
 
 GPG_KEYS_DIR = 'etc/gpgkeys'
@@ -72,7 +72,7 @@ def step_impl(context):
     in ``context.scenario.location_uuid``.
     """
     replicator_location_uuid = context.scenario.location_uuid
-    context.am_user.amba.add_replicator_to_default_aip_stor_loc(
+    context.am_user.browser.add_replicator_to_default_aip_stor_loc(
         replicator_location_uuid)
 
 
@@ -86,7 +86,7 @@ def step_impl(context, attributes):
     attributes = utils.parse_k_v_attributes(attributes)
     space_uuid = context.scenario.space_uuid
     context.scenario.location_uuid = \
-        context.am_user.amba.ensure_ss_location_exists(space_uuid, attributes)
+        context.am_user.browser.ensure_ss_location_exists(space_uuid, attributes)
 
 
 @given('an encrypted AIP in the standard GPG-encrypted space')
@@ -110,7 +110,7 @@ def step_impl(context):
 @when('the user attempts to import GPG key {key_fname}')
 def step_impl(context, key_fname):
     key_path = get_gpg_key_path(key_fname)
-    context.scenario.import_gpg_key_result = context.am_user.amba.import_gpg_key(key_path)
+    context.scenario.import_gpg_key_result = context.am_user.browser.import_gpg_key(key_path)
 
 
 @when('the user creates a new GPG key and assigns it to the standard'
@@ -118,11 +118,11 @@ def step_impl(context, key_fname):
 def step_impl(context):
     # Create the new GPG key
     new_key_name, new_key_email, new_key_fingerprint = (
-        context.am_user.amba.create_new_gpg_key())
+        context.am_user.browser.create_new_gpg_key())
     context.scenario.new_key_name = new_key_name
     context.scenario.new_key_fingerprint = new_key_fingerprint
     # Edit the "standard GPG-encrypted space" to use the new GPG key
-    standard_encr_space_uuid = context.am_user.amba.search_for_ss_space({
+    standard_encr_space_uuid = context.am_user.browser.search_for_ss_space({
         'Access protocol': 'GPG encryption on Local Filesystem',
         'Path': '/',
         'Staging path': '/var/archivematica/storage_service_encrypted',
@@ -130,7 +130,7 @@ def step_impl(context):
     })['uuid']
     new_key_repr = '{} <{}>'.format(new_key_name, new_key_email)
     utils.logger.info('Created a new GPG key "%s"', new_key_repr)
-    context.am_user.amba.change_encrypted_space_key(standard_encr_space_uuid,
+    context.am_user.browser.change_encrypted_space_key(standard_encr_space_uuid,
                                                     new_key_repr)
 
 
@@ -152,7 +152,7 @@ def step_impl(context):
     utils.logger.info('Attempting to delete GPG key "%s"', new_key_name)
     (context.scenario.delete_gpg_key_success,
      context.scenario.delete_gpg_key_msg) = (
-         context.am_user.amba.delete_gpg_key(new_key_name))
+         context.am_user.browser.delete_gpg_key(new_key_name))
     if context.scenario.delete_gpg_key_success:
         utils.logger.info('Attempt to delete GPG key "%s" was SUCCESSFUL',
                           new_key_name)
@@ -168,13 +168,13 @@ def step_impl(context):
     other than the one stored in ``context.scenario.new_key_name``.
     """
     # Edit the "standard GPG-encrypted space" to use the new GPG key
-    standard_encr_space_uuid = context.am_user.amba.search_for_ss_space({
+    standard_encr_space_uuid = context.am_user.browser.search_for_ss_space({
         'Access protocol': 'GPG encryption on Local Filesystem',
         'Path': '/',
         'Staging path': '/var/archivematica/storage_service_encrypted',
         'GnuPG Private Key': context.scenario.new_key_name
     })['uuid']
-    context.am_user.amba.change_encrypted_space_key(standard_encr_space_uuid)
+    context.am_user.browser.change_encrypted_space_key(standard_encr_space_uuid)
 
 
 # Thens
@@ -222,23 +222,23 @@ def step_impl(context, aip_description, second_aip_description, event_type):
         doc = etree.parse(filei)
         premis_object_el = doc.find(
             './/mets:mdWrap[@MDTYPE="PREMIS:OBJECT"]',
-            context.am_user.amba.mets_nsmap)
+            context.am_user.mets.mets_nsmap)
         premis_relationship = premis_object_el.find(
             'mets:xmlData/premis:object/premis:relationship',
-            context.am_user.amba.mets_nsmap)
+            context.am_user.mets.mets_nsmap)
         premis_relationship_type = premis_relationship.find(
             'premis:relationshipType',
-            context.am_user.amba.mets_nsmap).text.strip()
+            context.am_user.mets.mets_nsmap).text.strip()
         assert premis_relationship_type == 'derivation'
         premis_related_object_uuid = premis_relationship.find(
             'premis:relatedObjectIdentification/'
             'premis:relatedObjectIdentifierValue',
-            context.am_user.amba.mets_nsmap).text.strip()
+            context.am_user.mets.mets_nsmap).text.strip()
         assert second_aip_uuid == premis_related_object_uuid
         premis_related_event_uuid = premis_relationship.find(
             'premis:relatedEventIdentification/'
             'premis:relatedEventIdentifierValue',
-            context.am_user.amba.mets_nsmap).text.strip()
+            context.am_user.mets.mets_nsmap).text.strip()
         assert event_uuid == premis_related_event_uuid
 
 
@@ -282,10 +282,10 @@ def step_impl(context):
         premis_event = None
         for premis_event_el in doc.findall(
                 './/mets:mdWrap[@MDTYPE="PREMIS:EVENT"]',
-                context.am_user.amba.mets_nsmap):
+                context.am_user.mets.mets_nsmap):
             premis_event_type_el = premis_event_el.find(
                 'mets:xmlData/premis:event/premis:eventType',
-                context.am_user.amba.mets_nsmap)
+                context.am_user.mets.mets_nsmap)
             if premis_event_type_el.text.strip() == 'encryption':
                 premis_event = premis_event_el
                 break
@@ -294,13 +294,13 @@ def step_impl(context):
         # version=0.4.0</premis:eventDetail>
         premis_event_detail = premis_event.find(
             'mets:xmlData/premis:event/premis:eventDetail',
-            context.am_user.amba.mets_nsmap).text
+            context.am_user.mets.mets_nsmap).text
         assert 'GPG' in premis_event_detail
         assert 'version=' in premis_event_detail
         premis_event_od_note = premis_event.find(
             'mets:xmlData/premis:event/premis:eventOutcomeInformation/'
             'premis:eventOutcomeDetail/premis:eventOutcomeDetailNote',
-            context.am_user.amba.mets_nsmap).text.strip()
+            context.am_user.mets.mets_nsmap).text.strip()
         assert 'Status="encryption ok"' in premis_event_od_note
 
 
@@ -326,7 +326,7 @@ def step_impl(context, aip_description):
         pointer_path = getattr(context.scenario, aip_ptr_attr)
     else:
         pointer_path = context.scenario.aip_pointer_path
-    ns = context.am_user.amba.mets_nsmap
+    ns = context.am_user.mets.mets_nsmap
     assert_pointer_transform_file_encryption(pointer_path, ns)
 
 
@@ -362,7 +362,7 @@ def step_impl(context):
 def step_impl(context, key_name):
     assert context.scenario.import_gpg_key_result.startswith('New key')
     assert context.scenario.import_gpg_key_result.endswith('created.')
-    assert len(context.am_user.amba.get_gpg_key_search_matches(key_name)) == 1
+    assert len(context.am_user.browser.get_gpg_key_search_matches(key_name)) == 1
 
 
 @then('the user fails to import the GPG key {key_name} because it requires a'
@@ -371,7 +371,7 @@ def step_impl(context, key_name):
     assert context.scenario.import_gpg_key_result == (
         'Import failed. The GPG key provided requires a passphrase. GPG keys'
         ' with passphrases cannot be imported')
-    assert len(context.am_user.amba.get_gpg_key_search_matches(key_name)) == 0
+    assert len(context.am_user.browser.get_gpg_key_search_matches(key_name)) == 0
 
 
 use_step_matcher('parse')
@@ -390,7 +390,7 @@ def step_impl(context):
         context.scenario.transfer_uuid)
     utils.logger.info('expecting encrypted transfer to be at %s on server',
                       path_on_disk)
-    dip_local_path = context.am_user.amcla.scp_server_file_to_local(
+    dip_local_path = context.am_user.ssh.scp_server_file_to_local(
         path_on_disk)
     if dip_local_path is None:
         utils.logger.info(
@@ -418,7 +418,7 @@ def step_impl(context, aips_store_path):
     aip_server_path = '{}{}/{}-{}'.format(
         aips_store_path, subpath, context.scenario.transfer_name,
         context.scenario.sip_uuid)
-    aip_local_path = context.am_user.amcla.scp_server_file_to_local(
+    aip_local_path = context.am_user.ssh.scp_server_file_to_local(
         aip_server_path)
     if aip_local_path is None:
         utils.logger.info(
@@ -441,7 +441,7 @@ def step_impl(context, aips_store_path):
 @then('the AIP pointer file references the fingerprint of the new GPG key')
 def step_impl(context):
     pointer_path = context.scenario.aip_pointer_path
-    ns = context.am_user.amba.mets_nsmap
+    ns = context.am_user.mets.mets_nsmap
     fingerprint = context.scenario.new_key_fingerprint
     assert_pointer_transform_file_encryption(pointer_path, ns, fingerprint)
 
@@ -489,10 +489,10 @@ def assert_pointer_premis_event(**kwargs):
         premis_event = None
         for premis_event_el in doc.findall(
                 './/mets:mdWrap[@MDTYPE="PREMIS:EVENT"]',
-                kwargs['context'].am_user.amba.mets_nsmap):
+                kwargs['context'].am_user.mets.mets_nsmap):
             premis_event_type_el = premis_event_el.find(
                 'mets:xmlData/premis:event/premis:eventType',
-                kwargs['context'].am_user.amba.mets_nsmap)
+                kwargs['context'].am_user.mets.mets_nsmap)
             if premis_event_type_el.text.strip() == kwargs['event_type']:
                 premis_event = premis_event_el
                 break
@@ -500,12 +500,12 @@ def assert_pointer_premis_event(**kwargs):
         premis_event_uuid = premis_event.find(
             'mets:xmlData/premis:event/premis:eventIdentifier/'
             'premis:eventIdentifierValue',
-            kwargs['context'].am_user.amba.mets_nsmap).text.strip()
+            kwargs['context'].am_user.mets.mets_nsmap).text.strip()
         if kwargs.get('in_evt_dtl'):
             in_evt_dtl = kwargs['in_evt_dtl'] or []
             premis_event_detail = premis_event.find(
                 'mets:xmlData/premis:event/premis:eventDetail',
-                kwargs['context'].am_user.amba.mets_nsmap).text.strip()
+                kwargs['context'].am_user.mets.mets_nsmap).text.strip()
             for substr in in_evt_dtl:
                 assert substr in premis_event_detail
         if kwargs.get('in_evt_out'):
@@ -513,7 +513,7 @@ def assert_pointer_premis_event(**kwargs):
             premis_event_out = premis_event.find(
                 'mets:xmlData/premis:event/premis:eventOutcomeInformation/'
                 'premis:eventOutcome',
-                kwargs['context'].am_user.amba.mets_nsmap).text.strip()
+                kwargs['context'].am_user.mets.mets_nsmap).text.strip()
             for substr in in_evt_out:
                 assert substr in premis_event_out
         if kwargs.get('in_evt_out_dtl_nt'):
@@ -521,7 +521,7 @@ def assert_pointer_premis_event(**kwargs):
             premis_event_od_note = premis_event.find(
                 'mets:xmlData/premis:event/premis:eventOutcomeInformation/'
                 'premis:eventOutcomeDetail/premis:eventOutcomeDetailNote',
-                kwargs['context'].am_user.amba.mets_nsmap).text.strip()
+                kwargs['context'].am_user.mets.mets_nsmap).text.strip()
             for substr in in_evt_out_dtl_nt:
                 assert substr in premis_event_od_note
         return premis_event_uuid
@@ -534,14 +534,14 @@ def get_aip_is_encrypted(context, aip_description):
         pointer_path = getattr(context.scenario, aip_ptr_attr)
     else:
         pointer_path = context.scenario.aip_pointer_path
-    ns = context.am_user.amba.mets_nsmap
+    ns = context.am_user.mets.mets_nsmap
     with open(pointer_path) as filei:
         doc = etree.parse(filei)
         file_el = doc.find('mets:fileSec/mets:fileGrp/mets:file', ns)
         flocat_el = file_el.find('mets:FLocat', ns)
         xlink_href = flocat_el.get('{' + ns['xlink'] + '}href')
         # Use scp to copy the AIP on the server to a local directory.
-        aip_local_path = context.am_user.amcla.scp_server_file_to_local(xlink_href)
+        aip_local_path = context.am_user.ssh.scp_server_file_to_local(xlink_href)
         if aip_local_path is None:
             utils.logger.warning(
                 'Unable to copy file %s from the server to the local file'

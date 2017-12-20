@@ -8,7 +8,7 @@ import zipfile
 
 from behave import when, then, given
 
-from . import utils
+from features.steps import utils
 
 # ==============================================================================
 # Step Definitions
@@ -41,7 +41,7 @@ def step_impl(context):
     # Not the best way to check the AIP existence
     # as the request won't fail if AM is in debug mode.
     # Should we check directly in the SS API?
-    context.am_user.amba.navigate_to_aip_in_archival_storage(context.aip_uuid)
+    context.am_user.browser.navigate_to_aip_in_archival_storage(context.aip_uuid)
 
 
 # Whens

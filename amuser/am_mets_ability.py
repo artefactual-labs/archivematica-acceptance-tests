@@ -16,6 +16,8 @@ class ArchivematicaMETSAbility(base.Base):
     files.
     """
 
+    mets_nsmap = c.METS_NSMAP
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

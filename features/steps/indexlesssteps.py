@@ -61,7 +61,7 @@ def step_impl(context):
     3. Expect that element to contain exactly this text: "Elasticsearch
        indexing has been disabled in this Archivematica installation"
     """
-    es_indexing_config_text = context.am_user.amba.get_es_indexing_config_text()
+    es_indexing_config_text = context.am_user.browser.get_es_indexing_config_text()
     assert es_indexing_config_text is not None
     assert es_indexing_config_text.strip() == (
         'Elasticsearch indexing has been disabled in this Archivematica'
@@ -78,7 +78,7 @@ def step_impl(context):
     """
     if context.scenario.idxls_dply_method == 'docker-compose':
         docker_compose_path = os.path.join(
-            context.am_user.amba.docker_compose_path, 'docker-compose.yml')
+            context.am_user.browser.docker_compose_path, 'docker-compose.yml')
         import subprocess
         NAME = slice(0, 42)
         STATE = slice(75, 86)

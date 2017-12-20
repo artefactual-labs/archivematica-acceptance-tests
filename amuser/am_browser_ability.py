@@ -101,7 +101,7 @@ class ArchivematicaBrowserAbility(
         assert alert_text == 'Delete request created successfully.'
 
     def navigate_to_aip_in_archival_storage(self, aip_uuid):
-        url = self.get_aip_in_archival_storage_url(aip_uuid=aip_uuid)
+        url = self.get_aip_in_archival_storage_url(aip_uuid)
         max_attempts = 10
         attempt = 0
         while True:

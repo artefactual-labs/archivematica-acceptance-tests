@@ -25,19 +25,19 @@ class ArchivematicaUser(base.Base):
     different abilities, or ways of interacting with Archivematica. Using
     composition, this Archivematica has the following types of abilities:
 
-        - browser abilities (via Selenium) accessed through ``self.amba``.
-        - API abilities (via Requests) accessed through ``self.amapia``.
-        - command-line abilities (via ssh, scp) accessed through ``self.amcla``.
-        - METS (XML) abilities, accessed through ``self.ammetsa``.
+        - browser abilities (via Selenium) accessed through ``self.browser``.
+        - API abilities (via Requests) accessed through ``self.api``.
+        - SSH abilities (via ssh, scp) accessed through ``self.ssh``.
+        - METS (XML) abilities, accessed through ``self.mets``.
     """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.amba = am_browser_ability.ArchivematicaBrowserAbility(**kwargs)
-        self.amcla = am_cmd_line_ability.ArchivematicaCommandLineAbility(
+        self.browser = am_browser_ability.ArchivematicaBrowserAbility(**kwargs)
+        self.ssh = am_cmd_line_ability.ArchivematicaCommandLineAbility(
             **kwargs)
-        self.amapia = am_api_ability.ArchivematicaAPIAbility(**kwargs)
-        self.ammetsa = am_mets_ability.ArchivematicaMETSAbility(**kwargs)
+        self.api = am_api_ability.ArchivematicaAPIAbility(**kwargs)
+        self.mets = am_mets_ability.ArchivematicaMETSAbility(**kwargs)
 
     @staticmethod
     def decompress_package(package_path):

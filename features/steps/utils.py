@@ -23,14 +23,14 @@ class ArchivematicaStepsError(Exception):
 def wait_for_micro_service_to_complete(context, microservice_name, unit_type):
     unit_type = get_normalized_unit_type(unit_type)
     uuid_val = get_uuid_val(context, unit_type)
-    context.am_user.amba.await_job_completion(
+    context.am_user.browser.await_job_completion(
         microservice_name, uuid_val, unit_type=unit_type)
 
 
 def wait_for_decision_point_to_appear(context, microservice_name, unit_type):
     unit_type = get_normalized_unit_type(unit_type)
     uuid_val = get_uuid_val(context, unit_type)
-    job_uuid, _ = context.am_user.amba.await_decision_point(
+    job_uuid, _ = context.am_user.browser.await_decision_point(
         microservice_name, uuid_val, unit_type=unit_type)
     context.scenario.awaiting_job_uuid = job_uuid
 
@@ -38,7 +38,7 @@ def wait_for_decision_point_to_appear(context, microservice_name, unit_type):
 def make_choice(context, choice, decision_point, unit_type):
     unit_type = get_normalized_unit_type(unit_type)
     uuid_val = get_uuid_val(context, unit_type)
-    context.am_user.amba.make_choice(
+    context.am_user.browser.make_choice(
         choice, decision_point, uuid_val, unit_type=unit_type)
 
 
@@ -63,7 +63,7 @@ def get_uuid_val(context, unit_type):
             context.scenario.transfer_name = (
                 context.scenario.transfer_name.rstrip('.zip'))
             uuid_val = context.scenario.sip_uuid = (
-                context.am_user.amba.get_sip_uuid(context.scenario.transfer_name))
+                context.am_user.browser.get_sip_uuid(context.scenario.transfer_name))
     return uuid_val
 
 
@@ -80,33 +80,33 @@ def get_event_attr(event_type):
 
 
 def get_mets_from_scenario(context):
-    return context.am_user.amba.get_mets(
+    return context.am_user.browser.get_mets(
         context.scenario.transfer_name,
-        context.am_user.amba.get_sip_uuid(context.scenario.transfer_name))
+        context.am_user.browser.get_sip_uuid(context.scenario.transfer_name))
 
 
 def assert_premis_event(event_type, event, context):
     """Make PREMIS-event-type-specific assertions about ``event``."""
     if event_type == 'unpacking':
         premis_evt_detail_el = event.find(
-            'premis:eventDetail', context.am_user.amba.mets_nsmap)
+            'premis:eventDetail', context.am_user.mets.mets_nsmap)
         assert premis_evt_detail_el.text.strip().startswith('Unpacked from: ')
     elif event_type == 'message digest calculation':
-        event_detail = event.find('premis:eventDetail', context.am_user.amba.mets_nsmap).text
+        event_detail = event.find('premis:eventDetail', context.am_user.mets.mets_nsmap).text
         event_odn = event.find(
             'premis:eventOutcomeInformation/'
             'premis:eventOutcomeDetail/'
             'premis:eventOutcomeDetailNote',
-            context.am_user.amba.mets_nsmap).text
+            context.am_user.mets.mets_nsmap).text
         assert 'program="python"' in event_detail
         assert 'module="hashlib.sha256()"' in event_detail
         assert re.search('^[a-f0-9]+$', event_odn)
     elif event_type == 'virus check':
         event_detail = event.find(
-            'premis:eventDetail', context.am_user.amba.mets_nsmap).text
+            'premis:eventDetail', context.am_user.mets.mets_nsmap).text
         event_outcome = event.find(
             'premis:eventOutcomeInformation/premis:eventOutcome',
-            context.am_user.amba.mets_nsmap).text
+            context.am_user.mets.mets_nsmap).text
         assert 'program="Clam AV"' in event_detail
         assert event_outcome == 'Pass'
 
@@ -118,7 +118,7 @@ def assert_premis_properties(event, context, properties):
     """
     for xpath, predicates in properties.items():
         xpath = '/'.join(['premis:' + part for part in xpath.split('/')])
-        desc_el = event.find(xpath, context.am_user.amba.mets_nsmap)
+        desc_el = event.find(xpath, context.am_user.mets.mets_nsmap)
         for relation, value in predicates:
             if relation == 'equals':
                 assert desc_el.text.strip() == value, (
@@ -141,10 +141,10 @@ def initiate_transfer(context, transfer_path, accession_no=None,
     else:
         context.scenario.transfer_path = os.path.join(
             context.TRANSFER_SOURCE_PATH, transfer_path)
-    context.scenario.transfer_name = context.am_user.amba.unique_name(
+    context.scenario.transfer_name = context.am_user.browser.unique_name(
         transfer_path2name(transfer_path))
     context.scenario.transfer_uuid, context.scenario.transfer_name = (
-        context.am_user.amba.start_transfer(
+        context.am_user.browser.start_transfer(
             context.scenario.transfer_path, context.scenario.transfer_name,
             accession_no=accession_no, transfer_type=transfer_type))
 
@@ -153,9 +153,9 @@ def ingest_ms_output_is(name, output, context):
     """Wait for the Ingest micro-service with name ``name`` to appear and
     assert that its output is ``output``.
     """
-    context.scenario.sip_uuid = context.am_user.amba.get_sip_uuid(
+    context.scenario.sip_uuid = context.am_user.browser.get_sip_uuid(
         context.scenario.transfer_name)
-    context.scenario.job = context.am_user.amba.parse_job(
+    context.scenario.job = context.am_user.browser.parse_job(
         name, context.scenario.sip_uuid, 'sip')
     assert context.scenario.job.get('job_output') == output
 
@@ -218,7 +218,7 @@ def all_normalization_report_columns_are(column, expected_value, context):
     """Wait for the normalization report to be generated then assert that all
     values in ``column`` have value ``expected_value``.
     """
-    normalization_report = context.am_user.amba.parse_normalization_report(
+    normalization_report = context.am_user.browser.parse_normalization_report(
         context.scenario.sip_uuid)
     for file_dict in normalization_report:
         if file_dict['file_format'] != 'None':

@@ -4,7 +4,7 @@ import time
 
 from behave import when, then, given, use_step_matcher
 
-from . import utils
+from features.steps import utils
 
 
 # Givens
@@ -39,24 +39,24 @@ def step_impl(context):
 @given('that the user has ensured that the default processing config is in its'
        ' default state')
 def step_impl(context):
-    context.am_user.amba.ensure_default_processing_config_in_default_state()
+    context.am_user.browser.ensure_default_processing_config_in_default_state()
 
 
 @given('the reminder to add metadata is enabled')
 def step_impl(context):
-    context.am_user.amba.set_processing_config_decision(
+    context.am_user.browser.set_processing_config_decision(
         decision_label='Reminder: add metadata if desired',
         choice_value='None')
-    context.am_user.amba.save_default_processing_config()
+    context.am_user.browser.save_default_processing_config()
 
 
 @given('the processing config decision "{decision_label}" is set to'
        ' "{choice_value}"')
 def step_impl(context, decision_label, choice_value):
-    context.am_user.amba.set_processing_config_decision(
+    context.am_user.browser.set_processing_config_decision(
         decision_label=decision_label,
         choice_value=choice_value)
-    context.am_user.amba.save_default_processing_config()
+    context.am_user.browser.save_default_processing_config()
 
 
 @given('a transfer is initiated on directory {transfer_path}')
@@ -72,13 +72,13 @@ def step_impl(context, attributes):
     ``attributes``. These are :-delimited pairs delimited by ';'.
     """
     attributes = utils.parse_k_v_attributes(attributes)
-    context.scenario.space_uuid = context.am_user.amba.ensure_ss_space_exists(
+    context.scenario.space_uuid = context.am_user.browser.ensure_ss_space_exists(
         attributes)
 
 
 @given('the user has disabled the default transfer backlog location')
 def step_impl(context):
-    context.am_user.amba.disable_default_transfer_backlog()
+    context.am_user.browser.disable_default_transfer_backlog()
 
 
 @given('a fully automated default processing config')
@@ -145,14 +145,14 @@ def step_impl(context, choice, decision_point, unit_type):
 @when('the user waits for the AIP to appear in archival storage')
 def step_impl(context):
     uuid_val = utils.get_uuid_val(context, 'sip')
-    context.am_user.amba.wait_for_aip_in_archival_storage(uuid_val)
+    context.am_user.browser.wait_for_aip_in_archival_storage(uuid_val)
 
 
 @when('the user searches for the AIP UUID in the Storage Service')
 def step_impl(context):
     the_aip_uuid = utils.get_uuid_val(context, 'sip')
     context.scenario.aip_search_results = (
-        context.am_user.amba.search_for_aip_in_storage_service(the_aip_uuid))
+        context.am_user.browser.search_for_aip_in_storage_service(the_aip_uuid))
 
 
 use_step_matcher('re')
@@ -168,7 +168,7 @@ def step_impl(context, aip_description):
     else:
         uuid_val = utils.get_uuid_val(context, 'sip')
     transfer_name = context.scenario.transfer_name
-    context.scenario.aip_path = context.am_user.amapia.download_aip(
+    context.scenario.aip_path = context.am_user.api.download_aip(
         transfer_name, uuid_val)
 
 
@@ -183,7 +183,7 @@ def step_impl(context):
     # out of date. See @reencrypt-different-key.
     time.sleep(5)
     context.scenario.aip_pointer_path = app = (
-        context.am_user.amapia.download_aip_pointer_file(
+        context.am_user.api.download_aip_pointer_file(
             uuid_val))
     utils.logger.info('downloaded AIP pointer file for AIP %s to %s', uuid_val,
                       app)
@@ -196,7 +196,7 @@ def step_impl(context, aip_description):
     aip_uuid = getattr(context.scenario, aip_attr)
     time.sleep(5)
     setattr(context.scenario, aip_ptr_attr,
-            context.am_user.amapia.download_aip_pointer_file(aip_uuid))
+            context.am_user.api.download_aip_pointer_file(aip_uuid))
     utils.logger.info('downloaded AIP pointer file for %s AIP %s to %s',
                       aip_description, aip_uuid,
                       getattr(context.scenario, aip_ptr_attr))
@@ -205,7 +205,7 @@ def step_impl(context, aip_description):
 @when('the user waits for the DIP to appear in transfer backlog')
 def step_impl(context):
     uuid_val = utils.get_uuid_val(context, 'transfer')
-    context.am_user.amba.wait_for_dip_in_transfer_backlog(uuid_val)
+    context.am_user.browser.wait_for_dip_in_transfer_backlog(uuid_val)
 
 
 @when('the user decompresses the AIP')
@@ -216,13 +216,13 @@ def step_impl(context):
 
 @when('the user adds metadata')
 def step_impl(context):
-    context.am_user.amba.add_dummy_metadata(utils.get_uuid_val(context, 'sip'))
+    context.am_user.browser.add_dummy_metadata(utils.get_uuid_val(context, 'sip'))
 
 
 @when('the user initiates a {reingest_type} re-ingest on the AIP')
 def step_impl(context, reingest_type):
     uuid_val = utils.get_uuid_val(context, 'sip')
-    context.am_user.amba.initiate_reingest(
+    context.am_user.browser.initiate_reingest(
         uuid_val, reingest_type=reingest_type)
 
 
@@ -286,14 +286,14 @@ def step_impl(context, transfer_path):
 
 @when('the user closes all {unit_type}')
 def step_impl(context, unit_type):
-    getattr(context.am_user.amba, 'remove_all_' + unit_type)()
+    getattr(context.am_user.browser, 'remove_all_' + unit_type)()
 
 
 @when('the AIP is deleted')
 def step_impl(context):
     uuid_val = utils.get_uuid_val(context, 'sip')
-    context.am_user.amba.request_aip_delete(uuid_val)
-    context.am_user.amba.approve_aip_delete_request(uuid_val)
+    context.am_user.browser.request_aip_delete(uuid_val)
+    context.am_user.browser.approve_aip_delete_request(uuid_val)
 
 
 @when('the user performs a metadata-only re-ingest on the AIP')
@@ -341,6 +341,6 @@ def step_impl(context):
 def step_impl(context, microservice_name, microservice_output, unit_type):
     unit_type = utils.get_normalized_unit_type(unit_type)
     uuid_val = utils.get_uuid_val(context, unit_type)
-    context.scenario.job = context.am_user.amba.parse_job(
+    context.scenario.job = context.am_user.browser.parse_job(
         microservice_name, uuid_val, unit_type=unit_type)
     assert context.scenario.job.get('job_output') == microservice_output

@@ -5,7 +5,7 @@ import os
 from behave import when, then, given
 from lxml import etree
 
-from . import utils
+from features.steps import utils
 
 
 MC_EVENT_DETAIL_PREFIX = 'program="MediaConch"'
@@ -189,7 +189,7 @@ def step_impl(context, transfer_path, do_files_conform, policy_file):
 @given('an FPR rule with purpose "{purpose}", format "{format}", and command'
        ' "{command}"')
 def step_impl(context, purpose, format_, command):
-    context.am_user.amba.ensure_fpr_rule(purpose, format_, command)
+    context.am_user.browser.ensure_fpr_rule(purpose, format_, command)
 
 
 # Whens
@@ -197,14 +197,14 @@ def step_impl(context, purpose, format_, command):
 
 @when('the user edits the FPR rule to transcode .mkv files to .mkv for access')
 def step_impl(context):
-    context.am_user.amba.change_normalization_rule_command(
+    context.am_user.browser.change_normalization_rule_command(
         'Access Generic MKV',
         'Transcoding to mkv with ffmpeg')
 
 
 @when('the user edits the FPR rule to transcode .mov files to .mkv for access')
 def step_impl(context):
-    context.am_user.amba.change_normalization_rule_command(
+    context.am_user.browser.change_normalization_rule_command(
         'Access Generic MOV',
         'Transcoding to mkv with ffmpeg')
 
@@ -212,14 +212,14 @@ def step_impl(context):
 @when('the user uploads the policy file {policy_file}')
 def step_impl(context, policy_file):
     policy_path = get_policy_path(policy_file)
-    context.am_user.amba.upload_policy(policy_path)
+    context.am_user.browser.upload_policy(policy_path)
 
 
 @when('the user ensures there is an FPR command that uses policy file'
       ' {policy_file}')
 def step_impl(context, policy_file):
     policy_path = get_policy_path(policy_file)
-    context.am_user.amba.ensure_fpr_policy_check_command(policy_file, policy_path)
+    context.am_user.browser.ensure_fpr_policy_check_command(policy_file, policy_path)
 
 
 # TODO: this step could be generalized to support any purpose/format/command
@@ -227,10 +227,10 @@ def step_impl(context, policy_file):
 @when('the user ensures there is an FPR rule with purpose {purpose} that'
       ' validates Generic MKV files against policy file {policy_file}')
 def step_impl(context, purpose, policy_file):
-    context.am_user.amba.ensure_fpr_rule(
+    context.am_user.browser.ensure_fpr_rule(
         purpose,
         'Video: Matroska: Generic MKV',
-        context.am_user.amba.get_policy_command_description(policy_file)
+        context.am_user.browser.get_policy_command_description(policy_file)
     )
 
 
@@ -239,7 +239,7 @@ def step_impl(context, purpose, policy_file):
 
 @then('validation micro-service output is {microservice_output}')
 def step_impl(context, microservice_output):
-    context.scenario.job = context.am_user.amba.parse_job(
+    context.scenario.job = context.am_user.browser.parse_job(
         'Validate formats', context.scenario.transfer_uuid)
     assert context.scenario.job.get('job_output') == microservice_output
 
@@ -384,9 +384,9 @@ def step_impl(context, validation_result):
       ' eventOutcome = {event_outcome}')
 def step_impl(context, event_outcome):
     events = []
-    for e in context.am_user.ammetsa.get_premis_events(context.am_user.amba.get_mets(
+    for e in context.am_user.mets.get_premis_events(context.am_user.browser.get_mets(
             context.scenario.transfer_name,
-            context.am_user.amba.get_sip_uuid(context.scenario.transfer_name))):
+            context.am_user.browser.get_sip_uuid(context.scenario.transfer_name))):
         if (e['event_type'] == 'validation' and
                 e['event_detail'].startswith(MC_EVENT_DETAIL_PREFIX) and
                 e['event_outcome_detail_note'].startswith(
@@ -445,9 +445,9 @@ def step_impl(context, event_outcome):
       ' {event_outcome}')
 def step_impl(context, event_outcome):
     events = []
-    for e in context.am_user.ammetsa.get_premis_events(context.am_user.amba.get_mets(
+    for e in context.am_user.mets.get_premis_events(context.am_user.browser.get_mets(
             context.scenario.transfer_name,
-            context.am_user.amba.get_sip_uuid(context.scenario.transfer_name))):
+            context.am_user.browser.get_sip_uuid(context.scenario.transfer_name))):
         if (e['event_type'] == 'validation' and
                 e['event_detail'].startswith(MC_EVENT_DETAIL_PREFIX) and
                 e['event_outcome_detail_note'].startswith(
