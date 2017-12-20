@@ -113,8 +113,7 @@ class ArchivematicaBrowserTransferAbility(
             c.SELECTOR_TRANSFER_DIV)
         if transfer_elems:
             return transfer_elems[0]
-        else:
-            return None
+        return None
 
     def wait_for_transfer_to_appear(self, transfer_name, name_is_prefix=False):
         """Wait until the transfer appears in the transfer tab (after "Start

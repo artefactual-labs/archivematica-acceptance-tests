@@ -49,9 +49,8 @@ def is_hdl(idfr, entity_type, accession_no=None):
     if accession_no and entity_type == 'aip':
         print('PID {} should equal accession number {}'.format(pid, accession_no))
         return pid == accession_no
-    else:
-        print('PID {} should be a UUID'.format(pid))
-        return is_uuid(pid)
+    print('PID {} should be a UUID'.format(pid))
+    return is_uuid(pid)
 
 
 def normalize_ms_name(ms_name, vn):

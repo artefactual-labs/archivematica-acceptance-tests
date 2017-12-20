@@ -10,10 +10,10 @@
 #     -D ss_username=test \
 #     -D ss_password=test \
 #     -D ss_url=http://127.0.0.1:62081/ \
-#     -D ss_api_key=${AM_SS_API_KEY} \
+#     -D ss_api_key=test \
 #     -D home=archivematica \
 #     -D driver_name=Firefox
-# behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=${AM_SS_API_KEY} -D home=archivematica -D driver_name=Firefox
+# behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox
 
 @am16
 Feature: Metadata-only AIP re-ingest

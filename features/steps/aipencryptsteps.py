@@ -131,7 +131,7 @@ def step_impl(context):
     new_key_repr = '{} <{}>'.format(new_key_name, new_key_email)
     utils.logger.info('Created a new GPG key "%s"', new_key_repr)
     context.am_user.browser.change_encrypted_space_key(standard_encr_space_uuid,
-                                                    new_key_repr)
+                                                       new_key_repr)
 
 
 @when('an encrypted AIP is created from the directory at {transfer_path}')
@@ -371,7 +371,7 @@ def step_impl(context, key_name):
     assert context.scenario.import_gpg_key_result == (
         'Import failed. The GPG key provided requires a passphrase. GPG keys'
         ' with passphrases cannot be imported')
-    assert len(context.am_user.browser.get_gpg_key_search_matches(key_name)) == 0
+    assert not context.am_user.browser.get_gpg_key_search_matches(key_name)
 
 
 use_step_matcher('parse')

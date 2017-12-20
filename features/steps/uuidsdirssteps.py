@@ -72,8 +72,8 @@ def step_impl(context, dir_path):
         non_root_paths = utils.debag(non_root_paths)
         non_root_file_paths = utils.debag(non_root_file_paths)
 
-    assert len(non_root_paths) > 0
-    assert len(non_root_file_paths) > 0
+    assert non_root_paths
+    assert non_root_file_paths
     context.scenario.remote_dir_subfolders = non_root_paths
     context.scenario.remote_dir_files = non_root_file_paths
 

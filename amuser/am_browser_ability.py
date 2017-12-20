@@ -9,10 +9,15 @@ windows and interacting with Archivematica's GUIs.
 import time
 
 import requests
-from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
 from selenium.common.exceptions import (
     ElementNotVisibleException,
     NoSuchElementException,
+)
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import (
+    Select,
+    WebDriverWait
 )
 
 from . import constants as c
@@ -41,8 +46,21 @@ class ArchivematicaBrowserAbility(
     interact with a live Archivematica instance.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    @property
+    def ss_api_key(self):
+        if not self._ss_api_key:
+            self.driver.get(self.get_ss_login_url())
+            self.driver.find_element_by_id('id_username').send_keys(self.ss_username)
+            self.driver.find_element_by_id('id_password').send_keys(self.ss_password)
+            self.driver.find_element_by_css_selector(
+                c.varvn('SELECTOR_SS_LOGIN_BUTTON', self.vn)).click()
+            self.driver.get(self.get_default_ss_user_edit_url())
+            block = WebDriverWait(self.driver, 20)
+            block.until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'code')))
+            self._ss_api_key = self.driver.find_element_by_tag_name(
+                'code').text.strip()
+        return self._ss_api_key
 
     # ==========================================================================
     # Archival Storage Tab

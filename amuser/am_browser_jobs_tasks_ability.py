@@ -16,9 +16,6 @@ class ArchivematicaBrowserJobsTasksAbility(
         selenium_ability.ArchivematicaSeleniumAbility):
     """Archivematica Browser Jobs & Tasks Ability."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     @selenium_ability.recurse_on_stale
     def get_job_output(self, ms_name, transfer_uuid):
         """Get the output---"Completed successfully", "Failed"---of the Job
@@ -213,10 +210,8 @@ class ArchivematicaBrowserJobsTasksAbility(
                     if job_output in job_outputs:
                         return (span_elem.get_attribute('title').strip(),
                                 job_output)
-                    else:
-                        time.sleep(0.5)
-                        return self.get_job_uuid(ms_name, group_name,
-                                                 transfer_uuid)
+                    time.sleep(0.5)
+                    return self.get_job_uuid(ms_name, group_name, transfer_uuid)
         return None, None
 
 

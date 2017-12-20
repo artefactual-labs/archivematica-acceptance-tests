@@ -18,9 +18,6 @@ class ArchivematicaMETSAbility(base.Base):
 
     mets_nsmap = c.METS_NSMAP
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     @staticmethod
     def get_premis_events(mets):
         """Return all PREMIS events in ``mets`` (lxml.etree parse) as a list of

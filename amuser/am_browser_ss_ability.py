@@ -25,9 +25,6 @@ class ArchivematicaBrowserStorageServiceAbility(
     Storage Service.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def approve_aip_delete_request(self, aip_uuid):
         """Approve the deletion request of AIP with UUID ``aip_uuid`` via the
         SS GUI.
@@ -77,9 +74,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         if matching_space:
             LOGGER.info('matching space:\n%s', pprint.pformat(matching_space))
             return matching_space['uuid']
-        else:
-            LOGGER.info('space with attributes %s does NOT exist', attributes)
-            return self.create_ss_space(attributes)
+        LOGGER.info('space with attributes %s does NOT exist', attributes)
+        return self.create_ss_space(attributes)
 
     def search_for_ss_space(self, attributes):
         """Return first SS space matching all attrs in ``attributes`` dict."""
@@ -111,7 +107,10 @@ class ArchivematicaBrowserStorageServiceAbility(
                             if key.lower() == label_text:
                                 input_id = el.get_attribute('for')
                                 input_el = self.driver.find_element_by_id(input_id)
-                                input_el.send_keys(val)
+                                if input_el.tag_name == 'select':
+                                    Select(input_el).select_by_visible_text(val)
+                                else:
+                                    input_el.send_keys(val)
         self.driver.find_element_by_css_selector('input[type=submit]').click()
         header = self.driver.find_element_by_tag_name('h1').text.strip()
         space_uuid = header.split()[0].replace('"', '').replace(':', '')
@@ -133,7 +132,10 @@ class ArchivematicaBrowserStorageServiceAbility(
                         if key.lower() == label_text:
                             input_id = el.get_attribute('for')
                             input_el = self.driver.find_element_by_id(input_id)
-                            input_el.send_keys(val)
+                            if input_el.tag_name == 'select':
+                                Select(input_el).select_by_visible_text(val)
+                            else:
+                                input_el.send_keys(val)
                     # Here we just choose the first available pipeline for the
                     # location. This is a hack but it's better than having a
                     # pipeline-less location. WARNING/TODO: this will need to
@@ -237,7 +239,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         search_el.send_keys('Store AIP in standard Archivematica Directory')
         row_els = self.driver.find_elements_by_css_selector(
             '#DataTables_Table_0 > tbody > tr')
-        if len(row_els) == 0:
+        if not row_els:
             raise ArchivematicaBrowserStorageServiceAbilityError(
                 'Unable to find a default AIP storage location')
         if len(row_els) > 1:

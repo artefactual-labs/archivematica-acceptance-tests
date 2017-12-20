@@ -25,9 +25,6 @@ class ArchivematicaAPIAbility(base.Base):
     interact with AM.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def download_aip(self, transfer_name, sip_uuid):
         """Use the AM SS API to download the completed AIP.
         Calls http://localhost:8000/api/v2/file/<SIP-UUID>/download/\

@@ -1,8 +1,7 @@
-"""Archivematica Command Line Ability
+"""Archivematica SSH Ability
 
-This module contains the ``ArchivematicaCommandLineAbility`` class, which
-encodes the ability of an Archivematica user to use a the command line and
-Python modules like os, etc. to interact with
+This module contains the ``ArchivematicaSSHAbility`` class, which encodes the
+ability of an Archivematica user to use SSH and scp to interact with
 Archivematica.
 """
 
@@ -18,14 +17,10 @@ from . import base
 LOGGER = utils.LOGGER
 
 
-class ArchivematicaCommandLineAbility(base.Base):
-    """Archivematica Command Line Ability: the ability of an Archivematica user
-    to use SSH, scp, and Python os, etc. to interact with
-    Archivematica.
+class ArchivematicaSSHAbility(base.Base):
+    """Archivematica SSH Ability: the ability of an Archivematica user to use
+    SSH and scp to interact with Archivematica.
     """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def scp_server_file_to_local(self, server_file_path):
         """Use scp to copy a file from the server to our local tmp directory."""

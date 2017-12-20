@@ -18,9 +18,6 @@ class ArchivematicaBrowserAuthenticationAbility(
     use a browser to login/out to/from Archivematica and/or the Storage Service.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def login(self):
         """Login to Archivematica."""
         self.driver.get(self.get_login_url())

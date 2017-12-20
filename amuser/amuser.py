@@ -10,7 +10,7 @@ import subprocess
 
 from . import am_api_ability
 from . import am_browser_ability
-from . import am_cmd_line_ability
+from . import am_ssh_ability
 from . import am_mets_ability
 from . import base
 from . import constants as c
@@ -34,7 +34,7 @@ class ArchivematicaUser(base.Base):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.browser = am_browser_ability.ArchivematicaBrowserAbility(**kwargs)
-        self.ssh = am_cmd_line_ability.ArchivematicaCommandLineAbility(
+        self.ssh = am_ssh_ability.ArchivematicaSSHAbility(
             **kwargs)
         self.api = am_api_ability.ArchivematicaAPIAbility(**kwargs)
         self.mets = am_mets_ability.ArchivematicaMETSAbility(**kwargs)

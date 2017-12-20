@@ -17,9 +17,6 @@ class ArchivematicaBrowserPreservationPlanningAbility(
     interact with a live Archivematica instance.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def navigate_to_preservation_planning(self):
         self.navigate(self.get_preservation_planning_url())
 
@@ -89,8 +86,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         if policy_command_url:
             self.navigate(policy_command_url)
             return policy_command_descriptions
-        else:
-            return []
+        return []
 
     def ensure_fpr_policy_check_command(self, policy_file, policy_path):
         """Ensure there is an FPR validation command that checks a file against

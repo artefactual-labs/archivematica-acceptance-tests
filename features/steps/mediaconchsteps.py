@@ -313,11 +313,11 @@ def step_impl(context, policy_file):
         'We expected {} to be a directory but it either does not exist or it is'
         ' not a directory'.format(aip_policy_outputs_path))
     contents = os.listdir(aip_policy_outputs_path)
-    assert len(contents) > 0
+    assert contents
     file_paths = [x for x in
                   [os.path.join(aip_policy_outputs_path, y) for y in contents]
                   if os.path.isfile(x) and os.path.splitext(x)[1] == '.xml']
-    assert len(file_paths) > 0, (
+    assert file_paths, (
         'There are no files in dir {}!'.format(aip_policy_outputs_path))
     for fp in file_paths:
         with open(fp) as f:
@@ -339,12 +339,12 @@ def step_impl(context, policy_file):
         aip_path, 'data', 'logs', 'policyChecks', policy_file_no_ext)
     assert os.path.isdir(aip_policy_outputs_path)
     contents = os.listdir(aip_policy_outputs_path)
-    assert len(contents) > 0
+    assert contents
     file_paths = [x for x in
                   [os.path.join(aip_policy_outputs_path, y) for y in contents]
                   if os.path.isfile(x) and
                   os.path.splitext(x)[1] == '.xml']
-    assert len(file_paths) > 0, (
+    assert file_paths, (
         'There are no files in dir {}!'.format(aip_policy_outputs_path))
     for fp in file_paths:
         with open(fp) as f:
@@ -392,7 +392,7 @@ def step_impl(context, event_outcome):
                 e['event_outcome_detail_note'].startswith(
                     MC_EVENT_OUTCOME_DETAIL_NOTE_IMPLEMENTATION_CHECK_PREFIX)):
             events.append(e)
-    assert len(events) > 0
+    assert events
     for e in events:
         assert e['event_outcome'] == event_outcome
 
@@ -416,7 +416,7 @@ def step_impl(context, event_outcome):
     policy_check_tasks = [t for t in context.scenario.job['tasks'].values() if
                           t['stdout'].startswith(
                               'Running Check against policy ')]
-    assert len(policy_check_tasks) > 0
+    assert policy_check_tasks
     if event_outcome == 'pass':
         for task in policy_check_tasks:
             assert 'All policy checks passed:' in task['stdout']
@@ -431,7 +431,7 @@ def step_impl(context, event_outcome):
     policy_check_tasks = [t for t in context.scenario.job['tasks'].values() if
                           t['stdout'].startswith(
                               'Running Check against policy ')]
-    assert len(policy_check_tasks) > 0
+    assert policy_check_tasks
     if event_outcome == 'pass':
         for task in policy_check_tasks:
             assert 'All policy checks passed:' in task['stdout']
@@ -453,7 +453,7 @@ def step_impl(context, event_outcome):
                 e['event_outcome_detail_note'].startswith(
                     MC_EVENT_OUTCOME_DETAIL_NOTE_POLICY_CHECK_PREFIX)):
             events.append(e)
-    assert len(events) > 0
+    assert events
     for e in events:
         assert e['event_outcome'] == event_outcome
 

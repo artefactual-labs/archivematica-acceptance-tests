@@ -29,9 +29,6 @@ class ArchivematicaBrowserTransferIngestAbility(
         ingest_abl.ArchivematicaBrowserIngestAbility):
     """Archivematica Browser Transfer & Ingest Tabs Ability."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def await_job_completion(self, ms_name, transfer_uuid,
                              unit_type='transfer'):
         """Wait for the job representing the execution of micro-service
