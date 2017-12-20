@@ -27,7 +27,7 @@ def step_impl(context):
         ' attributes'
         ' Access protocol: GPG encryption on Local Filesystem;'
         ' Path: /;'
-        ' Staging path: /var/archivematica/storage_service_encrypted;'
+        ' Staging path: /var/archivematica/storage_service/storage_service_encrypted;'
         ' GnuPG Private Key: Archivematica Storage Service GPG Key;')
 
 
@@ -125,7 +125,7 @@ def step_impl(context):
     standard_encr_space_uuid = context.am_user.browser.search_for_ss_space({
         'Access protocol': 'GPG encryption on Local Filesystem',
         'Path': '/',
-        'Staging path': '/var/archivematica/storage_service_encrypted',
+        'Staging path': '/var/archivematica/storage_service/storage_service_encrypted',
         'GnuPG Private Key': 'Archivematica Storage Service GPG Key'
     })['uuid']
     new_key_repr = '{} <{}>'.format(new_key_name, new_key_email)
@@ -171,7 +171,7 @@ def step_impl(context):
     standard_encr_space_uuid = context.am_user.browser.search_for_ss_space({
         'Access protocol': 'GPG encryption on Local Filesystem',
         'Path': '/',
-        'Staging path': '/var/archivematica/storage_service_encrypted',
+        'Staging path': '/var/archivematica/storage_service/storage_service_encrypted',
         'GnuPG Private Key': context.scenario.new_key_name
     })['uuid']
     context.am_user.browser.change_encrypted_space_key(standard_encr_space_uuid)
