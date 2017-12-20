@@ -1,3 +1,6 @@
+.. image:: https://travis-ci.org/artefactual-labs/archivematica-acceptance-tests.svg?branch=master
+    :target: https://travis-ci.org/artefactual-labs/archivematica-acceptance-tests
+
 ================================================================================
   Archivematica Acceptance Tests
 ================================================================================
