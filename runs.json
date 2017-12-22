@@ -16,5 +16,22 @@
         "target_features": ["features/core/metadata-only-aip-reingest.feature"],
         "outcome": "fail",
         "outcome_note": "Failed at step ``And the user initiates a metadata-only re-ingest on the AIP``, module am_browser_ability.py, line 148, in ``initiate_reingest`` with error `selenium.common.exceptions.NoSuchElementException: Message: Unable to locate element: div.alert-success`"
+    }, {
+        "behave_command": "behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox",
+        "environment": {
+            "archivematica_version": "1.7.0",
+            "archivematica_branch": "qa/1.x",
+            "archivematica_commit": "9239f1e1d7a862c5cb3b1818760ea9b4665bdc60",
+            "storage_service_version": "0.11.0",
+            "storage_service_branch": "qa/0.x",
+            "storage_service_commit": "edc78d40340a153ddba879291364463c06e4e4a2",
+            "sampledata_branch": "master",
+            "sampledata_commit": "b51ad285b063f8b99cb87e1fdb8e681ee5021708",
+            "acceptance_tests_branch": "dev/refactor",
+            "acceptance_tests_commit": "3533cbd0281d2d161ec015188be71bd5935cdc04"
+        },
+        "target_features": ["features/core/metadata-only-aip-reingest.feature"],
+        "outcome": "pass",
+        "runtime": "7m18.599s"
     }
 ]
