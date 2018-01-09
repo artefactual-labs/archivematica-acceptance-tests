@@ -12,6 +12,10 @@ class ArchivematicaUserError(Exception):
     pass
 
 
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 class Base:
     """Base class for Archivematica user- and ability-type classes. Should only
     hold common functionality for configuring state.
@@ -65,16 +69,24 @@ class Base:
         self._ss_api_key = None
         self.cwd = None
         self._tmp_path = None
+        self._permanent_path = None
 
     @staticmethod
     def unique_name(name):
         return '{}_{}'.format(name, utils.unixtimestamp())
 
     @property
+    def permanent_path(self):
+        if not self._permanent_path:
+            self._permanent_path = os.path.join(ROOT, c.PERM_DIR_NAME)
+            if not os.path.isdir(self._permanent_path):
+                os.makedirs(self._permanent_path)
+        return self._permanent_path
+
+    @property
     def tmp_path(self):
         if not self._tmp_path:
-            here = os.path.dirname(os.path.abspath(__file__))
-            self._tmp_path = os.path.join(here, c.TMP_DIR_NAME)
+            self._tmp_path = os.path.join(ROOT, c.TMP_DIR_NAME)
             if not os.path.isdir(self._tmp_path):
                 os.makedirs(self._tmp_path)
         return self._tmp_path

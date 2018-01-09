@@ -112,6 +112,34 @@ def step_impl(context):
     )
 
 
+@given('the default processing config is set to automate a transfer through to'
+       ' "Store AIP"')
+def step_impl(context):
+    context.execute_steps(
+        'Given the default processing config is in its default state\n'
+        'And the processing config decision "Assign UUIDs to directories" is'
+        ' set to "No"\n'
+        'And the processing config decision "Select file format identification'
+        ' command (Transfer)" is set to "Identify using Siegfried"\n'
+        'And the processing config decision "Perform policy checks on'
+        ' originals" is set to "No"\n'
+        'And the processing config decision "Create SIP(s)" is set to "Create'
+        ' single SIP and continue processing"\n'
+        'And the processing config decision "Normalize" is set to "Normalize'
+        ' for preservation"\n'
+        'And the processing config decision "Approve normalization" is set to'
+        ' "Yes"\n'
+        'And the processing config decision "Perform policy checks on'
+        ' preservation derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on access'
+        ' derivatives" is set to "No"\n'
+        'And the processing config decision "Select file format identification'
+        ' command (Submission documentation & metadata)" is set to'
+        ' "Identify using Siegfried"\n'
+        'And the processing config decision "Bind PIDs" is set to "No"'
+    )
+
+
 # Whens
 # ------------------------------------------------------------------------------
 
@@ -232,7 +260,7 @@ def step_impl(context):
     """Standard AIP-creation decisions after a transfer is initiated and up
     until (but not including) the "Store AIP location" decision:
 
-    - file identification via Fido
+    - file identification via Siegfried
     - create SIP
     - normalize for preservation
     - store AIP
@@ -241,7 +269,7 @@ def step_impl(context):
         'When the user waits for the "Assign UUIDs to directories?" decision'
         ' point to appear and chooses "No" during transfer\n'
         'And the user waits for the "Select file format identification command"'
-        ' decision point to appear and chooses "Identify using Fido" during'
+        ' decision point to appear and chooses "Identify using Siegfried" during'
         ' transfer\n'
         'And the user waits for the "Perform policy checks on originals?"'
         ' decision point to appear and chooses "No" during transfer\n'
@@ -260,7 +288,7 @@ def step_impl(context):
         ' ingest\n'
         'And the user waits for the "Select file format identification'
         ' command|Process submission documentation" decision point to'
-        ' appear and chooses "Identify using Fido" during ingest\n'
+        ' appear and chooses "Identify using Siegfried" during ingest\n'
         'And the user waits for the "Bind PIDs?" decision point to appear and'
         ' chooses "No" during ingest\n'
         'And the user waits for the "Store AIP (review)" decision point to'

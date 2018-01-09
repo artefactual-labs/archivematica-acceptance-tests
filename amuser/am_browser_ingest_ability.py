@@ -41,6 +41,7 @@ class ArchivematicaBrowserIngestAbility(
             self.remove_top_transfer(top_transfer_elem)
 
     def get_sip_uuid(self, transfer_name):
+        LOGGER.info('Getting SIP UUID from transfer name %s', transfer_name)
         self.driver.quit()
         self.driver = self.get_driver()
         ingest_url = self.get_ingest_url()
@@ -50,10 +51,13 @@ class ArchivematicaBrowserIngestAbility(
         self.driver.get(ingest_url)
         sip_uuid, _, _ = (
             self.wait_for_transfer_to_appear(transfer_name))
+        LOGGER.info('Got SIP UUID %s', sip_uuid)
         return sip_uuid
 
     def get_mets(self, transfer_name, sip_uuid=None, parse_xml=True):
-        """Return the METS file XML as a string.
+        """Return the METS file XML as an lxml instance or as a string if
+        ``parse_xml`` is set to ``False``.
+
         WARNING: this only works if the processingMCP.xml config file is set to
         *not* store the AIP.
         """

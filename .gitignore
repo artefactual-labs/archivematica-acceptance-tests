@@ -1,4 +1,5 @@
 env/
+data/
 .env/
 sandbox/
 am-mc-commands/

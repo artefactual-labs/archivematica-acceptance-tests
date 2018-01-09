@@ -76,6 +76,7 @@ class ArchivematicaBrowserFileExplorerAbility(
         path = path.strip('/')
         path_parts = path.split('/')
         for i, folder in enumerate(path_parts):
+            LOGGER.info('Clicking on "%s"', folder)
             is_last = False
             if i == len(path_parts) - 1:
                 is_last = True
@@ -87,7 +88,7 @@ class ArchivematicaBrowserFileExplorerAbility(
             # should be, i.e., this is now an absolute XPath.
             folder_label_xpath = c.XPATH_TREEITEM_NEXT_SIBLING.join(xtrail)
             # Wait until folder is visible.
-            block = WebDriverWait(self.driver, 1)
+            block = WebDriverWait(self.driver, 3)
             block.until(EC.presence_of_element_located(
                 (By.XPATH, folder_label_xpath)))
             if is_last:

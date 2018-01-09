@@ -1,5 +1,6 @@
 """Utilities for Steps files."""
 
+import datetime
 import logging
 import os
 import re
@@ -236,3 +237,11 @@ def parse_k_v_attributes(attributes):
     """
     return {pair.split(':')[0].strip(): pair.split(':')[1].strip() for
             pair in attributes.split(';') if pair.strip()}
+
+
+def get_duration_as_float(duration_string):
+    dt = datetime.datetime.strptime(duration_string, '%H:%M:%S.%f')
+    delta = datetime.timedelta(
+        hours=dt.hour, minutes=dt.minute, seconds=dt.second,
+        microseconds=dt.microsecond)
+    return delta.total_seconds()
