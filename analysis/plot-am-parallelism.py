@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from datetime import datetime, timedelta
 import json
 import pprint
@@ -20,8 +21,13 @@ ds2d = datetime_string_to_datetime
 
 EPOCH = datetime.utcfromtimestamp(0)
 
+
 def unix_time_millis(dt):
     return (dt - EPOCH).total_seconds() * 1000.0
+
+
+def unix_time_micros(dt):
+    return (dt - EPOCH).total_seconds() * 1000000.0
 
 
 def process_tasks(tasks):
@@ -34,22 +40,26 @@ def process_tasks(tasks):
     """
     tasks_by_start_time = sorted([(ds2d(t['startTime']), t) for t in tasks])
     start_times = [s for s, t in tasks_by_start_time]
-    print('\n'.join('{} {} {}'.format(t.isoformat(), mdates.date2num(t), unix_time_millis(t))
-          for t in start_times))
     end_times = [ds2d(t['endTime']) for s, t in tasks_by_start_time]
-    start_times = np.fromiter(
-        (mdates.date2num(x) for x in start_times),
-        dtype='float',
-        count=len(start_times))
-    end_times = np.fromiter(
-        (mdates.date2num(x) for x in end_times),
-        dtype='float',
-        count=len(end_times))
-    durations = end_times - start_times
+    start_times = [unix_time_micros(t) for t in start_times]
+    end_times = [unix_time_micros(t) for t in end_times]
+    durations = [e - s for s, e in zip(start_times, end_times)]
     midpoints = [st + (0.5 * dur) for st, dur in zip(start_times, durations)]
+
+    print('*' * 80)
+    print('start time')
+    print(start_times[0])
+    print('end time')
+    print(end_times[0])
+    print('duration')
+    print(durations[0])
+    print('mid point')
+    print(midpoints[0])
+    print('*' * 80)
+
     indices = [i + 1 for i in range(len(tasks))]
     task_types = [t['exec'] for t in tasks]
-    return midpoints, durations, indices, task_types
+    return start_times, end_times, midpoints, durations, indices, task_types
 
 
 def get_task_types_set(tasks):
@@ -93,27 +103,116 @@ def human_task_type(tt):
     return ''.join(new_tt)
 
 
+def get_total_aip_processing_time(start_times, end_times):
+    s = min(start_times)
+    e = max(end_times)
+    t = e - s
+    print('total aip processing time')
+    print(t)
+    return t
+
+def dt2s_ms(dt):
+    return dt.strftime('%S.%f')
+
+def get_total_serialized_task_processing_time(start_times, end_times):
+    """Return the total number of task processing seconds, i.e., the runtime if
+    all tasks were executed serially.
+    """
+    return sum(e-s for s, e in zip(start_times, end_times))
+
+
+def get_total_task_processing_time(start_times, end_times):
+    """Return the total number of microseconds where task processing was
+    occurring. If there are two tasks A and B and task A started at 0 and ended
+    at 1000, and task B started at 500 and ended at 1200, the return value
+    would be 1200.
+    """
+    interval_start = None
+    interval_end = None
+    intervals = []
+    start_time = min(start_times)
+    for start, end in zip(start_times, end_times):
+        if interval_start is None and interval_end is None:
+            interval_start = start
+            interval_end = end
+            continue
+        if start > interval_end:
+            intervals.append((interval_start, interval_end))
+            interval_start = start
+        interval_end = end
+    intervals.append((interval_start, interval_end))
+    return sum(e-s for s, e in intervals)
+
+
+def get_longest_task(start_times, end_times):
+    return max(e-s for s, e in zip(start_times, end_times))
+
+
 def plot_tasks(tasks):
     fig = plt.figure(figsize=(20,10))
     ax = fig.add_subplot(1, 1, 1)
-    midpoints, durations, indices, task_types = process_tasks(tasks)
-    return
+    ax.set_title('Archivematica AIP Creation: concurrency view')
+    ax.set_xlabel('Time (microseconds)')
+    ax.set_ylabel('Task indices')
+    start_times, end_times, midpoints, durations, indices, task_types = (
+        process_tasks(tasks))
+
+    total_aip_proc_time = get_total_aip_processing_time(start_times, end_times)
+    total_task_proc_time = get_total_task_processing_time(
+        start_times, end_times)
+    total_serial_task_proc_time = get_total_serialized_task_processing_time(
+        start_times, end_times)
+
+    print('total_aip_proc_time')
+    print('{} seconds'.format(total_aip_proc_time * 0.000001))
+    print(type(total_aip_proc_time))
+
+    print('total_task_proc_time')
+    print('{} seconds'.format(total_task_proc_time * 0.000001))
+    print(type(total_task_proc_time))
+
+    print('total_serial_task_proc_time')
+    print('{} seconds'.format(total_serial_task_proc_time * 0.000001))
+    print(type(total_serial_task_proc_time))
+
+    longest_task = get_longest_task(start_times, end_times)
+    print('longest_task')
+    print('{} seconds'.format(longest_task * 0.000001))
+    print(type(longest_task))
+
+    # ttpt = X * tstpt
+    # X = ttpt / tstpt
+    x = total_task_proc_time / total_serial_task_proc_time
+    print(x)
+
+    # 1-866-788-0288
+    # tricura canada
+
+
+
+
     ttseen = []
     linestyle = ''
+    start = min(start_times)
     for middle, index, duration, task_type in zip(
             midpoints, indices, durations, task_types):
         color = get_task_type_color(tasks, task_type)
         linestyle = ''
-        if task_type in ttseen:
-            ax.errorbar(middle, index, xerr=duration, capthick=2, color=color,
-                        linestyle=linestyle)
-        else:
-            ax.errorbar(middle, index, xerr=duration, capthick=2, color=color,
-                        label=human_task_type(task_type), linestyle=linestyle)
+        middle = middle - start
+        kwargs = {
+            'xerr': duration / 2,
+            'yerr': 0.1,
+            'color': color,
+            'capsize': 0,
+            'linestyle': linestyle,
+            'elinewidth': 3
+        }
+        if task_type not in ttseen:
+            kwargs['label'] = human_task_type(task_type)
             ttseen.append(task_type)
+        ax.errorbar(middle, index, **kwargs)
     plt.legend(loc='upper left')
     plt.show()
-    plt.close('all')
 
 
 def load_aip_stats(aip_stats_path):
