@@ -20,7 +20,7 @@ JOB_OUTPUTS_COMPLETE = (
 TMP_DIR_NAME = '.amsc-tmp'
 PERM_DIR_NAME = 'data'
 # General timeout for page load and JS changes (in seconds)
-GENERAL_TIMEOUT = 5
+GENERAL_TIMEOUT = 50
 
 
 # CSS classes and selectors
@@ -326,7 +326,7 @@ PC_DECISION2ID = {
 # Wait/attempt count constants
 # =========================================================================
 
-WAIT_FOR_TRANSFER_TO_APPEAR_MAX_WAITS = 1000
+WAIT_FOR_TRANSFER_TO_APPEAR_MAX_WAITS = 1000000
 MAX_CLICK_TRANSFER_DIRECTORY_TRIES = 5
 MAX_CLICK_AIP_DIRECTORY_TRIES = 5
 

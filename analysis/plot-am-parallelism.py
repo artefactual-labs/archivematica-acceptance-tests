@@ -1,11 +1,10 @@
-from collections import OrderedDict
+#! /usr/bin/env python
+
 from datetime import datetime, timedelta
 import json
 import pprint
-import random
+import sys
 
-import numpy as np
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 
 
@@ -45,18 +44,6 @@ def process_tasks(tasks):
     end_times = [unix_time_micros(t) for t in end_times]
     durations = [e - s for s, e in zip(start_times, end_times)]
     midpoints = [st + (0.5 * dur) for st, dur in zip(start_times, durations)]
-
-    print('*' * 80)
-    print('start time')
-    print(start_times[0])
-    print('end time')
-    print(end_times[0])
-    print('duration')
-    print(durations[0])
-    print('mid point')
-    print(midpoints[0])
-    print('*' * 80)
-
     indices = [i + 1 for i in range(len(tasks))]
     task_types = [t['exec'] for t in tasks]
     return start_times, end_times, midpoints, durations, indices, task_types
@@ -107,12 +94,8 @@ def get_total_aip_processing_time(start_times, end_times):
     s = min(start_times)
     e = max(end_times)
     t = e - s
-    print('total aip processing time')
-    print(t)
     return t
 
-def dt2s_ms(dt):
-    return dt.strftime('%S.%f')
 
 def get_total_serialized_task_processing_time(start_times, end_times):
     """Return the total number of task processing seconds, i.e., the runtime if
@@ -156,41 +139,26 @@ def plot_tasks(tasks):
     ax.set_ylabel('Task indices')
     start_times, end_times, midpoints, durations, indices, task_types = (
         process_tasks(tasks))
-
     total_aip_proc_time = get_total_aip_processing_time(start_times, end_times)
     total_task_proc_time = get_total_task_processing_time(
         start_times, end_times)
     total_serial_task_proc_time = get_total_serialized_task_processing_time(
         start_times, end_times)
-
     print('total_aip_proc_time')
     print('{} seconds'.format(total_aip_proc_time * 0.000001))
     print(type(total_aip_proc_time))
-
     print('total_task_proc_time')
     print('{} seconds'.format(total_task_proc_time * 0.000001))
     print(type(total_task_proc_time))
-
     print('total_serial_task_proc_time')
     print('{} seconds'.format(total_serial_task_proc_time * 0.000001))
     print(type(total_serial_task_proc_time))
-
     longest_task = get_longest_task(start_times, end_times)
     print('longest_task')
     print('{} seconds'.format(longest_task * 0.000001))
     print(type(longest_task))
-
-    # ttpt = X * tstpt
-    # X = ttpt / tstpt
     x = total_task_proc_time / total_serial_task_proc_time
     print(x)
-
-    # 1-866-788-0288
-    # tricura canada
-
-
-
-
     ttseen = []
     linestyle = ''
     start = min(start_times)
@@ -221,7 +189,7 @@ def load_aip_stats(aip_stats_path):
 
 
 if __name__ == '__main__':
-    aip_stats_path = 'data/with_outputs_stats-1512793137.json'
+    aip_stats_path = sys.argv[1]
     aip_stats = load_aip_stats(aip_stats_path)
     tasks = aip_stats['tasks']
     plot_tasks(tasks)

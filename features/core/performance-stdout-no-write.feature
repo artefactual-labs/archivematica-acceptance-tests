@@ -116,11 +116,11 @@ Feature: Performance increase: stop saving stdout/stderr
     And the size of the without_outputs_stats METS file is less than that of the with_outputs_stats METS file
 
     Examples: Archivematica transfer sources
-    | transfer_source                                                        |
-    #| ~/archivematica-sampledata/TestTransfers/small                        |
-    | ~/archivematica-sampledata/SampleTransfers/Images                     |
-    #| ~/TestTransfers/acceptance-tests/performance/images-17M-each-2G-total |
-    #| ~/TestTransfers/acceptance-tests/performance/video-14M-each-10G-total |
+    | transfer_source                                                                                 |
+    #| ~/archivematica-sampledata/TestTransfers/small                                                 |
+    | ~/archivematica-sampledata/SampleTransfers/Images                                              |
+    #| ~/archivematica-sampledata/TestTransfers/acceptance-tests/performance/images-17M-each-2G-total |
+    #| ~/archivematica-sampledata/TestTransfers/acceptance-tests/performance/video-14M-each-10G-total |
 
     # Listed below are possible metrics of performance increase. Those checked
     # off are relatively easy to measure and are described in the scenario

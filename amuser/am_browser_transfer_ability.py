@@ -24,6 +24,7 @@ class ArchivematicaBrowserTransferAbility(
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.wait_for_transfer_to_appear_waits = 0
+        self.transfer_appear_wait_duration = 0.5
 
     def start_transfer(self, transfer_path, transfer_name, accession_no=None,
                        transfer_type=None):
@@ -159,11 +160,13 @@ class ArchivematicaBrowserTransferAbility(
             self.wait_for_transfer_to_appear_waits += 1
             if (self.wait_for_transfer_to_appear_waits <
                     c.WAIT_FOR_TRANSFER_TO_APPEAR_MAX_WAITS):
-                time.sleep(0.5)
+                time.sleep(self.transfer_appear_wait_duration)
+                self.transfer_appear_wait_duration *= 2
                 transfer_uuid, correct_transfer_div_elem, transfer_name = (
                     self.wait_for_transfer_to_appear(
                         transfer_name, name_is_prefix=name_is_prefix))
             else:
+                self.transfer_appear_wait_duration = 0.5
                 self.wait_for_transfer_to_appear_waits = 0
                 return None, None, None
         time.sleep(0.5)
