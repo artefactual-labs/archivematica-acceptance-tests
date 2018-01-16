@@ -1,6 +1,7 @@
 """Archivematica Browser Preservation Planning Ability"""
 
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
 
 from . import selenium_ability
@@ -92,14 +93,18 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         """Ensure there is an FPR validation command that checks a file against
         the MediaConch policy ``policy_file``.
         """
+        LOGGER.info('Ensuring there is an FPR validation command that checks a'
+                    ' file against the policy file named "%s".', policy_file)
         self.navigate(self.get_validation_commands_url())
         existing_policy_command_descriptions = \
             self.navigate_to_first_policy_check_validation_command()
-        description = get_policy_command_description(policy_file)
+        description = self.get_policy_command_description(policy_file)
         if description in existing_policy_command_descriptions:
-            # This policy command already exists; no need to re-create it.
+            LOGGER.info('The policy command already exists; no need to'
+                        ' re-create it.')
             return
         policy_command = self.get_policy_command(policy_file, policy_path)
+        LOGGER.info('Creating the policy check FPR command.')
         self.save_policy_check_command(policy_command, description)
 
     def get_policy_command(self, policy_file, policy_path):
@@ -134,9 +139,16 @@ class ArchivematicaBrowserPreservationPlanningAbility(
 
     def save_policy_check_command(self, policy_command, description):
         """Create and save a new FPR command using the string
-        ``policy_command``."""
+        ``policy_command``.
+        """
+        LOGGER.info('Creating an FPR policy check command with description'
+                    ' "%s".', description)
         self.navigate(self.get_create_command_url())
-        self.driver.find_element_by_id('id_tool').send_keys('MediaConch')
+        for option in self.driver.find_element_by_id(
+                'id_tool').find_elements_by_tag_name('option'):
+            if 'MediaConch' in option.text:
+                option.click()
+                break
         self.driver.find_element_by_id('id_description').send_keys(description)
         js_script = ('document.getElementById("id_command").value ='
                      ' `{}`;'.format(policy_command))
@@ -145,6 +157,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         self.driver.find_element_by_id('id_command_usage').send_keys(
             'Validation')
         self.driver.find_element_by_css_selector('input[type=submit]').click()
+        LOGGER.info('Created the FPR policy check command')
 
     def ensure_fpr_rule(self, purpose, format_, command_description):
         """Ensure that there is a new FPR rule with the purpose, format and
@@ -153,14 +166,22 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         /fpr/fprule/create/ expects, i.e., a colon-delimited triple like
         'Audio: Broadcast WAVE: Broadcast WAVE 1'.
         """
+        LOGGER.info('Ensuring there is an FPR rule with purpose "%s" that runs'
+                    ' command "%s" against files with format "%s".', purpose,
+                    command_description, format_)
         if self.fpr_rule_already_exists(purpose, format_, command_description):
+            LOGGER.info('Such an FPR rule already exists.')
             return
+        LOGGER.info('Creating the needed FPR rule.')
         self.navigate(self.get_create_rule_url())
-        self.driver.find_element_by_id('id_f-purpose').send_keys(purpose)
-        self.driver.find_element_by_id('id_f-format').send_keys(format_)
-        self.driver.find_element_by_id('id_f-command').send_keys(
-            command_description)
+        Select(self.driver.find_element_by_id(
+            'id_f-purpose')).select_by_visible_text(purpose)
+        Select(self.driver.find_element_by_id(
+            'id_f-format')).select_by_visible_text(format_)
+        Select(self.driver.find_element_by_id(
+            'id_f-command')).select_by_visible_text(command_description)
         self.driver.find_element_by_css_selector('input[type=submit]').click()
+        LOGGER.info('Created the needed FPR rule.')
 
     def fpr_rule_already_exists(self, purpose, format_, command_description):
         """Return ``True`` if an FPR rule already exists with the purpose,
@@ -192,6 +213,6 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         # one matching rule that needs enabling. Not sure at this point whether
         # this action is needed for testing.
 
-
-def get_policy_command_description(policy_file):
-    return 'Check against policy {} using MediaConch'.format(policy_file)
+    @staticmethod
+    def get_policy_command_description(policy_file):
+        return 'Check against policy {} using MediaConch'.format(policy_file)

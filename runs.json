@@ -80,5 +80,20 @@
         "target_features": ["features/Columbia/indexless.feature"],
         "outcome": "pass",
         "runtime": "5m45.541s"
+    }, {
+        "behave_command": "behave --tags=ipc --tags=preservation --tags=nonmanual -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D driver_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
+        "environment": {
+            "archivematica_version": "1.7.0",
+            "archivematica_branch": "qa/1.x",
+            "archivematica_commit": "e6fc02d83209681140ec17fb166aefae1ed2e7e7",
+            "storage_service_version": "0.11.0",
+            "storage_service_branch": "qa/0.x",
+            "storage_service_commit": "765aeaea5824c3eaaf27e2f5fdefeb7ecab2a4e5",
+            "sampledata_branch": "master",
+            "sampledata_commit": "e24475753852c0e9bee500f8c5c8f198af55ca0f"
+        },
+        "target_features": ["features/core/ingest-policy-check.feature"],
+        "outcome": "pass",
+        "runtime": "4m55.099s"
     }
 ]

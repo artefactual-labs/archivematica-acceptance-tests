@@ -63,6 +63,8 @@ def step_impl(context):
     context.execute_steps(
         'Given that the user has ensured that the default processing config is'
         ' in its default state\n'
+        'And the processing config decision "Assign UUIDs to directories" is'
+        ' set to "No"\n'
         'And the processing config decision "Perform policy checks on'
         ' preservation derivatives" is set to "No"\n'
         'And the processing config decision "Perform policy checks on access'
@@ -78,6 +80,7 @@ def step_impl(context):
         'And the processing config decision "Select file format identification'
         ' command (Submission documentation & metadata)" is set to'
         ' "Identify using Fido"\n'
+        'And the processing config decision "Bind PIDs" is set to "No"\n'
         'And the processing config decision "Store AIP location" is set to'
         ' "Store AIP in standard Archivematica Directory"\n'
         'And the processing config decision "Upload DIP" is set to'
