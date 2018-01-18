@@ -189,7 +189,7 @@ def step_impl(context, transfer_path, do_files_conform, policy_file):
     pass
 
 
-@given('an FPR rule with purpose "{purpose}", format "{format}", and command'
+@given('an FPR rule with purpose "{purpose}", format "{format_}", and command'
        ' "{command}"')
 def step_impl(context, purpose, format_, command):
     context.am_user.browser.ensure_fpr_rule(purpose, format_, command)
