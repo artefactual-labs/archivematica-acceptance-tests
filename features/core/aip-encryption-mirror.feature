@@ -10,6 +10,23 @@
 #       -D am_version=1.7 \
 #       -D driver_name=Firefox \
 #       -D server_user=archivematica
+#
+# How to run this test against a docker-compose deploy (see
+# https://github.com/artefactual-labs/am)::
+#
+#     $ behave --tags=aip-encrypt-mirror \
+#       --no-skipped \
+#       -D am_version=1.7 \
+#       -D driver_name=Firefox \
+#       -D am_username=test \
+#       -D am_password=test \
+#       -D am_url=http://127.0.0.1:62080/ \
+#       -D am_api_key=test \
+#       -D ss_username=test \
+#       -D ss_password=test \
+#       -D ss_url=http://127.0.0.1:62081/ \
+#       -D home=archivematica \
+#       -D docker_compose_path=/path/to/compose/dir
 
 @aip-encrypt-mirror @am17
 Feature: AIP Encryption via Mirror Locations

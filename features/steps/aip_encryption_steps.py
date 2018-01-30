@@ -479,12 +479,12 @@ def step_impl(context):
 
 def assert_pointer_premis_event(**kwargs):
     """Make assertions about the PREMIS event of premis:eventType
-    ``event_type`` in the METS pointer file at ``mets_path``. Minimally assert
-    that such an event exists. The optional params should hold lists of strings
-    that are all expected to be in eventDetail, eventOutcome, and
+    ``event_type`` in the METS pointer file at ``pointer_path``. Minimally
+    assert that such an event exists. The optional params should hold lists of
+    strings that are all expected to be in eventDetail, eventOutcome, and
     eventOutcomeDetailNote, respectively. Return the UUID of the relevant event.
     """
-    with open(kwargs['mets_path']) as filei:
+    with open(kwargs['pointer_path']) as filei:
         doc = etree.parse(filei)
         premis_event = None
         for premis_event_el in doc.findall(
@@ -540,8 +540,12 @@ def get_aip_is_encrypted(context, aip_description):
         file_el = doc.find('mets:fileSec/mets:fileGrp/mets:file', ns)
         flocat_el = file_el.find('mets:FLocat', ns)
         xlink_href = flocat_el.get('{' + ns['xlink'] + '}href')
-        # Use scp to copy the AIP on the server to a local directory.
-        aip_local_path = context.am_user.ssh.scp_server_file_to_local(xlink_href)
+        # Use `scp` or `docker cp` to copy the AIP on the server to a local
+        # directory.
+        if getattr(context.am_user.docker, 'docker_compose_path', None):
+            aip_local_path = context.am_user.docker.cp_server_file_to_local(xlink_href)
+        else:
+            aip_local_path = context.am_user.ssh.scp_server_file_to_local(xlink_href)
         if aip_local_path is None:
             utils.logger.warning(
                 'Unable to copy file %s from the server to the local file'
