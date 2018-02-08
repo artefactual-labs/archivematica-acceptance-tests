@@ -16,7 +16,8 @@
         "target_features": ["features/core/metadata-only-aip-reingest.feature"],
         "outcome": "fail",
         "outcome_note": "Failed at step ``And the user initiates a metadata-only re-ingest on the AIP``, module am_browser_ability.py, line 148, in ``initiate_reingest`` with error `selenium.common.exceptions.NoSuchElementException: Message: Unable to locate element: div.alert-success`"
-    }, {
+    },
+    {
         "behave_command": "behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox",
         "environment": {
             "archivematica_version": "1.7.0",
@@ -33,7 +34,8 @@
         "target_features": ["features/core/metadata-only-aip-reingest.feature"],
         "outcome": "pass",
         "runtime": "7m18.599s"
-    }, {
+    },
+    {
         "behave_command": "behave --tags=indexless --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox -D docker_compose_path=/path/to/dir/containing/docker/compose/file",
         "environment": {
             "archivematica_version": "1.7.0",
@@ -50,7 +52,8 @@
         "target_features": ["features/Columbia/indexless.feature"],
         "outcome": "pass",
         "runtime": "5m29.640s"
-    }, {
+    },
+    {
         "behave_command": "behave -v --tags=indexless --tags=deploy.method.ansible,same-aip,gui --no-skipped -D am_username=test -D am_password=testtest -D am_url=http://192.168.168.192/ -D am_version=1.7 -D ss_username=test -D ss_password=test -D ss_url=http://192.168.168.192:8000/ -D home=vagrant -D driver_name=Firefox -D server_user=vagrant -D server_password=vagrant",
         "environment": {
             "archivematica_version": "1.7.0",
@@ -65,7 +68,8 @@
         "target_features": ["features/Columbia/indexless.feature"],
         "outcome": "pass",
         "runtime": "2m59.847s"
-    }, {
+    },
+    {
         "behave_command": "behave -v --tags=indexless --tags=deploy.method.docker-compose,same-aip,gui --no-skipped -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox -D docker_compose_path=/Users/joeldunham/Documents/Artefactual/am/compose",
         "environment": {
             "archivematica_version": "1.7.0",
@@ -80,7 +84,8 @@
         "target_features": ["features/Columbia/indexless.feature"],
         "outcome": "pass",
         "runtime": "5m45.541s"
-    }, {
+    },
+    {
         "behave_command": "behave --tags=ipc --tags=preservation --tags=nonmanual -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D driver_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
         "environment": {
             "archivematica_version": "1.7.0",
@@ -95,7 +100,8 @@
         "target_features": ["features/core/ingest-policy-check.feature"],
         "outcome": "pass",
         "runtime": "4m55.099s"
-    }, {
+    },
+    {
         "behave_command": "behave --tags=ipc --tags=access --tags=nonmanual -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D driver_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
         "environment": {
             "archivematica_version": "1.7.0",
@@ -190,7 +196,8 @@
         "target_features": ["features/core/transfer-mkv-conformance.feature"],
         "outcome": "pass",
         "runtime": "3m55.988s"
-    }, {
+    },
+    {
         "behave_command": "behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox",
         "environment": {
             "archivematica_version": "1.7.0",
@@ -203,5 +210,19 @@
         "target_features": ["features/core/metadata-only-aip-reingest.feature"],
         "outcome": "pass",
         "runtime": "4m43.840s"
+    },
+    {
+        "behave_command": "behave --tags=transfer-backlog --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox -D docker_compose_path=/abs/path/to/dir/containing/compose/file",
+        "environment": {
+            "archivematica_version": "1.7.0",
+            "archivematica_branch": "qa/1.x",
+            "archivematica_commit": "e0a4f52e8c3c15340db54e7dd7a5e453d8243172",
+            "storage_service_version": "0.11.0",
+            "storage_service_branch": "stable/0.11.x",
+            "storage_service_commit": "61ab193af9e312961ec445121baccc7b052a8a16"
+        },
+        "target_features": ["features/core/aip-encryption.feature"],
+        "outcome": "pass",
+        "runtime": "2m7.080s"
     }
 ]
