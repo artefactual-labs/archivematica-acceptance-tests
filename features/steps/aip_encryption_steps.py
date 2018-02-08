@@ -390,8 +390,12 @@ def step_impl(context):
         context.scenario.transfer_uuid)
     utils.logger.info('expecting encrypted transfer to be at %s on server',
                       path_on_disk)
-    dip_local_path = context.am_user.ssh.scp_server_file_to_local(
-        path_on_disk)
+    if getattr(context.am_user.docker, 'docker_compose_path', None):
+        dip_local_path = context.am_user.docker.cp_server_file_to_local(
+            path_on_disk)
+    else:
+        dip_local_path = context.am_user.ssh.scp_server_file_to_local(
+            path_on_disk)
     if dip_local_path is None:
         utils.logger.info(
             'Unable to copy file %s from the server to the local file'
