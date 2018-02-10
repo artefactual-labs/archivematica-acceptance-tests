@@ -59,4 +59,6 @@ Feature: AIP Encryption via Mirror Locations
     And the master AIP on disk is not encrypted
     And the replica AIP on disk is encrypted
     When the user downloads the replica AIP
+    And the user downloads the master AIP
     Then the downloaded replica AIP is not encrypted
+    And the master and replica AIPs are byte-for-byte identical
