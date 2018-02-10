@@ -189,7 +189,9 @@ def step_impl(context):
     """
     the_aip_uuid = utils.get_uuid_val(context, 'sip')
     search_results = context.scenario.aip_search_results
-    assert len(search_results) == 2
+    assert len(search_results) == 2, (
+        'We expected 2 search results but there are {} in {}'.format(
+            len(search_results), str(search_results)))
     the_aips = [dct for dct in search_results if dct['uuid'] == the_aip_uuid]
     not_the_aips = [dct for dct in search_results
                     if dct['uuid'] != the_aip_uuid]
@@ -351,6 +353,17 @@ def step_impl(context, aip_description):
     context.scenario.aip_path = context.am_user.decompress_aip(
         context.scenario.aip_path)
     assert os.path.isdir(context.scenario.aip_path)
+
+
+@then('the master and replica AIPs are byte-for-byte identical')
+def step_impl(context):
+    assert os.path.isfile(context.scenario.master_aip)
+    assert os.path.isfile(context.scenario.replica_aip)
+    with open(context.scenario.master_aip, 'rb') as filei:
+        master_bytes = filei.read()
+    with open(context.scenario.replica_aip, 'rb') as filei:
+        replica_bytes = filei.read()
+    assert master_bytes == replica_bytes
 
 
 @then('the downloaded uncompressed AIP is an unencrypted tarfile')

@@ -226,6 +226,7 @@ def step_impl(context):
 
 @when('the user searches for the AIP UUID in the Storage Service')
 def step_impl(context):
+    time.sleep(1)
     the_aip_uuid = utils.get_uuid_val(context, 'sip')
     context.scenario.aip_search_results = (
         context.am_user.browser.search_for_aip_in_storage_service(the_aip_uuid))
@@ -246,6 +247,10 @@ def step_impl(context, aip_description):
     transfer_name = context.scenario.transfer_name
     context.scenario.aip_path = context.am_user.api.download_aip(
         transfer_name, uuid_val, context.am_user.browser.ss_api_key)
+    attr_name = aip_description.replace(' ', '')
+    utils.logger.info('setting attribute {} to {}'.format(
+        attr_name, context.scenario.aip_path))
+    setattr(context.scenario, attr_name, context.scenario.aip_path)
 
 
 use_step_matcher('parse')
