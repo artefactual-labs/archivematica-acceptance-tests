@@ -189,7 +189,9 @@ def step_impl(context):
     """
     the_aip_uuid = utils.get_uuid_val(context, 'sip')
     search_results = context.scenario.aip_search_results
-    assert len(search_results) == 2
+    assert len(search_results) == 2, (
+        'We expected 2 search results but there are {} in {}'.format(
+            len(search_results), str(search_results)))
     the_aips = [dct for dct in search_results if dct['uuid'] == the_aip_uuid]
     not_the_aips = [dct for dct in search_results
                     if dct['uuid'] != the_aip_uuid]
@@ -353,6 +355,17 @@ def step_impl(context, aip_description):
     assert os.path.isdir(context.scenario.aip_path)
 
 
+@then('the master and replica AIPs are byte-for-byte identical')
+def step_impl(context):
+    assert os.path.isfile(context.scenario.master_aip)
+    assert os.path.isfile(context.scenario.replica_aip)
+    with open(context.scenario.master_aip, 'rb') as filei:
+        master_bytes = filei.read()
+    with open(context.scenario.replica_aip, 'rb') as filei:
+        replica_bytes = filei.read()
+    assert master_bytes == replica_bytes
+
+
 @then('the downloaded uncompressed AIP is an unencrypted tarfile')
 def step_impl(context):
     assert tarfile.is_tarfile(context.scenario.aip_path)
@@ -390,8 +403,12 @@ def step_impl(context):
         context.scenario.transfer_uuid)
     utils.logger.info('expecting encrypted transfer to be at %s on server',
                       path_on_disk)
-    dip_local_path = context.am_user.ssh.scp_server_file_to_local(
-        path_on_disk)
+    if getattr(context.am_user.docker, 'docker_compose_path', None):
+        dip_local_path = context.am_user.docker.cp_server_file_to_local(
+            path_on_disk)
+    else:
+        dip_local_path = context.am_user.ssh.scp_server_file_to_local(
+            path_on_disk)
     if dip_local_path is None:
         utils.logger.info(
             'Unable to copy file %s from the server to the local file'
@@ -479,12 +496,12 @@ def step_impl(context):
 
 def assert_pointer_premis_event(**kwargs):
     """Make assertions about the PREMIS event of premis:eventType
-    ``event_type`` in the METS pointer file at ``mets_path``. Minimally assert
-    that such an event exists. The optional params should hold lists of strings
-    that are all expected to be in eventDetail, eventOutcome, and
+    ``event_type`` in the METS pointer file at ``pointer_path``. Minimally
+    assert that such an event exists. The optional params should hold lists of
+    strings that are all expected to be in eventDetail, eventOutcome, and
     eventOutcomeDetailNote, respectively. Return the UUID of the relevant event.
     """
-    with open(kwargs['mets_path']) as filei:
+    with open(kwargs['pointer_path']) as filei:
         doc = etree.parse(filei)
         premis_event = None
         for premis_event_el in doc.findall(
@@ -540,8 +557,12 @@ def get_aip_is_encrypted(context, aip_description):
         file_el = doc.find('mets:fileSec/mets:fileGrp/mets:file', ns)
         flocat_el = file_el.find('mets:FLocat', ns)
         xlink_href = flocat_el.get('{' + ns['xlink'] + '}href')
-        # Use scp to copy the AIP on the server to a local directory.
-        aip_local_path = context.am_user.ssh.scp_server_file_to_local(xlink_href)
+        # Use `scp` or `docker cp` to copy the AIP on the server to a local
+        # directory.
+        if getattr(context.am_user.docker, 'docker_compose_path', None):
+            aip_local_path = context.am_user.docker.cp_server_file_to_local(xlink_href)
+        else:
+            aip_local_path = context.am_user.ssh.scp_server_file_to_local(xlink_href)
         if aip_local_path is None:
             utils.logger.warning(
                 'Unable to copy file %s from the server to the local file'

@@ -1,20 +1,22 @@
-# behave \
-#     --tags=aip-encrypt \
-#     --tags=compressed \
-#     --no-skipped \
-#     -v \
-#     -D am_username=test \
-#     -D am_password=test \
-#     -D am_url=http://127.0.0.1:62080/ \
-#     -D am_version=1.7 \
-#     -D am_api_key=test \
-#     -D ss_username=test \
-#     -D ss_password=test \
-#     -D ss_url=http://127.0.0.1:62081/ \
-#     -D ss_api_key=test \
-#     -D home=archivematica \
-#     -D driver_name=Firefox
-# behave --tags=aip-encrypt --tags=compressed --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox
+# To run this feature file against a Docker-compose deploy of Archivematica (cf.
+# https://github.com/artefactual-labs/am/tree/master/compose)::
+#
+#     $ behave \
+#         --tags=aip-encrypt \
+#         --no-skipped \
+#         -v \
+#         -D am_username=test \
+#         -D am_password=test \
+#         -D am_url=http://127.0.0.1:62080/ \
+#         -D am_version=1.7 \
+#         -D am_api_key=test \
+#         -D ss_username=test \
+#         -D ss_password=test \
+#         -D ss_url=http://127.0.0.1:62081/ \
+#         -D ss_api_key=test \
+#         -D home=archivematica \
+#         -D driver_name=Firefox \
+#         -D docker_compose_path=/path/to/compose/dir
 
 @aip-encrypt @am17
 Feature: AIP Encryption

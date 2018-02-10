@@ -33,5 +33,31 @@
         "target_features": ["features/core/metadata-only-aip-reingest.feature"],
         "outcome": "pass",
         "runtime": "7m18.599s"
+    }, {
+        "behave_command": "behave --tags=transfer-backlog --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox -D docker_compose_path=/abs/path/to/dir/containing/compose/file",
+        "environment": {
+            "archivematica_version": "1.7.0",
+            "archivematica_branch": "qa/1.x",
+            "archivematica_commit": "e0a4f52e8c3c15340db54e7dd7a5e453d8243172",
+            "storage_service_version": "0.11.0",
+            "storage_service_branch": "stable/0.11.x",
+            "storage_service_commit": "61ab193af9e312961ec445121baccc7b052a8a16"
+        },
+        "target_features": ["features/core/aip-encryption.feature"],
+        "outcome": "pass",
+        "runtime": "2m7.080s"
+    }, {
+        "behave_command": "behave --tags=aip-encrypt-mirror --no-skipped -D am_version=1.7 -D driver_name=Firefox -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D home=archivematica -D docker_compose_path=/abs/path/to/dir/containing/compose/file -v",
+        "environment": {
+            "archivematica_version": "1.7.0",
+            "archivematica_branch": "qa/1.x",
+            "archivematica_commit": "e0a4f52e8c3c15340db54e7dd7a5e453d8243172",
+            "storage_service_version": "0.11.0",
+            "storage_service_branch": "stable/0.11.x",
+            "storage_service_commit": "646f76a50223299ee2cded46812797cfb38416aa"
+        },
+        "target_features": ["features/core/aip-encryption-mirror.feature"],
+        "outcome": "pass",
+        "runtime": "4m57.297s"
     }
 ]
