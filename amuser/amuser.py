@@ -67,7 +67,8 @@ class ArchivematicaUser(base.Base):
             return None
         return fname
 
-    def decompress_aip(self, aip_path):
+    def decompress_aip(self, aip_path, cwd=None):
+        cwd = cwd or self.tmp_path
         aip_parent_dir_path = os.path.dirname(aip_path)
         try:
             devnull = getattr(subprocess, 'DEVNULL')
@@ -77,9 +78,12 @@ class ArchivematicaUser(base.Base):
         output=subprocess.check_output(cmd).decode('utf8')
         aip_dir_name = output.splitlines()[-3].split()[-1]
         aip_dir_path = os.path.join(aip_parent_dir_path, aip_dir_name)
+        cmd = shlex.split('7z x {} -aoa'.format(aip_path))
+        LOGGER.info('Decompress AIP command: %s', cmd)
+        LOGGER.info('Decompress AIP cwd: %s', cwd)
         p = subprocess.Popen(
-            shlex.split('7z x {} -aoa'.format(aip_path)),
-            cwd=self.tmp_path,
+            cmd,
+            cwd=cwd,
             stdout=devnull,
             stderr=subprocess.STDOUT)
         p.wait()

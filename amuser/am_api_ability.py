@@ -86,6 +86,22 @@ class ArchivematicaAPIAbility(base.Base):
                 raise ArchivematicaAPIAbilityError(
                     'Unable to download AIP {} pointer file'.format(sip_uuid))
 
+    def poll_until_aip_stored(self, sip_uuid, ss_api_key, poll_interval=1,
+                              max_polls=60):
+        payload = {'username': self.ss_username, 'api_key': ss_api_key}
+        url = '{}api/v2/file/{}/'.format(self.ss_url, sip_uuid)
+        counter = 0
+        while True:
+            counter += 1
+            if counter > max_polls:
+                raise ArchivematicaAPIAbilityError(
+                    'Polled too many times waiting for AIP %s to be stored',
+                    sip_uuid)
+            r = requests.get(url, params=payload)
+            if r.ok:
+                break
+            time.sleep(poll_interval)
+
 
 def _save_download(request, file_path):
     with open(file_path, 'wb') as f:

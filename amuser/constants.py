@@ -139,6 +139,7 @@ MICRO_SERVICES2GROUPS = {
         'Process submission documentation'),
     'Identify file format of metadata files': ('Process metadata directory',),
     'Identify manually normalized files': ('Normalize',),
+    'Index AIP': ('Store AIP',),
     'Include default SIP processingMCP.xml': (
         'Include default SIP processingMCP.xml',),
     'Include default Transfer processingMCP.xml': (
@@ -271,6 +272,8 @@ JS_SNIPPET_GET_MICRO_SERVICES2GROUPS = """
 PC_DECISION2ID = {
     'Assign UUIDs to directories':
         'id_bd899573-694e-4d33-8c9b-df0af802437d',
+    'Document empty directories':
+        'id_d0dfa5fc-e3c2-4638-9eda-f96eea1070e0',
     'Bind PIDs':
         'id_05357876-a095-4c11-86b5-a7fff01af668',
     'Send transfer to quarantine':

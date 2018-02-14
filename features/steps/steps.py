@@ -140,13 +140,60 @@ def step_impl(context):
     )
 
 
+@given('a default processing config that creates and stores an AIP')
+def step_impl(context):
+    context.execute_steps(
+        'Given the default processing config is in its default state\n'
+        'And the processing config decision "Document empty directories" is'
+        ' set to "No"\n'
+        'And the processing config decision "Assign UUIDs to directories" is'
+        ' set to "No"\n'
+        'And the processing config decision "Select file format identification'
+        ' command (Transfer)" is set to "Identify using Siegfried"\n'
+        'And the processing config decision "Perform policy checks on'
+        ' originals" is set to "No"\n'
+        'And the processing config decision "Create SIP(s)" is set to "Create'
+        ' single SIP and continue processing"\n'
+        'And the processing config decision "Normalize" is set to "Normalize'
+        ' for preservation"\n'
+        'And the processing config decision "Approve normalization" is set to'
+        ' "Yes"\n'
+        'And the processing config decision "Perform policy checks on'
+        ' preservation derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on access'
+        ' derivatives" is set to "No"\n'
+        'And the processing config decision "Select file format identification'
+        ' command (Submission documentation & metadata)" is set to'
+        ' "Identify using Siegfried"\n'
+        'And the processing config decision "Bind PIDs" is set to "No"\n'
+        'And the processing config decision "Store AIP" is set to "Yes"\n'
+        'And the processing config decision "Store AIP location" is set to'
+        ' "Default location"\n'
+    )
+
+
+@given('a default processing config that gets a transfer to the "Create SIP(s)"'
+       ' decision point')
+def step_impl(context):
+    context.execute_steps(
+        'Given the default processing config is in its default state\n'
+        'And the processing config decision "Assign UUIDs to directories" is'
+        ' set to "No"\n'
+        'And the processing config decision "Select file format identification'
+        ' command (Transfer)" is set to "Identify using Siegfried"\n'
+        'And the processing config decision "Perform policy checks on'
+        ' originals" is set to "No"\n'
+    )
+
+
 # Whens
 # ------------------------------------------------------------------------------
 
 @when('the user waits for the "{microservice_name}" micro-service to complete'
       ' during {unit_type}')
 def step_impl(context, microservice_name, unit_type):
-    utils.wait_for_micro_service_to_complete(context, microservice_name, unit_type)
+    utils.wait_for_micro_service_to_complete(context, microservice_name,
+                                             unit_type)
 
 
 @when('the user waits for the "{microservice_name}" decision point to appear'

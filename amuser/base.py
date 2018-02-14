@@ -1,4 +1,5 @@
 """Base class for ArchivematicaUser and other related classes."""
+# pylint: disable=too-many-instance-attributes
 
 import os
 import shutil
@@ -54,6 +55,7 @@ class Base:
     kwarg2attr_filter = {'ss_api_key': '_ss_api_key'}
 
     def __init__(self, **kwargs):
+        self.here = ROOT
         for kwarg, default in self.expected_args:
             setattr(self,
                     self.kwarg2attr_filter.get(kwarg, kwarg),

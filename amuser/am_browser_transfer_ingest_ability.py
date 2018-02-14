@@ -95,6 +95,24 @@ class ArchivematicaBrowserTransferIngestAbility(
             raise ArchivematicaBrowserTransferIngestAbilityError(
                 'Unable to find decision point {}'.format(decision_point))
 
+    def assert_no_option(self, choice_text, decision_point, uuid_val,
+                         unit_type='transfer'):
+        """Assert that the option ``choice_text`` is not available for
+        ``decision_point`` by attempting to make it and expecting an error with
+        the "Unable to select choice" error message.
+        """
+        try:
+            self.make_choice(choice_text, decision_point,
+                             uuid_val, unit_type=unit_type)
+        except ArchivematicaBrowserTransferIngestAbilityError as exc:
+            assert 'Unable to select choice "{}"'.format(choice_text) == str(
+                exc)
+        else:
+            raise AssertionError(
+                'We were able to select choice "{}" at decision point "{}" even'
+                ' though we expected this not to be possible.'.format(
+                    choice_text, decision_point))
+
     @selenium_ability.recurse_on_stale
     def wait_for_microservice_visibility(self, ms_name, group_name,
                                          transfer_uuid):

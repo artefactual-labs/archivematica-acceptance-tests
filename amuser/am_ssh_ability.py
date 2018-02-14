@@ -80,3 +80,27 @@ class ArchivematicaSSHAbility(base.Base):
             LOGGER.info('You do not have SSH access to the Archivematica'
                         ' server')
             return None
+
+    def assert_elasticsearch_not_installed(self):
+        """Assert that Elasticsearch is not installed by SSHing to the server
+        and expecting to find no file at /etc/init.d/elasticsearch.
+        """
+        if self.server_user and self.server_password and self.ssh_accessible:
+            AM_IP = ''.join([x for x in self.am_url if x in string.digits + '.'])
+            cmd = ('ssh'
+                   ' -o UserKnownHostsFile=/dev/null'
+                   ' -o StrictHostKeyChecking=no'
+                   ' {}@{}'
+                   ' ls /etc/init.d/elasticsearch'.format(
+                       self.server_user, AM_IP))
+            LOGGER.info(
+                'Command for checking if Elasticsearch is installed: %s', cmd)
+            child = pexpect.spawn(cmd)
+            if self.ssh_requires_password:
+                child.expect('assword:')
+                child.sendline(self.server_password)
+            child.expect(pexpect.EOF, timeout=20)
+            out = child.before.decode('utf8')
+            needle = 'No such file or directory'
+            assert needle in out, (
+                'We expected "{}" to be in "{}".'.format(needle, out))

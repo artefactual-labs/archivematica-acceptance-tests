@@ -67,3 +67,20 @@ class ArchivematicaDockerAbility(base.Base):
             vals = [v.strip() for v in line.strip(' |').split('|')]
             tasks.append(dict(zip(keys, vals)))
         return tasks
+
+    def get_processes(self):
+        return subprocess.check_output([
+            'docker-compose',
+            '-f',
+            self.docker_compose_file_path,
+            'ps']).decode('utf8').splitlines()
+
+    def get_process_names_states(self):
+        NAME = slice(0, 42)
+        STATE = slice(75, 86)
+        names_and_states = []
+        for line in self.get_processes():
+            name = line[NAME].strip().lower()
+            state = line[STATE].strip().lower()
+            names_and_states.append({'name': name, 'state': state})
+        return names_and_states

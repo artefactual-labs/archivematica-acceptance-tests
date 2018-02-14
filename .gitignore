@@ -7,6 +7,8 @@ test-transfers-sandbox/
 records/
 mediaconch-policies-sandbox/
 mediaconch-policies/video-MKV-FFV1-Intra-PCM-or-FLAC-CRC32-everywhere.xml
+etc/aips/pictures-ee3eeb43-3f76-494e-8e35-e992fb3d4f98
+!etc/aips/pictures.7z
 test-files/
 .amsc-tmp/
 .tox/

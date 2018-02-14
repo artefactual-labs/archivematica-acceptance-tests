@@ -33,5 +33,52 @@
         "target_features": ["features/core/metadata-only-aip-reingest.feature"],
         "outcome": "pass",
         "runtime": "7m18.599s"
+    }, {
+        "behave_command": "behave --tags=indexless --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox -D docker_compose_path=/path/to/dir/containing/docker/compose/file",
+        "environment": {
+            "archivematica_version": "1.7.0",
+            "archivematica_branch": "origin/dev/issue-878-headless-into-am-1.7",
+            "archivematica_commit": "d563f6b6e9cd309ba2a1cd16e558cfec308ccf5c",
+            "storage_service_version": "0.11.0",
+            "storage_service_branch": "qa/0.x",
+            "storage_service_commit": "7ecdc1429bbb24f80725818cd54ae41990eb2164",
+            "sampledata_branch": "master",
+            "sampledata_commit": "9805b0a0bf1dad65236ffa36b4db0b79b709ae74",
+            "acceptance_tests_branch": "dev/issue-11442-make-indexless-feature-executable",
+            "acceptance_tests_commit": "not applicable"
+        },
+        "target_features": ["features/Columbia/indexless.feature"],
+        "outcome": "pass",
+        "runtime": "5m29.640s"
+    }, {
+        "behave_command": "behave -v --tags=indexless --tags=deploy.method.ansible,same-aip,gui --no-skipped -D am_username=test -D am_password=testtest -D am_url=http://192.168.168.192/ -D am_version=1.7 -D ss_username=test -D ss_password=test -D ss_url=http://192.168.168.192:8000/ -D home=vagrant -D driver_name=Firefox -D server_user=vagrant -D server_password=vagrant",
+        "environment": {
+            "archivematica_version": "1.7.0",
+            "archivematica_branch": "origin/origin/dev/issue-923-stop-using-disableElasticsearchIndexing",
+            "archivematica_commit": "b64cb1ded616a203846a8289566d2f1f21d9d3b1",
+            "storage_service_version": "0.11.0",
+            "storage_service_branch": "qa/0.x",
+            "storage_service_commit": "05692cfc2fbd702774309bbd82dc1d9a4388bf09",
+            "acceptance_tests_branch": "dev/issue-11442-make-indexless-feature-executable",
+            "acceptance_tests_commit": "not applicable"
+        },
+        "target_features": ["features/Columbia/indexless.feature"],
+        "outcome": "pass",
+        "runtime": "2m59.847s"
+    }, {
+        "behave_command": "behave -v --tags=indexless --tags=deploy.method.docker-compose,same-aip,gui --no-skipped -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox -D docker_compose_path=/Users/joeldunham/Documents/Artefactual/am/compose",
+        "environment": {
+            "archivematica_version": "1.7.0",
+            "archivematica_branch": "origin/origin/dev/issue-923-stop-using-disableElasticsearchIndexing",
+            "archivematica_commit": "b64cb1ded616a203846a8289566d2f1f21d9d3b1",
+            "storage_service_version": "0.11.0",
+            "storage_service_branch": "qa/0.x",
+            "storage_service_commit": "05692cfc2fbd702774309bbd82dc1d9a4388bf09",
+            "acceptance_tests_branch": "dev/issue-11442-make-indexless-feature-executable",
+            "acceptance_tests_commit": "not applicable"
+        },
+        "target_features": ["features/Columbia/indexless.feature"],
+        "outcome": "pass",
+        "runtime": "5m45.541s"
     }
 ]

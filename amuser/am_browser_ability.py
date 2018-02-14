@@ -62,6 +62,22 @@ class ArchivematicaBrowserAbility(
                 'code').text.strip()
         return self._ss_api_key
 
+    def get_displayed_tabs(self):
+        ret = []
+        for li_el in self.driver.find_element_by_css_selector(
+                'ul.navbar-nav').find_elements_by_tag_name('li'):
+            ret.append(li_el.text.strip().split('\n')[0])
+        return list(filter(None, ret))
+
+    def assert_sip_arrange_pane_not_displayed(self):
+        for selector in ('form#search_form', 'div#originals', 'div#arrange'):
+            try:
+                self.driver.find_element_by_css_selector(selector)
+            except NoSuchElementException as exc:
+                assert 'Unable to locate element: {}'.format(
+                    selector) in str(exc)
+        assert self.driver.find_element_by_css_selector('div#sip-container')
+
     # ==========================================================================
     # Archival Storage Tab
     # ==========================================================================
@@ -263,6 +279,37 @@ class ArchivematicaBrowserAbility(
             self.navigate(edit_default_processing_config_url)
         self.driver.find_element_by_css_selector('input[value=Save]').click()
 
+    def get_processing_config_decision_options(self, **kwargs):
+        """Return the options available for a given processing config decision
+        as a list of strings.
+        """
+        decision_id = kwargs.get('decision_id')  # 'id_<UUID>' or just '<UUID>'
+        decision_label = kwargs.get('decision_label')  # e.g., 'Select
+                                                       # compression algorithm'
+        if decision_id is None and decision_label is None:
+            raise ArchivematicaBrowserAbilityError(
+                'You must provide a decision id or a decision label when'
+                ' getting the available options for a processing config'
+                ' decision')
+        # Make sure we are editing the default processing config and
+        # navigate there if not.
+        edit_default_processing_config_url = \
+            self.get_edit_default_processing_config_url()
+        if self.driver.current_url != edit_default_processing_config_url:
+            self.navigate(edit_default_processing_config_url)
+        # Get a decision_id value, something of the form 'id_<UUID>'
+        if decision_id is None:
+            decision_id = _get_decision_id_from_label(decision_label)
+        else:
+            if not decision_id.startswith('id_'):
+                decision_id = 'id_' + decision_id
+        decision_el = self.driver.find_element_by_id(decision_id)
+        options = []
+        if decision_el.tag_name == 'select':
+            for option_el in decision_el.find_elements_by_tag_name('option'):
+                options.append(option_el.text.strip())
+        return options
+
     def set_processing_config_decision( self, **kwargs):
         """Set the (default) processing config decision, identified via
         ``decision_id`` or ``decision_label``) to the value/choice
@@ -298,21 +345,7 @@ class ArchivematicaBrowserAbility(
             self.navigate(edit_default_processing_config_url)
         # Get a decision_id value, something of the form 'id_<UUID>'
         if decision_id is None:
-            decision_id = c.PC_DECISION2ID.get(decision_label)
-            if decision_id is None:
-                for label, id_ in c.PC_DECISION2ID.items():
-                    if label.lower().startswith(decision_label.lower()):
-                        decision_id = id_
-                        break
-            if decision_id is None:
-                for label, id_ in c.PC_DECISION2ID.items():
-                    if decision_label.lower() in label.lower():
-                        decision_id = id_
-                        break
-            if decision_id is None:
-                raise ArchivematicaBrowserAbilityError(
-                    'Unable to determine a decision id given input'
-                    ' parameters')
+            decision_id = _get_decision_id_from_label(decision_label)
         else:
             if not decision_id.startswith('id_'):
                 decision_id = 'id_' + decision_id
@@ -464,3 +497,22 @@ class ArchivematicaBrowserAbility(
         continue_button_el = self.driver.find_element_by_css_selector(
             continue_button_selector)
         continue_button_el.click()
+
+
+def _get_decision_id_from_label(decision_label):
+    decision_id = c.PC_DECISION2ID.get(decision_label)
+    if decision_id is None:
+        for label, id_ in c.PC_DECISION2ID.items():
+            if label.lower().startswith(decision_label.lower()):
+                decision_id = id_
+                break
+    if decision_id is None:
+        for label, id_ in c.PC_DECISION2ID.items():
+            if decision_label.lower() in label.lower():
+                decision_id = id_
+                break
+    if decision_id is None:
+        raise ArchivematicaBrowserAbilityError(
+            'Unable to determine a decision id given input'
+            ' parameters')
+    return decision_id
