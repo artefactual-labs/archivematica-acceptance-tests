@@ -173,7 +173,7 @@ def step_impl(context):
                 'An Elasticsearch container is running when we expect it not to'
                 ' be. Its state is %s', es_ps['state'])
             raise
-    elif context.scenario.idxls_dply_method == 'ansible':
+    elif context.scenario.idxls_dply_method in ('ansible', 'manual'):
         context.am_user.ssh.assert_elasticsearch_not_installed()
     else:
         utils.logger.warning(

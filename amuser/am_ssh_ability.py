@@ -6,6 +6,7 @@ Archivematica.
 """
 
 import os
+import shlex
 import string
 import subprocess
 
@@ -32,7 +33,15 @@ class ArchivematicaSSHAbility(base.Base):
         filename = os.path.basename(server_file_path)
         local_path = os.path.join(self.tmp_path, filename)
         AM_IP = ''.join([x for x in self.am_url if x in string.digits + '.'])
-        if self.server_user and self.server_password:
+        if self.server_user and self.ssh_identity_file:
+            cmd = ('scp'
+                   ' -o StrictHostKeyChecking=no'
+                   ' -i {}'
+                   ' {}@{}:{} {}'.format(
+                       self.ssh_identity_file, self.server_user, AM_IP,
+                       server_file_path, local_path))
+            subprocess.check_output(shlex.split(cmd))
+        elif self.server_user and self.server_password:
             cmd = ('scp'
                    ' -o UserKnownHostsFile=/dev/null'
                    ' -o StrictHostKeyChecking=no'
@@ -43,15 +52,6 @@ class ArchivematicaSSHAbility(base.Base):
                 child.expect('assword:')
                 child.sendline(self.server_password)
             child.expect(pexpect.EOF, timeout=20)
-        elif self.server_user and self.ssh_identity_file:
-            cmd = ('scp'
-                   ' -o UserKnownHostsFile=/dev/null'
-                   ' -o StrictHostKeyChecking=no'
-                   ' -i {}'
-                   ' {}@{}:{} {}'.format(
-                       self.ssh_identity_file, self.server_user, AM_IP,
-                       server_file_path, local_path))
-            subprocess.check_output(shlex.split(cmd))
         else:
             LOGGER.info('You must provide a server_user and a either a'
                         ' server_password or a ssh_identity_file')
@@ -75,7 +75,16 @@ class ArchivematicaSSHAbility(base.Base):
         dirname = os.path.basename(server_dir_path)
         local_path = os.path.join(self.tmp_path, dirname)
         AM_IP = ''.join([x for x in self.am_url if x in string.digits + '.'])
-        if self.server_user and self.server_password:
+        if self.server_user and self.ssh_identity_file:
+            cmd = ('scp'
+                   ' -r'
+                   ' -i {}'
+                   ' -o StrictHostKeyChecking=no'
+                   ' {}@{}:{} {}'.format(
+                       self.ssh_identity_file, self.server_user, AM_IP,
+                       server_dir_path, local_path))
+            subprocess.check_output(shlex.split(cmd))
+        elif self.server_user and self.server_password:
             cmd = ('scp'
                    ' -r'
                    ' -o UserKnownHostsFile=/dev/null'
@@ -89,16 +98,6 @@ class ArchivematicaSSHAbility(base.Base):
                 child.expect('assword:')
                 child.sendline(self.server_password)
             child.expect(pexpect.EOF, timeout=20)
-        elif self.server_user and self.ssh_identity_file:
-            cmd = ('scp'
-                   ' -r'
-                   ' -i {}'
-                   ' -o UserKnownHostsFile=/dev/null'
-                   ' -o StrictHostKeyChecking=no'
-                   ' {}@{}:{} {}'.format(
-                       self.ssh_identity_file, self.server_user, AM_IP,
-                       server_dir_path, local_path))
-            subprocess.check_output(shlex.split(cmd))
         else:
             LOGGER.info('You must provide a server_user and a either a'
                         ' server_password or a ssh_identity_file')
@@ -118,7 +117,22 @@ class ArchivematicaSSHAbility(base.Base):
                         ' server')
             return None
         AM_IP = ''.join([x for x in self.am_url if x in string.digits + '.'])
-        if self.server_user and self.server_password:
+        if self.server_user and self.ssh_identity_file:
+            cmd = ('ssh'
+                   ' -i {}'
+                   ' -o StrictHostKeyChecking=no'
+                   ' {}@{}'
+                   ' ls /etc/init.d/elasticsearch'.format(
+                       self.ssh_identity_file,
+                       self.server_user, AM_IP))
+            LOGGER.info(
+                'Command for checking if Elasticsearch is installed: %s', cmd)
+            try:
+                out = subprocess.check_output(
+                    shlex.split(cmd), stderr=subprocess.STDOUT).decode('utf8')
+            except subprocess.CalledProcessError as exc:
+                out = exc.output.decode('utf8')
+        elif self.server_user and self.server_password:
             cmd = ('ssh'
                    ' -o UserKnownHostsFile=/dev/null'
                    ' -o StrictHostKeyChecking=no'
@@ -133,18 +147,6 @@ class ArchivematicaSSHAbility(base.Base):
                 child.sendline(self.server_password)
             child.expect(pexpect.EOF, timeout=20)
             out = child.before.decode('utf8')
-        elif self.server_user and self.ssh_identity_file:
-            cmd = ('ssh'
-                   ' -i {}'
-                   ' -o UserKnownHostsFile=/dev/null'
-                   ' -o StrictHostKeyChecking=no'
-                   ' {}@{}'
-                   ' ls /etc/init.d/elasticsearch'.format(
-                       self.ssh_identity_file,
-                       self.server_user, AM_IP))
-            LOGGER.info(
-                'Command for checking if Elasticsearch is installed: %s', cmd)
-            out = subprocess.check_output(shlex.split(cmd)).decode('utf8')
         else:
             LOGGER.info('You must provide a server_user and a either a'
                         ' server_password or a ssh_identity_file')
