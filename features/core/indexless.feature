@@ -35,6 +35,24 @@
 #           -D server_user=vagrant \
 #           -D server_password=vagrant
 
+# To run this feature against an indexless manual (Ubuntu 16) Archivematica
+# deploy::
+#
+#     $ behave -v --tags=indexless \
+#           --tags=deploy.method.manual,same-aip,gui \
+#           --no-skipped \
+#           -D am_username=test \
+#           -D am_password=test \
+#           -D am_url=http://192.168.168.195/ \
+#           -D am_version=1.7 \
+#           -D ss_username=test \
+#           -D ss_password=test \
+#           -D ss_url=http://192.168.168.195:8000/ \
+#           -D home=ubuntu \
+#           -D driver_name=Firefox \
+#           -D server_user=vagrant \
+#           -D ssh_identity_file=/abs/path/to/ssh/private/key
+
 @indexless @headless
 Feature: Archivematica is deployed without Indexing feature
   When deploying Archivematica, users want to be able to decide whether or not

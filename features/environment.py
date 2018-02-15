@@ -26,6 +26,7 @@ AUTOMATION_TOOLS_PATH = '/etc/archivematica/automation-tools'
 # ``SSH_ACCESSIBLE`` to ``False``.
 SSH_ACCESSIBLE = True
 SSH_REQUIRES_PASSWORD = True
+SSH_IDENTITY_FILE = None
 SERVER_USER = 'vagrant'
 SERVER_PASSWORD = 'vagrant'
 
@@ -49,7 +50,9 @@ def get_am_user(userdata):
         'ssh_requires_password': bool(
             userdata.get('ssh_requires_password', SSH_REQUIRES_PASSWORD)),
         'server_user': userdata.get('server_user', SERVER_USER),
-        'server_password': userdata.get('server_password', SERVER_PASSWORD)
+        'server_password': userdata.get('server_password', SERVER_PASSWORD),
+        'ssh_identity_file': userdata.get(
+            'ssh_identity_file', SSH_IDENTITY_FILE)
     })
     return amuser.ArchivematicaUser(**userdata)
 
