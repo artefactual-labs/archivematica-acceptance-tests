@@ -76,6 +76,54 @@ class ArchivematicaMETSAbility(base.Base):
                 'At least one PURL does not resolve in\n  {}'.format(
                     '\n  '.join(purls)))
 
+    @staticmethod
+    def assert_empty_dir_documented_identified(mets_doc, empty_dir_rel_path):
+        """Make assertions that confirm that the empty directory
+        ``empty_dir_rel_path`` is documented in the METS XML document
+        ``mets_doc`` and that it has the expected identifiers: PID, PURL, and
+        UUID.
+        """
+        ns = c.METS_NSMAP
+        norm_struct = mets_doc.xpath(
+            'mets:structMap[@LABEL=\'Normative Directory Structure\']',
+            namespaces=ns)[0]
+        assert norm_struct is not None
+        objects_div_el = norm_struct.xpath(
+            'mets:div[@TYPE=\'Directory\']'
+            '/mets:div[@TYPE=\'Directory\' and @LABEL=\'objects\']',
+            namespaces=ns)[0]
+        assert objects_div_el is not None
+        xpath = []
+        for dir_ in empty_dir_rel_path.split('/'):
+            xpath.append(
+                'mets:div[@TYPE=\'Directory\' and @LABEL=\'{}\']'.format(
+                    dir_))
+        xpath = '/'.join(xpath)
+        empty_dir_div_el = objects_div_el.xpath(
+            xpath, namespaces=ns)[0]
+        assert empty_dir_div_el is not None
+        dmdid = empty_dir_div_el.get('DMDID')
+        assert dmdid is not None
+        dmd_sec_el = mets_doc.xpath(
+            'mets:dmdSec[@ID=\'{}\']'.format(dmdid),
+            namespaces=ns)[0]
+        assert dmd_sec_el is not None
+        identifiers = []
+        for obj_idfr_el in dmd_sec_el.findall(
+                'mets:mdWrap/'
+                'mets:xmlData/'
+                'premis3:object/'
+                'premis3:objectIdentifier', ns):
+            identifiers.append((
+                obj_idfr_el.find('premis3:objectIdentifierType', ns).text,
+                obj_idfr_el.find('premis3:objectIdentifierValue', ns).text))
+        uuid_id = [ival for itype, ival in identifiers if itype=='UUID'][0]
+        hdl_id = [ival for itype, ival in identifiers if itype=='hdl'][0]
+        uri_id = [ival for itype, ival in identifiers if itype=='URI'][0]
+        assert uuid_id
+        assert hdl_id
+        assert uri_id
+
 
 def _add_entity_identifiers(entity, doc, ns):
     """Find all of the identifiers for ``entity`` (a dict representing a file

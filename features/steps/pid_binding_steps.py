@@ -98,5 +98,13 @@ def step_impl(context):
       ' directories and the package itself')
 def step_impl(context):
     accession_no = getattr(context.scenario, 'accession_no', None)
-    mets = utils.get_mets_from_scenario(context)
+    mets = context.scenario.mets = utils.get_mets_from_scenario(context)
     context.am_user.mets.validate_mets_for_pids(mets, accession_no=accession_no)
+
+
+@then('the empty directory in {empty_dir_rel_path} is in the normative'
+      ' structMap and has identifiers')
+def step_impl(context, empty_dir_rel_path):
+    mets = context.scenario.mets
+    context.am_user.mets.assert_empty_dir_documented_identified(
+        mets, empty_dir_rel_path)
