@@ -17,5 +17,4 @@ __pycache__
 behave-tutorial/
 reports/
 data/
-archivematicaselenium.log
-steps.log
+*.log
