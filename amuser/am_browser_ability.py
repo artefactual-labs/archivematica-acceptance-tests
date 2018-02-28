@@ -138,11 +138,18 @@ class ArchivematicaBrowserAbility(
         url = self.get_aip_in_archival_storage_url(aip_uuid)
         max_attempts = 10
         attempt = 0
+        s = requests.session()
+        s.headers.update(
+            {'User-Agent':
+             'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML,'
+             ' like Gecko) Chrome/44.0.2403.157 Safari/537.36'})
+        for cookie in self.driver.get_cookies():
+            s.cookies.update({cookie['name']: cookie['value']})
         while True:
             if attempt > max_attempts:
                 raise ArchivematicaBrowserAbilityError(
                     'Unable to navigate to {}'.format(url))
-            r = requests.get(url)
+            r = s.get(url)
             if r.status_code == requests.codes.ok:
                 LOGGER.info('Requests got OK status code %s when requesting'
                             ' %s', r.status_code, url)
@@ -152,7 +159,7 @@ class ArchivematicaBrowserAbility(
                         ' again', r.status_code, url)
             attempt += 1
             time.sleep(1)
-        self.navigate(url)
+        self.navigate(url, reload=True)
 
     def initiate_reingest(self, aip_uuid, reingest_type='metadata-only'):
         self.navigate_to_aip_in_archival_storage(aip_uuid)
@@ -167,8 +174,9 @@ class ArchivematicaBrowserAbility(
                 'Unable to initiate a reingest of type {} on AIP'
                 ' {}'.format(reingest_type, aip_uuid))
         while True:
-            if self.driver.find_element_by_css_selector(
-                    type_selector).is_displayed():
+            type_input_el = self.driver.find_element_by_css_selector(
+                type_selector)
+            if type_input_el.is_displayed():
                 break
             else:
                 self.driver.find_element_by_css_selector(

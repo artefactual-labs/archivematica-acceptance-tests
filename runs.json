@@ -190,5 +190,18 @@
         "target_features": ["features/core/transfer-mkv-conformance.feature"],
         "outcome": "pass",
         "runtime": "3m55.988s"
+    }, {
+        "behave_command": "behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox",
+        "environment": {
+            "archivematica_version": "1.7.0",
+            "archivematica_branch": "stable/1.7.x",
+            "archivematica_commit": "a986533cda805b59e7ac690cbd2206bb7e29c502",
+            "storage_service_version": "0.11.0",
+            "storage_service_branch": "stable/0.11.x",
+            "storage_service_commit": "183551f106f6b9a68f49e9ce2b3063a1e1923761"
+        },
+        "target_features": ["features/core/metadata-only-aip-reingest.feature"],
+        "outcome": "pass",
+        "runtime": "4m43.840s"
     }
 ]

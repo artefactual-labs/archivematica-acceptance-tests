@@ -25,7 +25,7 @@ Feature: Metadata-only AIP re-ingest
   Scenario: Isla creates an AIP, and then performs a metadata-only re-ingest on it, adds metadata to it, and confirms that her newly added metadata are in the modified METS file.
     Given that the user has ensured that the default processing config is in its default state
     And the reminder to add metadata is enabled
-    When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
+    When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/Images/pictures
     And the user waits for the "Assign UUIDs to directories?" decision point to appear and chooses "No" during transfer
     And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
     And the user waits for the "Perform policy checks on originals?" decision point to appear and chooses "No" during transfer
@@ -39,7 +39,7 @@ Feature: Metadata-only AIP re-ingest
     And the user waits for the "Bind PIDs?" decision point to appear and chooses "No" during ingest
     And the user waits for the "Store AIP (review)" decision point to appear during ingest
     Then in the METS file the metsHdr element has a CREATEDATE attribute but no LASTMODDATE attribute
-    And in the METS file the metsHdr element has two dmdSec next sibling element(s)
+    And in the METS file the metsHdr element has one dmdSec next sibling element(s)
     When the user chooses "Store AIP" at decision point "Store AIP (review)" during ingest
     And the user waits for the "Store AIP location" decision point to appear and chooses "Store AIP in standard Archivematica Directory" during ingest
     And the user waits for the AIP to appear in archival storage
@@ -55,6 +55,6 @@ Feature: Metadata-only AIP re-ingest
     And the user waits for the "Bind PIDs?" decision point to appear and chooses "No" during ingest
     And the user waits for the "Store AIP (review)" decision point to appear during ingest
     Then in the METS file the metsHdr element has a CREATEDATE attribute and a LASTMODDATE attribute
-    And in the METS file the metsHdr element has three dmdSec next sibling element(s)
+    And in the METS file the metsHdr element has two dmdSec next sibling element(s)
     And in the METS file the dmdSec element contains the metadata added
 

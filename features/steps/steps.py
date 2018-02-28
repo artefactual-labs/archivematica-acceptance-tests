@@ -221,6 +221,7 @@ def step_impl(context, choice, decision_point, unit_type):
 def step_impl(context):
     uuid_val = utils.get_uuid_val(context, 'sip')
     context.am_user.browser.wait_for_aip_in_archival_storage(uuid_val)
+    time.sleep(2)
 
 
 @when('the user searches for the AIP UUID in the Storage Service')
