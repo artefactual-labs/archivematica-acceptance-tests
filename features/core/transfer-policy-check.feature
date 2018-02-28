@@ -22,6 +22,6 @@ Feature: Transfer policy check
     Then the transfer logs directory of the AIP contains a MediaConch policy check output file for each policy file tested against <policy_file>
 
   Examples: Policy Check Outcomes
-    | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                          | policy_file                       | purpose                                  |
-    | conform          | Completed successfully | pass           | successful          | preforma/all-conform-policy-originals  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Originals against a Policy |
-    | not conform      | Failed                 | fail           | failed              | preforma/none-conform-policy-originals | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation of Originals against a Policy |
+    | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                          | policy_file                       | purpose                     |
+    | conform          | Completed successfully | pass           | successful          | preforma/all-conform-policy-originals  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
+    | not conform      | Failed                 | fail           | failed              | preforma/none-conform-policy-originals | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
