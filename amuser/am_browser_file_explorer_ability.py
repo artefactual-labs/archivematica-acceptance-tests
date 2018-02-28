@@ -142,7 +142,7 @@ class ArchivematicaBrowserFileExplorerAbility(
         try:
             if counter > 10:
                 return
-            r = folder_el.click()
+            folder_el.click()
             if not self.driver.find_element_by_css_selector(
                     c.SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER).is_enabled():
                 LOGGER.info('The Add button has not become clickable.')
