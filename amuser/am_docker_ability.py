@@ -85,26 +85,48 @@ class ArchivematicaDockerAbility(base.Base):
             names_and_states.append({'name': name, 'state': state})
         return names_and_states
 
-    def cp_server_file_to_local(self, server_file_path):
-        """Use ``docker cp`` to copy a file from the docker container to our
-        local tmp directory.
-        """
+    def _get_container_id(self, docker_container_name):
         try:
             docker_compose_path = self.docker_compose_path
         except AttributeError:
             LOGGER.error('No docker compose path provided.')
             raise
-        docker_container_name = 'archivematica-storage-service'
-        docker_container_id = subprocess.check_output(
-            shlex.split('docker-compose ps -q {}'.format(docker_container_name)),
+        return subprocess.check_output(
+            shlex.split('docker-compose ps -q {}'.format(
+                docker_container_name)),
             cwd=docker_compose_path).decode('utf8').strip()
+
+    def cp_server_file_to_local(self, server_file_path):
+        """Use ``docker cp`` to copy a file from the docker container to our
+        local tmp directory.
+        """
+        docker_container_name = 'archivematica-storage-service'
+        docker_container_id = self._get_container_id(docker_container_name)
         filename = os.path.basename(server_file_path)
         local_path = os.path.join(self.tmp_path, filename)
         subprocess.check_output(
             shlex.split('docker cp {}:{} {}'.format(
                 docker_container_id, server_file_path, local_path)),
-            cwd=docker_compose_path).decode('utf8').strip()
+            cwd=self.docker_compose_path).decode('utf8').strip()
         if os.path.isfile(local_path):
             return local_path
         LOGGER.info('Failed to `docker cp` %s to %s', server_file_path, local_path)
+        return False
+
+    def cp_server_dir_to_local(self, server_dir_path):
+        """Use ``docker cp`` to copy a directory from the docker container to
+        our local tmp directory.
+        """
+        docker_container_name = 'archivematica-storage-service'
+        docker_container_id = self._get_container_id(docker_container_name)
+        server_dir_path = server_dir_path.rstrip('/')
+        dirname = os.path.basename(server_dir_path)
+        local_path = os.path.join(self.tmp_path, dirname)
+        subprocess.check_output(
+            shlex.split('docker cp {}:{} {}'.format(
+                docker_container_id, server_dir_path, local_path)),
+            cwd=self.docker_compose_path).decode('utf8').strip()
+        if os.path.isdir(local_path):
+            return local_path
+        LOGGER.info('Failed to `docker cp` %s to %s', server_dir_path, local_path)
         return False

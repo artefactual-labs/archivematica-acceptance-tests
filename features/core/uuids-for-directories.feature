@@ -1,6 +1,50 @@
-# To run::
-#     $ behave --tags=uuids-dirs --no-skipped -D driver_name=Firefox -D am_version=1.7
-@uuids-dirs @dev
+# To run this feature file against a Docker-compose deploy of Archivematica (cf.
+# https://github.com/artefactual-labs/am/tree/master/compose)::
+#
+#     $ behave \
+#           --tags=uuids-dirs \
+#           -D am_url=http://127.0.0.1:62080/ \
+#           -D ss_url=http://127.0.0.1:62081/ \
+#           -D am_username=test \
+#           -D am_password=test \
+#           -D ss_username=test \
+#           -D ss_password=test \
+#           --no-skipped \
+#           -D driver_name=Firefox \
+#           -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests \
+#           -D am_version=1.7 \
+#           -D docker_compose_path=/home/jdunham/Development/Archivematica/am/compose/ \
+#           -D home=archivematica
+#
+# Warning: the uuids-for-directories.feature is not idempotent. That is, you
+# cannot run it more than once and expect it to pass. This is because it
+# involves starting a Zipped Bag type transfer and such transfers cannot be
+# given unique names using Archivematica: their names are based on the basename
+# of the .zip file used as the transfer source. Therefore, in order to run this
+# feature multiple times, you have to close all transfers and ingests (or at
+# least the ones named "BagTransfer"). You can do this with the following two
+# commands:
+#
+#     $ ./close_all_transfers.sh \
+#           -D am_url=http://127.0.0.1:62080/ \
+#           -D ss_url=http://127.0.0.1:62081/ \
+#           -D am_username=test \
+#           -D am_password=test \
+#           -D ss_username=test \
+#           -D ss_password=test \
+#           -D driver_name=Firefox \
+#           -D am_version=1.7
+#     $ ./close_all_ingests.sh \
+#           -D am_url=http://127.0.0.1:62080/ \
+#           -D ss_url=http://127.0.0.1:62081/ \
+#           -D am_username=test \
+#           -D am_password=test \
+#           -D ss_username=test \
+#           -D ss_password=test \
+#           -D driver_name=Firefox \
+#           -D am_version=1.7
+
+@uuids-dirs
 Feature: UUIDs for Directories
   Sometimes Archivematica users want to be able to treat the directories in a
   transfer as intellectual entities. They want to be able to assign identifiers
