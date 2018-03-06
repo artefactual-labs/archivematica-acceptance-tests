@@ -109,7 +109,7 @@ def assert_premis_event(event_type, event, context):
         event_outcome = event.find(
             'premis:eventOutcomeInformation/premis:eventOutcome',
             context.am_user.mets.mets_nsmap).text
-        assert 'program="Clam AV"' in event_detail
+        assert 'program="ClamAV' in event_detail
         assert event_outcome == 'Pass'
 
 
