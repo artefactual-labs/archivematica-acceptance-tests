@@ -200,12 +200,20 @@ def step_impl(context):
     the_aip = the_aips[0]
     replica = not_the_aips[0]
     replica_uuid = replica['uuid']
-    assert the_aip['replicas'] == replica['uuid']
+    assert the_aip['replicas'] == replica['uuid'], (
+        'We expected {} and {} to be the same, but they are not the same.'.format(
+            the_aip['replicas'], replica['uuid']))
     assert replica['is_replica_of'] == the_aip['uuid']
-    assert (set([x.strip() for x in replica['actions'].split()]) ==
-            set(['Download']))
-    assert (set([x.strip() for x in the_aip['actions'].split()]) ==
-            set(['Download', 'Re-ingest']))
+    expected_replica_actions = set(['Download', 'Request', 'Deletion'])
+    replica_actions = set([x.strip() for x in replica['actions'].split()])
+    assert replica_actions == expected_replica_actions, (
+        'We expected the replica actions to be {} but in fact they were {}'.format(
+            expected_replica_actions, replica_actions))
+    expected_aip_actions = set(['Download', 'Request', 'Deletion', 'Re-ingest'])
+    aip_actions = set([x.strip() for x in the_aip['actions'].split()])
+    assert aip_actions == expected_aip_actions, (
+        'We expected the AIP actions to be {} but in fact they were {}'.format(
+            expected_aip_actions, aip_actions))
     context.scenario.master_aip_uuid = the_aip_uuid
     context.scenario.replica_aip_uuid = replica_uuid
 

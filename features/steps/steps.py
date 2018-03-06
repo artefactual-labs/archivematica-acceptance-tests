@@ -344,6 +344,8 @@ def step_impl(context):
         ' appear and chooses "Identify using Siegfried" during ingest\n'
         'And the user waits for the "Bind PIDs?" decision point to appear and'
         ' chooses "No" during ingest\n'
+        'And the user waits for the "Document empty directories?" decision'
+        ' point to appear and chooses "No" during ingest\n'
         'And the user waits for the "Store AIP (review)" decision point to'
         ' appear and chooses "Store AIP" during ingest'
     )

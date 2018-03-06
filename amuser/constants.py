@@ -128,6 +128,7 @@ MICRO_SERVICES2GROUPS = {
     'Designate to process as a standard transfer': ('Quarantine',),
     'Determine if transfer contains packages': ('Extract packages',),
     'Determine which files to identify': ('Identify file format',),
+    'Document empty directories?': ('Generate AIP METS',),
     'Examine contents?': ('Examine contents',),
     'Find type to process as': ('Quarantine',),
     'Generate METS.xml document': ('Generate METS.xml document', 'Generate AIP METS'),
