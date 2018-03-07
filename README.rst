@@ -171,6 +171,61 @@ runs scenarios tagged with ``@wip``.
 
     $ behave --wip
 
+How to run these tests against a Docker Compose Archivematica 1.7 deploy
+--------------------------------------------------------------------------------
+
+If you have Archivematica version 1.7 running locally using the `Archivematica
+Docker Compose deployment method`_, the following command should run all of the
+features that are expected to pass on AM 1.7. Note that you must replace
+several `<>`-enclosed variables with values appropriate to your development
+setup::
+
+
+    $ behave \
+          --tags=mo-aip-reingest,icc,ipc,tpc,picc,uuids-dirs,premis-events,pid-binding,aip-encrypt-mirror,aip-encrypt \
+          --no-skipped \
+          -v \
+          -D am_version=1.7 \
+          -D am_url=http://127.0.0.1:62080/ \
+          -D am_username=test \
+          -D am_password=test \
+          -D am_api_key=test \
+          -D ss_url=http://127.0.0.1:62081/ \
+          -D ss_username=test \
+          -D ss_password=test \
+          -D ss_api_key=test \
+          -D home=archivematica \
+          -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests \
+          -D driver_name=Firefox \
+          -D docker_compose_path=<ABS_PATH_TO_DIR_CONTAINING_DOCKER_COMPOSE_FILE> \
+          -D pid_web_service_endpoint=<SOME_URL> \
+          -D pid_web_service_key=<SOME_SECRET> \
+          -D handle_resolver_url=<SOME_RESOLVER_URL> \
+          -D base_resolve_url=<SOME_RESOLVE_URL> \
+          -D pid_xml_namespace=<SOME_NAMESPACE>
+
+If you do not have access to a Handle server for running the PID-binding tests,
+then you can remove the `pid-binding` tag and related behave userdata (`-D`)
+flags to run a smaller set of tests::
+
+    $ behave \
+          --tags=mo-aip-reingest,icc,ipc,tpc,picc,uuids-dirs,premis-events,aip-encrypt-mirror,aip-encrypt \
+          --no-skipped \
+          -v \
+          -D am_version=1.7 \
+          -D am_url=http://127.0.0.1:62080/ \
+          -D am_username=test \
+          -D am_password=test \
+          -D am_api_key=test \
+          -D ss_url=http://127.0.0.1:62081/ \
+          -D ss_username=test \
+          -D ss_password=test \
+          -D ss_api_key=test \
+          -D home=archivematica \
+          -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests \
+          -D driver_name=Firefox \
+          -D docker_compose_path=<ABS_PATH_TO_DIR_CONTAINING_DOCKER_COMPOSE_FILE>
+
 
 Configuration
 ================================================================================
@@ -228,7 +283,7 @@ Archivematica version 1.7 instance at 123.456.123.456 using the Firefox driver::
         -D am_version=1.7
 
 
-Contributors Guide
+Guidelines for Contributors
 ================================================================================
 
 This section provides advice on how to contribute to this repository. At
@@ -240,7 +295,7 @@ be made to.
    - General (i.e., reusable) step functions should be defined in steps/steps.py.
    - Feature-specific step functions should be defined in sister modules to
      steps/steps.py that are named after the feature, e.g.,
-     steps/aipencryptsteps.py.
+     steps/aip_encryption_steps.py.
 
 2. Place reusable logic in steps files in steps/utils.py and import it in
    steps files.
@@ -251,18 +306,23 @@ be made to.
    - Tag features/scenarios that are documentation only, i.e., not implemented
      and not intended to be executed as tests, using `@unexecutable`.
 
-4. Store user data and functionality in the ``ArchivematicaUser`` class of
-   amuser.py.
+4. Implement general user abilities as methods of the ``ArchivematicaUser``
+   class of amuser/amuser.py.
 
-5. Define browser-dependent abilities of the AM user as attributes of
-   ``ArchivematicaBrowserClient`` in ambrowserclient.py.
+5. Define browser-dependent (e.g., Selenium-based) abilities of the
+   ``ArchivematicaUser`` as methods of ``ArchivematicaBrowserAbility`` in
+   amuser/am_browser_ability.py.
 
-6. Define API-dependent abilities of the AM user as attributes of
-   ``ArchivematicaAPIClient`` in amapiclient.py. (Potentially move amclient.py
-   from automation-tools to its own repo/library and make it a dependency of
-   the automation tools.)
+6. Define HTTP API-dependent (e.g., Requests-based) abilities of the
+   ``ArchivematicaUser`` as methods of ``ArchivematicaAPIAbility`` in
+   amuser/am_api_ability.py.
 
-7. Use the steps catalog to view the available steps, i.e., those that have
+7. Similarly, abilities related to METS parsing, SSH interaction, and Docker
+   interaction should be defined as methods of the appropriate class in the
+   appropriate module of the amuser/ package. See the constructor of
+   ``ArchivematicaUser``.
+
+8. Use the steps catalog to view the available steps, i.e., those that have
    been defined in steps files in the steps/ directory::
 
     $ behave --steps-catalog
@@ -275,3 +335,4 @@ be made to.
 .. _Requests: http://docs.python-requests.org/en/master/
 .. _TightVNC: http://www.tightvnc.com/vncserver.1.php
 .. _`deploy pub`: https://github.com/artefactual/deploy-pub.git
+.. _`Archivematica Docker Compose deployment method`: https://github.com/artefactual-labs/am/tree/master/compose
