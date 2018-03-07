@@ -363,6 +363,9 @@ def step_impl(context, aip_description):
     assert os.path.isdir(context.scenario.aip_path)
 
 
+use_step_matcher('parse')
+
+
 @then('the master and replica AIPs are byte-for-byte identical')
 def step_impl(context):
     assert os.path.isfile(context.scenario.master_aip)
@@ -393,9 +396,6 @@ def step_impl(context, key_name):
         'Import failed. The GPG key provided requires a passphrase. GPG keys'
         ' with passphrases cannot be imported')
     assert not context.am_user.browser.get_gpg_key_search_matches(key_name)
-
-
-use_step_matcher('parse')
 
 
 @then('the transfer on disk is encrypted')
@@ -443,8 +443,12 @@ def step_impl(context, aips_store_path):
     aip_server_path = '{}{}/{}-{}'.format(
         aips_store_path, subpath, context.scenario.transfer_name,
         context.scenario.sip_uuid)
-    aip_local_path = context.am_user.ssh.scp_server_file_to_local(
-        aip_server_path)
+    if getattr(context.am_user.docker, 'docker_compose_path', None):
+        aip_local_path = context.am_user.docker.cp_server_file_to_local(
+            aip_server_path)
+    else:
+        aip_local_path = context.am_user.ssh.scp_server_file_to_local(
+            aip_server_path)
     if aip_local_path is None:
         utils.logger.info(
             'Unable to copy file %s from the server to the local file'

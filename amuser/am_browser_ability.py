@@ -11,6 +11,7 @@ import time
 import requests
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import (
+    ElementNotInteractableException,
     ElementNotVisibleException,
     NoSuchElementException,
 )
@@ -121,7 +122,7 @@ class ArchivematicaBrowserAbility(
             try:
                 self.driver.find_element_by_id('id_delete-uuid').click()
                 break
-            except ElementNotVisibleException:
+            except (ElementNotVisibleException, ElementNotInteractableException):
                 self.driver.find_element_by_css_selector(
                     delete_tab_selector).click()
                 time.sleep(1)

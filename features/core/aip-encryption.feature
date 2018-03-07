@@ -51,6 +51,7 @@ Feature: AIP Encryption
     And standard AIP-creation decisions are made
     And the user waits for the "Store AIP location" decision point to appear and chooses "Store AIP Encrypted in standard Archivematica Directory" during ingest
     And the user waits for the AIP to appear in archival storage
+    And the user queries the API until the AIP has been stored
     Then the uncompressed AIP on disk at /var/archivematica/sharedDirectory/www/AIPsStoreEncrypted/ is encrypted
     When the user downloads the AIP
     Then the downloaded uncompressed AIP is an unencrypted tarfile

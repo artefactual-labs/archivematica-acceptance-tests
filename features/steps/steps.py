@@ -408,6 +408,8 @@ def step_impl(context):
         ' and chooses "Identify using Fido" during ingest\n'
         'And the user waits for the "Bind PIDs?" decision point to appear'
         ' and chooses "No" during ingest\n'
+        'And the user waits for the "Document empty directories?" decision'
+        ' point to appear and chooses "No" during ingest\n'
         'And the user waits for the "Store AIP (review)" decision point to'
         ' appear and chooses "Store AIP" during ingest\n'
         'And the user waits for the "Store AIP location" decision point to'
