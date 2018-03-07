@@ -253,7 +253,7 @@ def unzip(zip_path):
     zip_ref = zipfile.ZipFile(zip_path, 'r')
     try:
         zip_ref.extractall(directory_to_extract_to)
-    except:
+    except BaseException:
         pass
     finally:
         zip_ref.close()

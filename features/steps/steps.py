@@ -248,8 +248,8 @@ def step_impl(context, aip_description):
     context.scenario.aip_path = context.am_user.api.download_aip(
         transfer_name, uuid_val, context.am_user.browser.ss_api_key)
     attr_name = aip_description.replace(' ', '')
-    utils.logger.info('setting attribute {} to {}'.format(
-        attr_name, context.scenario.aip_path))
+    utils.logger.info('setting attribute %s to %s',
+                      attr_name, context.scenario.aip_path)
     setattr(context.scenario, attr_name, context.scenario.aip_path)
 
 
