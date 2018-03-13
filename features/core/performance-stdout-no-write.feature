@@ -1,18 +1,15 @@
 # Performance Increase Without Output Streams Feature File
 # ==============================================================================
-#
+
 # Warning: this feature file should only be run in development. It requires a
 # docker-compose-based Archivematica deploy. The test itself must be able to
 # alter the deployment by changing an environment variable and recreating a
-# docker container. This feature was developed against an AM deploy created
-# using https://github.com/artefactual-labs/am on branch
-# dev/issue-11443-performance-no-capture-output.
+# docker container.
 #
 # To run the test, deploy Archivematica locally using
 # https://github.com/artefactual-labs/am::
 #
 #     $ git clone https://github.com/artefactual-labs/am
-#     $ git checkout dev/issue-11443-performance-no-capture-output
 #     $ cd am/compose
 #     $ git submodule update --init --recursive
 #     $ make create-volumes
@@ -35,8 +32,6 @@
 #         -D am_version=1.7 \
 #         -D docker_compose_path=/abs/path/to/am/compose
 #         -D home=archivematica
-#
-#     behave --tags=performance-no-stdout --no-skipped --no-capture -D driver_name=Firefox -D am_url=http://127.0.0.1:62080/ -D am_password=test -D home="" -D am_version=1.7 -D docker_compose_path=/Users/joeldunham/Documents/Artefactual/am/compose -D home=archivematica
 
 # Results
 # ==============================================================================
@@ -82,10 +77,28 @@
 # Analysis
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #
-# Average runtime for without output tasks: 514.10 seconds
-# Average runtime for with output tasks:    535.88 seconds
-# Average time reduction:                     7.18 %
+# Average runtime for without output tasks:  514.10 seconds
+# Average runtime for with output tasks:     535.88 seconds
+# Average time reduction:                      7.18 %
 
+
+# Results against TestTransfers/.../images-17M-each (1.9G)
+# ------------------------------------------------------------------------------
+#
+# This test was run using the modified (and final) version of the feature
+# wherein the CAPTURE_CLIENT_SCRIPT_OUTPUT flag causes stderr to be passed from
+# the gearman worker to the gearman task manager if, and only if, the exit code
+# of the task was non-zero.
+#
+# This transfer contains 113 17M .tif files for a total size of 1.9G.
+#
+# 1. Total runtime for without output tasks: 1,757.50 seconds
+#    Total runtime for with output tasks:    1,905.62 seconds
+#
+# Analysis
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# Average time reduction:                        7.77 %
 
 @performance-no-stdout @developer
 Feature: Performance increase: stop saving stdout/stderr
@@ -113,14 +126,14 @@ Feature: Performance increase: stop saving stdout/stderr
     # Note: this will currently fail because ceasing to pass client script
     # output streams to MCPServer has no effect on what is written to the METS
     # file.
-    And the size of the without_outputs_stats METS file is less than that of the with_outputs_stats METS file
+    # And the size of the without_outputs_stats METS file is less than that of the with_outputs_stats METS file
 
     Examples: Archivematica transfer sources
-    | transfer_source                                                        |
-    #| ~/archivematica-sampledata/TestTransfers/small                        |
-    | ~/archivematica-sampledata/SampleTransfers/Images                     |
-    #| ~/TestTransfers/acceptance-tests/performance/images-17M-each-2G-total |
-    #| ~/TestTransfers/acceptance-tests/performance/video-14M-each-10G-total |
+    | transfer_source                                                                       |
+    #| ~/archivematica-sampledata/TestTransfers/small                                        |
+    #| ~/archivematica-sampledata/SampleTransfers/Images                                     |
+    | ~/archivematica-sampledata/TestTransfers/acceptance-tests/performance/images-17M-each |
+    #| ~/archivematica-sampledata/TestTransfers/acceptance-tests/performance/video-14M-each  |
 
     # Listed below are possible metrics of performance increase. Those checked
     # off are relatively easy to measure and are described in the scenario

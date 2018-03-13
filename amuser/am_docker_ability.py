@@ -48,6 +48,7 @@ class ArchivematicaDockerAbility(base.Base):
             ' LENGTH(t.stdOut) as len_std_out,'
             ' LENGTH(t.stdError) as len_std_err,'
             ' t.exec,'
+            ' t.exitCode,'
             ' t.endTime,'
             ' t.startTime,'
             ' TIMEDIFF(t.endTime,t.startTime) as duration'

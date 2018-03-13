@@ -96,7 +96,10 @@ def step_impl(context, without_outputs_fname, with_outputs_fname):
     w_o_sum_tasks = sum(t['duration_float'] for t in with_outputs_tasks)
     utils.logger.info('Total runtime for without output tasks: %f', wo_o_sum_tasks)
     utils.logger.info('Total runtime for with output tasks: %f', w_o_sum_tasks)
-    assert wo_o_sum_tasks < w_o_sum_tasks
+    assert wo_o_sum_tasks < w_o_sum_tasks, (
+        'We expected the runtime {} of the "without output" AIP to be less'
+        ' than the runtime {} of the "with output" AIP but our expectation was'
+        ' not met.'.format(wo_o_sum_tasks, w_o_sum_tasks))
 
 
 @then('performance statistics show output streams {verb} saved to the database')
@@ -105,7 +108,8 @@ def step_impl(context, verb):
     with open(path) as fi:
         stats = json.load(fi)
     std_out_len_set = set([x['len_std_out'] for x in stats['tasks']])
-    std_err_len_set = set([x['len_std_err'] for x in stats['tasks']])
+    std_err_len_set = set([x['len_std_err'] for x in stats['tasks']
+                           if x['exitCode'].strip() == '0'])
     if verb == 'are':
         assert len(std_out_len_set) > 1
         assert len(std_err_len_set) > 1
