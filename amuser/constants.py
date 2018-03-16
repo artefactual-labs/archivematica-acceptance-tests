@@ -183,6 +183,8 @@ MICRO_SERVICES2GROUPS = {
     'Prepare AIP': ('Prepare AIP',),
     'Process JSON metadata': ('Process metadata directory',),
     'Process transfer JSON metadata': ('Reformat metadata files',),
+    'Relate manual normalized preservation files to the original files': (
+        'Process manually normalized files',),
     'Reminder: add metadata if desired': ('Add final metadata',),
     'Remove cache files': ('Remove cache files',),
     'Remove empty manual normalization directories': ('Process metadata directory',),
