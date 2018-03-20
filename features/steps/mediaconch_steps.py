@@ -112,6 +112,29 @@ def step_impl(context):
     )
 
 
+@given('a processing configuration for MediaConch challenging file testing')
+def step_impl(context):
+    context.execute_steps(
+        'Given a base processing configuration for MediaConch tests\n'
+        'And the processing config decision "Select file format identification'
+        ' command (Transfer)" is set to "Identify using Siegfried"\n'
+        'And the processing config decision "Normalize" is set to "Normalize'
+        ' for preservation"'
+    )
+
+
+@given('transfer path {transfer_path} which contains files that, when'
+       ' normalized to MKV, are known to have broken MediaConch v. 16.12'
+       ' validation checks')
+def step_impl(context, transfer_path):
+    """We won't confirm it here, but if you attempt to run an implementation
+    check on the .mkv file produced by normalizing the file(s) in this
+    ``transfer_path`` using MediaConch v. 16.12, then MediaConch will hang. See
+    https://github.com/artefactual/archivematica/issues/966.
+    """
+    pass
+
+
 @given('a processing configuration for conformance checks on access'
        ' derivatives')
 def step_impl(context):
@@ -459,6 +482,13 @@ def step_impl(context, event_outcome):
     assert events
     for e in events:
         assert e['event_outcome'] == event_outcome
+
+
+@then('all original files in the transfer are identified as PRONOM fmt/199'
+      ' (MPEG-4 Media File)')
+def step_impl(context):
+    for task in context.scenario.job['tasks'].values():
+        assert 'fmt/199' in task['stdout']
 
 
 # ==============================================================================
