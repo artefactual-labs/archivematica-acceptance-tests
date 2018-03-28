@@ -40,7 +40,7 @@ Feature: Archivematica's entities can be assigned PIDs with specified resolution
 
   Scenario Outline: Lucien wants to create an AIP with a METS file that documents the binding of persistent identifiers to all of the AIP's original files and directories, and to the AIP itself.
     Given a fully automated default processing config
-    And default processing configured to assign UUIDs to directories
+    And default processing configured to assign UUIDs to all directories
     And default processing configured to bind PIDs
     And a Handle server client configured to create qualified PURLs
     And a Handle server client configured to use the accession number as the PID for the AIP

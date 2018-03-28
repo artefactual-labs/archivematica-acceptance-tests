@@ -468,6 +468,11 @@ class ArchivematicaBrowserAbility(
             self.set_processing_config_decision(
                 decision_label='Bind PIDs',
                 choice_value='None')
+            self.set_processing_config_decision(
+                decision_label='Document empty directories',
+                choice_value='None')
+
+
         self.save_default_processing_config()
 
     # ==========================================================================

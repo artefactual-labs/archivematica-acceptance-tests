@@ -129,6 +129,15 @@ def step_impl(context):
         ' set to "Yes"\n')
 
 
+@given('default processing configured to assign UUIDs to all directories')
+def step_impl(context):
+    context.execute_steps(
+        'Given the processing config decision "Assign UUIDs to directories" is'
+        ' set to "Yes"\n'
+        'And the processing config decision "Document empty directories" is'
+        ' set to "Yes"\n')
+
+
 # Thens
 # ------------------------------------------------------------------------------
 

@@ -26,7 +26,14 @@ def step_impl(context, count, event_type, properties):
             events.append(premis_evt_el)
             utils.assert_premis_event(event_type, premis_evt_el, context)
             utils.assert_premis_properties(premis_evt_el, context, properties)
-    assert len(events) == int(count)
+    assert len(events) == int(count), (
+        'We expected to find {count} events of type {event_type} matching'
+        ' properties `{properties}` but in fact we only found'
+        ' {events_count}.'.format(
+            count=count,
+            event_type=event_type,
+            properties=str(properties),
+            events_count=len(events)))
 
 
 @then('in the METS file there are/is {count} PREMIS event(s) of type'

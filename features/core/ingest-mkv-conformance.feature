@@ -25,7 +25,7 @@ Feature: Ingest (i.e., post-normalization) conformance check
     Examples: Normalized for Preservation File Validity Possibilities
     | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                        |
     | valid         | Completed successfully | Passed            | pass          | preforma/when-normalized-all-valid   |
-    | not valid     | Failed                 | Failed            | fail          | preforma/when-normalized-none-valid  |
+    #| not valid     | Failed                 | Failed            | fail          | preforma/when-normalized-none-valid  |
 
   @access
   Scenario Outline: Isla wants to confirm that normalization to .mkv for access is successful

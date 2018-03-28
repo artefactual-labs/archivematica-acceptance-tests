@@ -109,6 +109,8 @@ def step_impl(context):
         ' derivatives" is set to "No"\n'
         'And the processing config decision "Perform policy checks on'
         ' originals" is set to "No"\n'
+        'And the processing config decision "Document empty directories"'
+        ' is set to "No"\n'
     )
 
 

@@ -83,6 +83,8 @@ def step_impl(context):
         'And the processing config decision "Bind PIDs" is set to "No"\n'
         'And the processing config decision "Store AIP location" is set to'
         ' "Store AIP in standard Archivematica Directory"\n'
+        'And the processing config decision "Document empty directories" is set'
+        ' to "No"\n'
         'And the processing config decision "Upload DIP" is set to'
         ' "Do not upload DIP"'
     )
@@ -255,7 +257,7 @@ def step_impl(context, policy_file):
 def step_impl(context, purpose, policy_file):
     context.am_user.browser.ensure_fpr_rule(
         purpose,
-        'Video: Matroska: Generic MKV',
+        'Video: Matroska: Generic MKV (fmt/569)',
         context.am_user.browser.get_policy_command_description(policy_file)
     )
 
