@@ -1,5 +1,7 @@
 """Archivematica Ingest Tab Ability"""
 
+import time
+
 from lxml import etree
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -73,11 +75,14 @@ class ArchivematicaBrowserIngestAbility(
         self.navigate(aip_preview_url)
         mets_path = 'storeAIP/{}-{}/METS.{}.xml'.format(
             transfer_name, sip_uuid, sip_uuid)
+        handles_before = self.driver.window_handles
         self.navigate_to_aip_directory_and_click(mets_path)
-        self.wait_for_new_window()
+        self.wait_for_new_window(handles_before)
         original_window_handle = self.driver.window_handles[0]
         new_window_handle = self.driver.window_handles[1]
         self.driver.switch_to.window(new_window_handle)
+        while self.driver.current_url.strip() == 'about:blank':
+            time.sleep(1)
         mets = self.driver.page_source
         self.driver.switch_to.window(original_window_handle)
         if parse_xml:

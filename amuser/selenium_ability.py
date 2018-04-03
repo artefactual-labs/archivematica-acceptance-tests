@@ -109,11 +109,13 @@ class ArchivematicaSeleniumAbility(base.Base):
                     self.login()
         self.driver.get(url)
 
-    def wait_for_new_window(self, timeout=10):
-        handles_before = self.driver.window_handles
-        yield
+    def wait_for_new_window(self, handles_before, timeout=10):
+        def window_handles_count_has_changed(driver):
+            LOGGER.info('Previously we had %s window handles, now we have'
+                        ' %s', len(handles_before), len(driver.window_handles))
+            return len(handles_before) != len(driver.window_handles)
         WebDriverWait(self.driver, timeout).until(
-            lambda driver: len(handles_before) != len(driver.window_handles))
+            window_handles_count_has_changed)
 
     def hover(self, elem):
         hover = ActionChains(self.driver).move_to_element(elem)
