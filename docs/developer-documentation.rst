@@ -3,8 +3,8 @@
 ================================================================================
 
 This document provides developer documentation for the Archivematica Automated
-User Acceptance Tests. This is technical documentation for those seeking to
-understand how these tests work and how to contribute to them.
+User Acceptance Tests (AMAUAT). This is technical documentation for those
+seeking to understand how these tests work and how to contribute to them.
 
 The Archivematica Automated User Acceptance Tests (or just the AM Acceptance
 Tests, or just AT) are high-level tests of the Archivematica_ application which
@@ -445,7 +445,7 @@ assertion code. Often there is a simple strategy to avoid this.
 
 1. First, comment out all steps prior to the assertion step in the feature
    file.
-2. Then, modify the step function that implements then assertion so that it
+2. Then, modify the step function that implements the assertion so that it
    references the AIP or transfer that has already been created in the original
    run of the test. Assuming the original transfer had the name
    ``BagTransfer123`` and the SIP created has UUID

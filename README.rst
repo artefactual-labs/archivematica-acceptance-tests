@@ -1,19 +1,15 @@
 .. image:: https://travis-ci.org/artefactual-labs/archivematica-acceptance-tests.svg?branch=master
     :target: https://travis-ci.org/artefactual-labs/archivematica-acceptance-tests
 
-================================================================================
-  Archivematica Acceptance Tests
+
+Archivematica Automated User Acceptance Tests (AMAUAT)
 ================================================================================
 
-Acceptance tests for Archivematica_ (AM) written using Python behave_ and the
-Gherkin_ language. Deploying an Archivematica system to test against is a
-necessary separate step. The tests use Selenium_ to launch a browser in order to
-interact with Archivematica's web GUI. (They also make vanilla requests to AM's
-API using Python's Requests_ library). They have been run successfully with
-Firefox and Chrome, and in CI scenarios using TightVNC_.
-
-Using Gherkin to express tests makes them quite readable to non-programmers.
-Consider the following snippet from the premis-events.feature file::
+This repository contains automated user acceptance tests for Archivematica_
+(AM) written using the Python behave_ library and the Gherkin_ language. Using
+Gherkin to express tests makes them readable to a wide range of Archivematica
+users and stakeholders. Consider the following snippet from the *PREMIS events*
+feature file (``premis-events.feature``)::
 
     Feature: PREMIS events are recorded correctly
       Users of Archivematica want to be sure that the steps taken by
@@ -21,70 +17,126 @@ Consider the following snippet from the premis-events.feature file::
       to the PREMIS specification.
 
       Scenario: Isla wants to confirm that standard PREMIS events are created
-      Given that the user has ensured that the default processing config is in its default state
-      When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
-      Then in the METS file there are/is 7 PREMIS event(s) of type ingestion
+        Given that the user has ensured that the default processing config is in its default state
+        When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
+        Then in the METS file there are/is 7 PREMIS event(s) of type ingestion
 
-The ``Given``, ``When`` and ``Then`` statements in the .feature files are
-implemented by "step" functions in the features/steps/steps.py file, which, in
-turn, may interact with Archivematica GUI(s) and APIs by calling methods of an
-``amuser::ArchivematicaUser`` instance.
+The ``Given``, ``When`` and ``Then`` statements in the feature files allow us
+to put the system into a known state, perform user actions, and then make
+assertions about the expected outcomes, respectively. These steps are
+implemented by *step* functions in Python modules located in the
+``features/steps/`` directory, which, in turn, may interact with Archivematica
+GUIs and APIs by calling methods of an ``ArchivematicaUser`` instance as
+defined in the ``amuser`` package. For detailed guidance on adding feature
+files, implementing steps, or adding AM user abilities, please see the
+`Developer documentation <docs/developer-documentation.rst>`_.
+
+
+Table of Contents
+--------------------------------------------------------------------------------
+
+- `High-level overview`_
+- `Installation`_
+- `Usage`_
+
+
+High-level overview
+================================================================================
+
+The AMAUAT are a completely separate application from `Archivematica`_ (AM) and
+the Archivematica `Storage Service`_ (SS). They require that you already have an
+Archivematica instance deployed somewhere to test against (see `Installing
+Archivematica`_.) The tests must be supplied with configuration details,
+including crucially the URLs of the AM and SS instances as well as valid
+usernames and passwords for authenticating to those instances. The AM instance
+being tested may be running locally on the same machine or remotely on an
+external server. Note that running all of the AMAUAT tests to completion will
+likely take more than one hour and will result in several transfers, SIPs, and
+AIPs being created in the AM instance that is being tested.
+
+The tests use Selenium_ to launch a browser in order to interact with
+Archivematica's web interfaces. Therefore, you may need to install a web
+browser (Chrome or Firefox) and the appropriate Selenium drivers; see the
+`Browsers, drivers and displays`_ section for details.
 
 
 Installation
 ================================================================================
 
-In current development versions of Archivematica's public Vagrant/Ansible
-deployment tool `deploy pub`_, these acceptance tests can be installed
-automatically by setting the ``archivematica_src_install_acceptance_tests`` to
-``"yes"`` in the Ansible playbook's ``vars-`` file, e.g.,
-vars-singlenode-qa.yml
+This section describes how to install the AMAUAT. If you have done this before
+and just need a refresher, see the `Installation quickstart`_. If you are
+installing manually for the first time, see the `Detailed installation
+instructions`_. If you are testing a local Archivematica deploy created using
+`deploy-pub`_ (Vagrant/Ansible), then you can configure that system to install
+these tests for you: see the `Install with deploy-pub`_ sections. If you are
+testing a local deploy created using `am`_ (Docker Compose), then the tests
+should be installed for you automatically.
 
-To install these tests manually, first create a virualenv using Python 3 and
-activate it::
+
+Installation quickstart
+--------------------------------------------------------------------------------
+
+The following list of commands illustrates the bare minimum required in order
+to install and run the tests. Note that a real-world invocation of the
+``behave`` command will require the addition of flags that are particular to
+your environment and the details of the Archivematica instance that you are
+testing against (see Usage_). If you have never run these tests before, please
+read the `Detailed installation instructions`_ first.
+
+::
+
+    $ virtualenv -p python3 env
+    $ source env/bin/activate
+    $ git clone https://github.com/artefactual-labs/archivematica-acceptance-tests.git
+    $ cd archivematica-acceptance-tests
+    $ pip install -r requirements.txt
+    $ behave
+
+
+Detailed installation instructions
+--------------------------------------------------------------------------------
+
+To install these tests manually, first create a virtual environment using Python
+3 and activate it::
 
     $ virtualenv -p python3 env
     $ source env/bin/activate
 
-Clone the source (either to the same machine where Archivematica is installed,
-or to another)::
+Then clone the source::
 
     $ git clone https://github.com/artefactual-labs/archivematica-acceptance-tests.git
 
-Since lxml is a dependency, you may need to install python3-dev. On Ubuntu
-14.04 with Python 3::
+Since lxml_ is a dependency, you may need to install python3-dev. On Ubuntu
+14.04 with Python 3 the following command should work::
 
     $ sudo apt-get install python3-dev
 
-Install the Python dependencies::
+Finally, install the Python dependencies::
 
     $ pip install -r requirements.txt
 
-One way to run the tests headless, i.e., without a visible browser, is with
-VNC server. To install one of the available VNC servers on Ubuntu 14.04::
 
-    $ sudo apt-get update
-    $ sudo apt-get install -y tightvncserver
-
-A browser (Chrome or Firefox) must be installed on the system where the tests
-are being run; see below. On a dev or CI server, this may require installation.
-
-
-Install Chrome on Ubuntu 14.04
+Install with deploy-pub
 --------------------------------------------------------------------------------
 
-Following the instructions from
-http://askubuntu.com/questions/510056/how-to-install-google-chrome::
+Archivematica's public Vagrant/Ansible deployment tool `deploy-pub`_ allows you
+to install the AMAUAT when provisioning your VM. This simply requires setting
+the ``archivematica_src_install_acceptance_tests`` variable to ``"yes"`` in the
+Ansible playbook's ``vars-`` file, e.g., vars-singlenode-qa.yml.
 
-    $ wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - 
-    $ sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
-    $ sudo apt-get update
-    $ sudo apt-get install google-chrome-stable
-    $ google-chrome --version
-    Google Chrome 57.0.2987.133
 
-Install chromedriver following the instructions at
-https://christopher.su/2015/selenium-chromedriver-ubuntu/::
+Browsers, drivers and displays
+--------------------------------------------------------------------------------
+
+A web browser (Firefox or Chrome) must be installed on the system where the
+tests are being run. On a typical desktop computer this is usually not a
+problem. However, on a development or CI server, this may require extra
+installation steps. You will need to consult the appropriate documentation for
+installing Firefox or Chrome on your particular platform.
+
+If you are using Chrome to run the tests, you will need to install the Selenium
+Chrome driver. Instructions for `installing the Selenium Chrome driver on
+Ubuntu 14.04`_ are copied below::
 
     wget -N http://chromedriver.storage.googleapis.com/2.26/chromedriver_linux64.zip
     unzip chromedriver_linux64.zip
@@ -93,246 +145,168 @@ https://christopher.su/2015/selenium-chromedriver-ubuntu/::
     sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
     sudo ln -s /usr/local/share/chromedriver /usr/bin/chromedriver
 
+When the tests are running, they will open and close several browser windows.
+This can be annoying when you are trying to use your computer at the same time
+for other tasks. On the other hand, if you are running the tests on a virtual
+machine or a server, chances are that that machine will not have a display and
+you will require a *headless* display manager. The recommended way to run the
+tests headless is with `TightVNC`_. To install TightVNC on Ubuntu 14.04::
 
-Install a specific Firefox version on Ubuntu 14.04
+    $ sudo apt-get update
+    $ sudo apt-get install -y tightvncserver
+
+Before running the tests, start the VNC server on display port 42 and tell the
+terminal session to use that display port::
+
+    $ tightvncserver -geometry 1920x1080 :42
+    $ export DISPLAY=:42
+
+Note that the first time you run this command, TightVNC server will ask you to
+provide a password so that you can connect to the server with a VNC viewer, if
+desired. If you do want to connect to the VNC session to see the tests running
+in real-time, use a VNC viewer to connect to display port 42 of the IP of the
+VM that is running the tests. As an example, if you are using the
+``xtightvncviewer`` application on Ubuntu (``sudo apt-get install
+xtightvncviewer``), you could run the following command to view the tests
+running on a local machine at IP ``192.168.168.192``::
+
+   $ xtightvncviewer 192.168.168.192:42
+
+
+Installing Archivematica
 --------------------------------------------------------------------------------
 
-We have had variable success running these tests on various versions of
-Firefox. It may be necessary to purge an existing Firefox and install an older
-version. We have had some success with Firefox v. 47 and provide instructions
-for installing that on Ubuntu 14.04 here::
+As mentioned previously, running the AMAUAT requires having an existing
+Archivematica instance installed. While describing how to do this is beyond the
+scope of this document, there are several well-documented ways of installing
+Archivematica, with the Docker Compose strategy being the recommended method
+for development. See the following links:
 
-    $ firefox -v
-    Mozilla Firefox 48.0
-    $ sudo apt-get purge firefox
-    $ wget sourceforge.net/projects/ubuntuzilla/files/mozilla/apt/pool/main/f/firefox-mozilla-build/firefox-mozilla-build_47.0.1-0ubuntu1_amd64.deb
-    $ sudo dpkg -i firefox-mozilla-build_47.0.1-0ubuntu1_amd64.deb 
-    $ firefox -v
-    Mozilla Firefox 47.0.1
-
-
-Troubleshooting
-================================================================================
-
-If the tests generate ``cannot allocate memory`` errors, there may be unclosed
-browsers. Run the following command to look for persistent firefox or chrome
-browsers and kill them::
-
-    $ ps --sort -rss -eo rss,pid,command | head
+- `Docker Compose`_ Archivematica installation
+- `Vagrant/Ansible`_ Archivematica installation
+- `Manual`_ Archivematica installation
 
 
 Usage
 ================================================================================
 
-Basic usage::
+Simply executing the ``behave`` command will run all of the tests and will use
+the default URLs and authentication strings as defined in
+``features/environment.py``. However, in the typical case you will need to
+provide Behave with some configuration details that are appropriate to your
+environment and which target a specific subset of tests (i.e., feature files or
+scenarios).  The following command is a more realistic example of running the
+AMAUAT::
 
-    $ behave --tags=-wip
+    $ behave \
+        --tags=icc \
+        --no-skipped \
+        -v \
+        --stop \
+        -D am_version=1.7 \
+        -D home=archivematica \
+        -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests \
+        -D driver_name=Firefox \
+        -D am_url=http://127.0.0.1:62080/ \
+        -D am_username=test \
+        -D am_password=test \
+        -D ss_url=http://127.0.0.1:62081/ \
+        -D ss_username=test \
+        -D ss_password=test
 
-The above will launch many annoying browser windows. Use VNC to hide all that
-rubbish. Start VNC server on display port 42 and background the process::
+The command given above is interpreted as follows.
 
-    $ tightvncserver -geometry 1920x1080 :42
+- The ``--tags=icc`` flag tells Behave that we only want to run the *Ingest
+  Conformance Check* feature as defined in the
+  ``features/core/ingest-mkv-conformance.feature`` file, which has the ``@icc``
+  tag.
+- The ``--no-skipped`` flag indicates that we do not want the output to be
+  cluttered with information about the other tests (feature files) that we are
+  skipping in this run.
+- The ``-v`` flag indicates that we want verbose output, i.e., that we want any
+  print statements to appear in stdout.
+- The ``--stop`` flag tells Behave to stop running the tests as soon as there
+  is a single failure.
+- The rest of the ``-D``-style flags are Behave *user data*:
 
-The first time you run this command, TightVNC server will ask you to create a password.
+  - ``-D am_version=1.7`` tells the tests that we are targeting an
+    Archivematica version 1.7 instance.
+  - The ``-D home=archivematica`` flag indicates that when the user clicks the
+    *Browse* button in Archivematica's Transfer tab, the top-level folder for
+    all ``~/``-prefixed transfer source paths in the feature files should be
+    ``archivematica/``.
+  - The ``-D transfer_source_path=...`` flag indicates that when the user
+    clicks the *Browse* button in Archivematica's Transfer tab, the top-level
+    folder for all *relative* transfer source paths in the feature files
+    should be
+    ``archivematica/archivematica-sampledata/TestTransfers/acceptance-tests/``.
+  - The ``-D driver_name=Firefox`` flag tells Behave to use the Firefox browser.
+  - Finally, the remaining user data flags provide Behave with the URLs and
+    authentication details of particular AM and SS instances.
 
-Tell the terminal session to use the display port::
+To see all of the Behave user data flags that the AMAUAT recognizes, inspect the
+``get_am_user`` function of the ``features/environment.py`` module.
 
-    $ export DISPLAY=:42
+To run all tests that match *any* of a set of tags, separate the tags by commas.
+For example, the following will run all of the *Ingest Conformance Check*
+(``icc``) and *Ingest Policy Check* (``ipc``) tests::
 
-Run the tests, this time just those targetting the correct creation of PREMIS
-events::
+    $ behave --tags=icc,ipc
 
-    $ behave --tags=-wip --tags=premis-events --tags=standard --no-skipped
+To run all tests that match *all* of a set of tags, use separate ``--tags``
+flags for each tag. For example, the following will run only the preservation
+scenario of the *Ingest Conformance Check* feature::
 
-The scenarios in the .feature files may be tagged with zero or more tags. The
-above command runs all scenarios tagged ``@premis-events`` and ``@standard``.
+    $ behave --tags=icc --tags=preservation
 
-If you want to connect to the VNC session to see the tests running, use any VNC
-client from your computer, and connect to the IP of the vm in display 42. As an
-example, with Ubuntu, you can do the follow:::
+In addition to the general guidance just provided, all of the feature files in
+the ``features/`` directory should contain comments clearly indicating how they
+should be executed and whether they need any special configuration (flags).
 
-   $ sudo apt-get install xtightvncviewer
-   $ xtightvncviewer 192.168.168.192:42
 
-There is also a convenience script for running just the tests that target
-Archivematica version 1.6::
+Closing all units
+--------------------------------------------------------------------------------
 
-    $ ./runtests.sh
-
-There are two convenience scripts for closing all transfers and closing all
-ingests via the GUI (i.e., using Selenium)::
+There are two shell scripts that use the AMAUAT test functionality to close all
+units (i.e., transfers or ingests). These scripts call ``behave`` internally
+(targeting specific feature tags) and will therefore accept the same flags as
+``behave`` itself (e.g., for specifying the AM url); the basic method for
+executing these scripts is by running::
 
     $ ./close_all_transfers.sh
     $ ./close_all_ingests.sh
 
-Some scenarios are tagged as work in progress (``@wip``). behave_ implements a
-``--wip`` command-line flag to make testing such scenarios simpler. It only
-runs scenarios tagged with ``@wip``.
 
-    $ behave --wip
-
-How to run these tests against a Docker Compose Archivematica 1.7 deploy
+Troubleshooting
 --------------------------------------------------------------------------------
 
-If you have Archivematica version 1.7 running locally using the `Archivematica
-Docker Compose deployment method`_, the following command should run all of the
-features that are expected to pass on AM 1.7. Note that you must replace
-several `<>`-enclosed variables with values appropriate to your development
-setup::
+If the tests generate ``cannot allocate memory`` errors, there may be unclosed
+browsers windows. Run the following command to look for persistent Firefox or
+Chrome browsers and kill them::
+
+    $ ps --sort -rss -eo rss,pid,command | head
 
 
-    $ behave \
-          --tags=mo-aip-reingest,icc,ipc,tpc,picc,uuids-dirs,premis-events,pid-binding,aip-encrypt-mirror,aip-encrypt \
-          --no-skipped \
-          -v \
-          -D am_version=1.7 \
-          -D am_url=http://127.0.0.1:62080/ \
-          -D am_username=test \
-          -D am_password=test \
-          -D am_api_key=test \
-          -D ss_url=http://127.0.0.1:62081/ \
-          -D ss_username=test \
-          -D ss_password=test \
-          -D ss_api_key=test \
-          -D home=archivematica \
-          -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests \
-          -D driver_name=Firefox \
-          -D docker_compose_path=<ABS_PATH_TO_DIR_CONTAINING_DOCKER_COMPOSE_FILE> \
-          -D pid_web_service_endpoint=<SOME_URL> \
-          -D pid_web_service_key=<SOME_SECRET> \
-          -D handle_resolver_url=<SOME_RESOLVER_URL> \
-          -D base_resolve_url=<SOME_RESOLVE_URL> \
-          -D pid_xml_namespace=<SOME_NAMESPACE>
-
-If you do not have access to a Handle server for running the PID-binding tests,
-then you can remove the `pid-binding` tag and related behave userdata (`-D`)
-flags to run a smaller set of tests::
-
-    $ behave \
-          --tags=mo-aip-reingest,icc,ipc,tpc,picc,uuids-dirs,premis-events,aip-encrypt-mirror,aip-encrypt \
-          --no-skipped \
-          -v \
-          -D am_version=1.7 \
-          -D am_url=http://127.0.0.1:62080/ \
-          -D am_username=test \
-          -D am_password=test \
-          -D am_api_key=test \
-          -D ss_url=http://127.0.0.1:62081/ \
-          -D ss_username=test \
-          -D ss_password=test \
-          -D ss_api_key=test \
-          -D home=archivematica \
-          -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests \
-          -D driver_name=Firefox \
-          -D docker_compose_path=<ABS_PATH_TO_DIR_CONTAINING_DOCKER_COMPOSE_FILE>
-
-
-Configuration
-================================================================================
-
-Install a Compatible Archivematica System
+Logging
 --------------------------------------------------------------------------------
 
-The tests require access to a live Archivematica installation. The tests tagged
-``am16`` should pass against Archivematica version 1.6. Those tagged ``dev``
-require specific development branches to be installed, e.g., ``dev`` tests also
-tagged with ``preforma`` require AM at branch dev/issue-9478-preforma. Such
-dependencies should be indicated in the comments of the relevant .feature files.
-
-Archivematica is most easily installed using the deploy-pub ansible playbook
-set at
-https://github.com/artefactual/deploy-pub.git
-Assuming you have VirtualBox, Vagrant and Ansible installed, here is the
-quickstart::
-
-    $ git clone https://github.com/artefactual/deploy-pub.git
-    $ cd deploy-pub/playbooks/archivematica
-    $ ansible-galaxy install -f -p roles/ -r requirements.yml
-    $ vagrant up
-
-
-Configuration via features/environment.py or Behave userdata options
---------------------------------------------------------------------------------
-
-The tests assume by default that you have configured your Archivematica
-installation to be served at a specific URL, viz. http://192.168.168.192/.
-The tests should be able to detect a fresh AM install, in which case they will
-create an administrator-level user with username ``test`` and
-password ``testtest``. These and other configuration options can be overridden
-by altering the following constants in features/environment.py...::
-
-- ``AM_URL``
-- ``AM_USERNAME``
-- ``AM_PASSWORD``
-- ``SS_URL``
-- ``SS_USERNAME``
-- ``SS_PASSWORD``
-- ``TRANSFER_SOURCE_PATH``
-- ``HOME``
-- ``DRIVER_NAME``
-- ``AM_VERSION``
-
-... or by passing the equivalent lowercased parameters as Behave "userdata"
-options. For example, the following would run the tests against an
-Archivematica version 1.7 instance at 123.456.123.456 using the Firefox driver::
-
-    $ behave \
-        -D am_url=http://192.168.168.16 \
-        -D ss_url=http://192.168.168.16:8000/ \
-        -D driver_name=Firefox
-        -D am_version=1.7
-
-
-Guidelines for Contributors
-================================================================================
-
-This section provides advice on how to contribute to this repository. At
-present, this repo does not conform to the following principles, but it should
-be made to.
-
-1. Write step functions in the correct place.
-
-   - General (i.e., reusable) step functions should be defined in steps/steps.py.
-   - Feature-specific step functions should be defined in sister modules to
-     steps/steps.py that are named after the feature, e.g.,
-     steps/aip_encryption_steps.py.
-
-2. Place reusable logic in steps files in steps/utils.py and import it in
-   steps files.
-
-3. Use tags for works in progress and non-executable features.
-
-   - Tag work-in-progress features or scenarios with `@wip`.
-   - Tag features/scenarios that are documentation only, i.e., not implemented
-     and not intended to be executed as tests, using `@unexecutable`.
-
-4. Implement general user abilities as methods of the ``ArchivematicaUser``
-   class of amuser/amuser.py.
-
-5. Define browser-dependent (e.g., Selenium-based) abilities of the
-   ``ArchivematicaUser`` as methods of ``ArchivematicaBrowserAbility`` in
-   amuser/am_browser_ability.py.
-
-6. Define HTTP API-dependent (e.g., Requests-based) abilities of the
-   ``ArchivematicaUser`` as methods of ``ArchivematicaAPIAbility`` in
-   amuser/am_api_ability.py.
-
-7. Similarly, abilities related to METS parsing, SSH interaction, and Docker
-   interaction should be defined as methods of the appropriate class in the
-   appropriate module of the amuser/ package. See the constructor of
-   ``ArchivematicaUser``.
-
-8. Use the steps catalog to view the available steps, i.e., those that have
-   been defined in steps files in the steps/ directory::
-
-    $ behave --steps-catalog
+By default, the ``ArchivematicaUser`` sends its logs to ``amuser/amuser.log``
+and the steps modules send their logs to ``features/steps/steps.log``. When
+debugging issue with the tests, these log files should be consulted.
 
 
 .. _Archivematica: https://github.com/artefactual/archivematica
-.. _behave: http://pythonhosted.org/behave/
+.. _`Storage Service`: https://github.com/artefactual/archivematica-storage-service
+.. _behave: https://github.com/behave/behave
 .. _Gherkin: https://github.com/cucumber/cucumber/wiki/Gherkin
 .. _Selenium: http://www.seleniumhq.org/
 .. _Requests: http://docs.python-requests.org/en/master/
 .. _TightVNC: http://www.tightvnc.com/vncserver.1.php
-.. _`deploy pub`: https://github.com/artefactual/deploy-pub.git
+.. _`deploy-pub`: https://github.com/artefactual/deploy-pub.git
 .. _`Archivematica Docker Compose deployment method`: https://github.com/artefactual-labs/am/tree/master/compose
+.. _`am`: https://github.com/artefactual-labs/am/tree/master/compose
+.. _`installing the Selenium Chrome driver on Ubuntu 14.04`: https://christopher.su/2015/selenium-chromedriver-ubuntu/::
+.. _lxml: http://lxml.de/
+.. _`Docker Compose`: https://github.com/artefactual-labs/am/tree/master/compose
+.. _`Vagrant/Ansible`: https://github.com/artefactual/deploy-pub/tree/master/playbooks/archivematica-xenial
+.. _`Manual`: https://www.archivematica.org/en/docs/archivematica-1.7/
