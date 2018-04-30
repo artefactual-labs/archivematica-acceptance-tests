@@ -459,7 +459,21 @@ assertion code. Often there is a simple strategy to avoid this.
    running on the previously created SIP/AIP.
 
 
+How do I run the tests of the tests?
+--------------------------------------------------------------------------------
 
+The Python code in ``features/steps/`` and ``amuser/`` should adhere to `PEP
+8`_. To test this locally, make sure you have tox_ and Pylint_ installed and
+then call ``tox`` to run the tests on the tests::
+
+    $ pip install -r requirements/test.txt
+    $ tox
+
+
+
+.. _`PEP 8`: https://www.python.org/dev/peps/pep-0008/
+.. _`tox`: https://tox.readthedocs.io/en/latest/
+.. _`Pylint`: https://www.pylint.org/
 .. _Archivematica: https://github.com/artefactual/archivematica
 .. _behave: http://pythonhosted.org/behave/
 .. _Gherkin: https://github.com/cucumber/cucumber/wiki/Gherkin
