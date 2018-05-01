@@ -30,7 +30,9 @@ class ArchivematicaBrowserStorageServiceAbility(
         SS GUI.
         """
         self.navigate(self.get_ss_package_delete_request_url())
-        self.driver.find_element_by_id('DataTables_Table_0_filter').send_keys(aip_uuid)
+        self.driver.find_element_by_id(
+            'DataTables_Table_0_filter').find_element_by_tag_name(
+                'input').send_keys(aip_uuid)
         matching_rows = []
         for row_el in self.driver.find_elements_by_css_selector(
                 'table#DataTables_Table_0 tbody tr'):
