@@ -121,6 +121,8 @@ def step_impl(context):
         'Given the default processing config is in its default state\n'
         'And the processing config decision "Assign UUIDs to directories" is'
         ' set to "No"\n'
+        'And the processing config decision "Document empty directories" is'
+        ' set to "No"\n'
         'And the processing config decision "Select file format identification'
         ' command (Transfer)" is set to "Identify using Siegfried"\n'
         'And the processing config decision "Perform policy checks on'

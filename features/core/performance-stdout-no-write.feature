@@ -28,9 +28,8 @@
 #         -D driver_name=Firefox \
 #         -D am_url=http://127.0.0.1:62080/ \
 #         -D am_password=test \
-#         -D home="" \
 #         -D am_version=1.7 \
-#         -D docker_compose_path=/abs/path/to/am/compose
+#         -D docker_compose_path=/abs/path/to/am/compose \
 #         -D home=archivematica
 
 # Results
