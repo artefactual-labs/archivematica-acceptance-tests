@@ -15,7 +15,7 @@ from . import utils
 from . import selenium_ability
 
 
-logger = logging.getLogger('ArchivematicaUser Transfer')
+logger = logging.getLogger('amuser.transfer')
 
 
 class ArchivematicaBrowserTransferAbility(

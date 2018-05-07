@@ -5,7 +5,7 @@ import logging
 from behave import then, given
 
 
-logger = logging.getLogger('AMAUAT Steps - Manual Normalization')
+logger = logging.getLogger('amauat.steps.manualnormalization')
 
 
 # ==============================================================================

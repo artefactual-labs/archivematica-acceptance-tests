@@ -11,7 +11,7 @@ from . import utils
 from . import selenium_ability
 
 
-logger = logging.getLogger('ArchivematicaUser Authentication')
+logger = logging.getLogger('amuser.authentication')
 
 
 class ArchivematicaBrowserAuthenticationAbility(

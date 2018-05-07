@@ -15,7 +15,7 @@ from . import am_browser_transfer_ability as transfer_abl
 from . import am_browser_ingest_ability as ingest_abl
 
 
-logger = logging.getLogger('ArchivematicaUser Transfer/Ingest')
+logger = logging.getLogger('amuser.transferingest')
 
 
 class ArchivematicaBrowserTransferIngestAbilityError(

@@ -14,7 +14,7 @@ from . import base
 from . import utils
 
 
-logger = logging.getLogger('ArchivematicaUser API')
+logger = logging.getLogger('amuser.api')
 
 
 class ArchivematicaAPIAbilityError(base.ArchivematicaUserError):

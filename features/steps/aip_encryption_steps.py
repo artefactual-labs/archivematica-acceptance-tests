@@ -15,7 +15,7 @@ STDRD_GPG_TB_REL_PATH = (
     'var/archivematica/sharedDirectory/www/AIPsStore/transferBacklogEncrypted')
 
 
-logger = logging.getLogger('Steps - AIP Encryption')
+logger = logging.getLogger('amauat.steps.aipencryption')
 
 
 # ==============================================================================

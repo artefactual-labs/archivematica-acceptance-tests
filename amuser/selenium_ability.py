@@ -20,7 +20,7 @@ from . import utils
 from . import base
 
 
-logger = logging.getLogger('ArchivematicaUser Selenium')
+logger = logging.getLogger('amuser.selenium')
 
 
 class ArchivematicaSeleniumError(base.ArchivematicaUserError):

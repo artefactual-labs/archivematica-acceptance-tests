@@ -8,7 +8,7 @@ from behave import when, then, given, use_step_matcher
 from features.steps import utils
 
 
-logger = logging.getLogger('AMAUAT Steps')
+logger = logging.getLogger('amauat.steps')
 
 
 # Givens

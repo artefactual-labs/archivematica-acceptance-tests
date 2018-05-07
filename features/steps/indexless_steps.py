@@ -10,7 +10,7 @@ from lxml import etree
 from features.steps import utils
 
 
-logger = logging.getLogger('AMAUAT Steps - Indexless')
+logger = logging.getLogger('amauat.steps.indexless')
 
 
 # ==============================================================================

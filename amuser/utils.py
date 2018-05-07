@@ -9,7 +9,7 @@ import requests
 from . import constants as c
 
 
-logger = logging.getLogger('ArchivematicaUser utils')
+logger = logging.getLogger('amuser.utils')
 
 
 def squash(string_):

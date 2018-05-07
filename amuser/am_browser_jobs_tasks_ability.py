@@ -10,7 +10,7 @@ from . import utils
 from . import selenium_ability
 
 
-logger = logging.getLogger('ArchivematicaUser Jobs/Tasks')
+logger = logging.getLogger('amuser.jobstasks')
 
 
 class ArchivematicaBrowserJobsTasksAbility(

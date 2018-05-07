@@ -14,7 +14,7 @@ from . import utils
 from . import base
 
 
-logger = logging.getLogger('ArchivematicaUser Docker')
+logger = logging.getLogger('amuser.docker')
 
 
 class ArchivematicaDockerAbility(base.Base):

@@ -7,7 +7,7 @@ from behave import when, then, given
 from features.steps import utils
 
 
-logger = logging.getLogger('AMAUAT Steps - AIP Encryption')
+logger = logging.getLogger('amauat.steps.captureoutput')
 
 
 # ==============================================================================

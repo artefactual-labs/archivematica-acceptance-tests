@@ -31,7 +31,7 @@ from . import am_browser_ss_ability as ss_abl
 from . import am_browser_preservation_planning_ability as pres_plan_abl
 
 
-logger = logging.getLogger('ArchivematicaUser Browser')
+logger = logging.getLogger('amuser.browser')
 
 
 class ArchivematicaBrowserAbilityError(base.ArchivematicaUserError):

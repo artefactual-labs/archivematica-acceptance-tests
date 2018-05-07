@@ -7,7 +7,7 @@ import re
 import zipfile
 
 
-logger = logging.getLogger('AMAUAT Steps - Utils')
+logger = logging.getLogger('amauat.steps.utils')
 
 
 class ArchivematicaStepsError(Exception):

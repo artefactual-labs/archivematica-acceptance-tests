@@ -19,7 +19,7 @@ from . import constants as c
 from . import utils
 
 
-logger = logging.getLogger('ArchivematicaUser')
+logger = logging.getLogger('amuser')
 
 
 class ArchivematicaUser(base.Base):

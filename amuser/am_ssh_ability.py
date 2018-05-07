@@ -17,7 +17,7 @@ from . import utils
 from . import base
 
 
-logger = logging.getLogger('ArchivematicaUser SSH')
+logger = logging.getLogger('amuser.ssh')
 
 
 class ArchivematicaSSHAbility(base.Base):

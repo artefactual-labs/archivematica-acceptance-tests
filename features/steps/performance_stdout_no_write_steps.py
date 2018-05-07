@@ -13,7 +13,7 @@ from lxml import etree
 from features.steps import utils
 
 
-logger = logging.getLogger('AMAUAT Steps - Performance No Capture')
+logger = logging.getLogger('amauat.steps.performancenocapture')
 
 
 # ==============================================================================

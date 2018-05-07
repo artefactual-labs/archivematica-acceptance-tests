@@ -10,7 +10,7 @@ from . import selenium_ability
 from . import utils
 
 
-logger = logging.getLogger('ArchivematicaUser Preservation Planning')
+logger = logging.getLogger('amuser.preservationplanning')
 
 
 class ArchivematicaBrowserPreservationPlanningAbility(

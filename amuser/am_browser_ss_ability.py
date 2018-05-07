@@ -11,7 +11,7 @@ from . import base
 from . import selenium_ability
 
 
-logger = logging.getLogger('ArchivematicaUser SS')
+logger = logging.getLogger('amuser.ss')
 
 
 class ArchivematicaBrowserStorageServiceAbilityError(
