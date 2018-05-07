@@ -8,7 +8,7 @@ Archivematica Automated User Acceptance Tests (AMAUAT)
 This repository contains automated user acceptance tests for Archivematica_
 (AM) written using the Python behave_ library and the Gherkin_ language. Using
 Gherkin to express tests makes them readable to a wide range of Archivematica
-users and stakeholders. Consider the following snippet from the *PREMIS events*
+users and stakeholders [1]_. Consider the following snippet from the *PREMIS events*
 feature file (``premis-events.feature``)::
 
     Feature: PREMIS events are recorded correctly
@@ -44,20 +44,20 @@ High-level overview
 ================================================================================
 
 The AMAUAT are a completely separate application from `Archivematica`_ (AM) and
-the Archivematica `Storage Service`_ (SS). They require that you already have an
-Archivematica instance deployed somewhere to test against (see `Installing
-Archivematica`_.) The tests must be supplied with configuration details,
-including crucially the URLs of the AM and SS instances as well as valid
-usernames and passwords for authenticating to those instances. The AM instance
-being tested may be running locally on the same machine or remotely on an
-external server. Note that running all of the AMAUAT tests to completion will
+the Archivematica `Storage Service`_ (SS). They require that you already have
+an Archivematica instance deployed somewhere that you can test against (see
+`Installing Archivematica`_.) The tests must be supplied with configuration
+details, including crucially the URLs of the AM and SS instances as well as
+valid usernames and passwords for authenticating to those instances. The AM
+instance being tested may be running locally on the same machine or remotely on
+an external server. Note that running all of the AMAUAT tests to completion will
 likely take more than one hour and will result in several transfers, SIPs, and
 AIPs being created in the AM instance that is being tested.
 
-The tests use Selenium_ to launch a browser in order to interact with
-Archivematica's web interfaces. Therefore, you may need to install a web
-browser (Chrome or Firefox) and the appropriate Selenium drivers; see the
-`Browsers, drivers and displays`_ section for details.
+The tests use the `Selenium WebDriver`_ to launch a web browser in order to
+interact with Archivematica's web interfaces. Therefore, you may need to
+install a web browser (Chrome or Firefox) and the appropriate Selenium drivers;
+see the `Browsers, drivers and displays`_ section for details.
 
 
 Installation
@@ -120,9 +120,10 @@ Install with deploy-pub
 --------------------------------------------------------------------------------
 
 Archivematica's public Vagrant/Ansible deployment tool `deploy-pub`_ allows you
-to install the AMAUAT when provisioning your VM. This simply requires setting
-the ``archivematica_src_install_acceptance_tests`` variable to ``"yes"`` in the
-Ansible playbook's ``vars-`` file, e.g., vars-singlenode-qa.yml.
+to install the AMAUAT when provisioning your virtual machine (VM). This simply
+requires setting the ``archivematica_src_install_acceptance_tests`` variable to
+``"yes"`` in the Ansible playbook's ``vars-`` file, e.g.,
+vars-singlenode-qa.yml.
 
 
 Browsers, drivers and displays
@@ -295,11 +296,17 @@ and the steps modules send their logs to ``features/steps/steps.log``. When
 debugging issue with the tests, these log files should be consulted.
 
 
+.. [1] The Gherkin syntax and the approach of defining features by describing
+   user behaviours came out of the `behavior-driven development (BDD)`_
+   process, which focuses on what a user wants a system to do, and not on how
+   it does it. The `Behave documentation`_ provides a good overview of the key
+   concepts and their origins in BDD.
+
 .. _Archivematica: https://github.com/artefactual/archivematica
 .. _`Storage Service`: https://github.com/artefactual/archivematica-storage-service
 .. _behave: https://github.com/behave/behave
 .. _Gherkin: https://github.com/cucumber/cucumber/wiki/Gherkin
-.. _Selenium: http://www.seleniumhq.org/
+.. _`Selenium WebDriver`: https://www.seleniumhq.org/projects/webdriver/
 .. _Requests: http://docs.python-requests.org/en/master/
 .. _TightVNC: http://www.tightvnc.com/vncserver.1.php
 .. _`deploy-pub`: https://github.com/artefactual/deploy-pub.git
@@ -310,3 +317,6 @@ debugging issue with the tests, these log files should be consulted.
 .. _`Docker Compose`: https://github.com/artefactual-labs/am/tree/master/compose
 .. _`Vagrant/Ansible`: https://github.com/artefactual/deploy-pub/tree/master/playbooks/archivematica-xenial
 .. _`Manual`: https://www.archivematica.org/en/docs/archivematica-1.7/
+.. _`behavior-driven development (BDD)`: https://en.wikipedia.org/wiki/Behavior-driven_development
+.. _`Behave documentation`: http://behave.readthedocs.io/en/latest/
+
