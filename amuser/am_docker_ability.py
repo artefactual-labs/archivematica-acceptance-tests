@@ -5,6 +5,7 @@ ability of an Archivematica user to use Docker to interact configure and deploy
 Archivematica.
 """
 
+import logging
 import os
 import shlex
 import subprocess
@@ -13,7 +14,7 @@ from . import utils
 from . import base
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser Docker')
 
 
 class ArchivematicaDockerAbility(base.Base):
@@ -90,7 +91,7 @@ class ArchivematicaDockerAbility(base.Base):
         try:
             docker_compose_path = self.docker_compose_path
         except AttributeError:
-            LOGGER.error('No docker compose path provided.')
+            logger.error('No docker compose path provided.')
             raise
         return subprocess.check_output(
             shlex.split('docker-compose ps -q {}'.format(
@@ -111,7 +112,7 @@ class ArchivematicaDockerAbility(base.Base):
             cwd=self.docker_compose_path).decode('utf8').strip()
         if os.path.isfile(local_path):
             return local_path
-        LOGGER.info('Failed to `docker cp` %s to %s', server_file_path, local_path)
+        logger.info('Failed to `docker cp` %s to %s', server_file_path, local_path)
         return False
 
     def cp_server_dir_to_local(self, server_dir_path):
@@ -129,5 +130,5 @@ class ArchivematicaDockerAbility(base.Base):
             cwd=self.docker_compose_path).decode('utf8').strip()
         if os.path.isdir(local_path):
             return local_path
-        LOGGER.info('Failed to `docker cp` %s to %s', server_dir_path, local_path)
+        logger.info('Failed to `docker cp` %s to %s', server_dir_path, local_path)
         return False

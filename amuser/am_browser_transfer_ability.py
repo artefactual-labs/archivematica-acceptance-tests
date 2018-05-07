@@ -1,5 +1,6 @@
 """Archivematica Transfer Tab Ability"""
 
+import logging
 import os
 import time
 
@@ -14,7 +15,7 @@ from . import utils
 from . import selenium_ability
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser Transfer')
 
 
 class ArchivematicaBrowserTransferAbility(
@@ -145,7 +146,7 @@ class ArchivematicaBrowserTransferAbility(
             else:
                 cond = transfer_name_in_dom == transfer_name
             if cond:
-                LOGGER.info('Changed transfer name from %s to %s',
+                logger.info('Changed transfer name from %s to %s',
                             transfer_name, transfer_name_in_dom)
                 transfer_name = transfer_name_in_dom
                 abbr_elem = transfer_name_div_elem.find_element_by_tag_name(
@@ -227,7 +228,7 @@ def approve_transfer(transfer_div_elem, approve_option_uuid):
                 transfer_div_elem.find_element_by_css_selector(
                     approve_transfer_option_selector))
         except NoSuchElementException:
-            LOGGER.info('NoSuchElementException raised when attempting to'
+            logger.info('NoSuchElementException raised when attempting to'
                         ' retrieve element with css selector %s',
                         approve_transfer_option_selector)
             time.sleep(1)

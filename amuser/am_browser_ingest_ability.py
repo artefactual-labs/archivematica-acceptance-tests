@@ -1,5 +1,6 @@
 """Archivematica Ingest Tab Ability"""
 
+import logging
 import time
 
 from lxml import etree
@@ -17,7 +18,7 @@ from . import utils
 from . import selenium_ability
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser Ingest')
 
 
 class ArchivematicaBrowserIngestAbility(
@@ -43,7 +44,7 @@ class ArchivematicaBrowserIngestAbility(
             self.remove_top_transfer(top_transfer_elem)
 
     def get_sip_uuid(self, transfer_name):
-        LOGGER.info('Getting SIP UUID from transfer name %s', transfer_name)
+        logger.info('Getting SIP UUID from transfer name %s', transfer_name)
         self.driver.quit()
         self.driver = self.get_driver()
         ingest_url = self.get_ingest_url()
@@ -53,7 +54,7 @@ class ArchivematicaBrowserIngestAbility(
         self.driver.get(ingest_url)
         sip_uuid, _, _ = (
             self.wait_for_transfer_to_appear(transfer_name))
-        LOGGER.info('Got SIP UUID %s', sip_uuid)
+        logger.info('Got SIP UUID %s', sip_uuid)
         return sip_uuid
 
     def get_mets(self, transfer_name, sip_uuid=None, parse_xml=True):

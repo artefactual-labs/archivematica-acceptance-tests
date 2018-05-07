@@ -1,6 +1,7 @@
 """Steps for the CCA DIP Feature."""
 
 import csv
+import logging
 import os
 import subprocess
 import time
@@ -9,6 +10,10 @@ import zipfile
 from behave import when, then, given
 
 from features.steps import utils
+
+
+logger = logging.getLogger('AMAUAT Steps - CCA DIP')
+
 
 # ==============================================================================
 # Step Definitions
@@ -50,7 +55,7 @@ def step_impl(context):
 @when('he executes the DIP creation script')
 def step_impl(context):
     output = subprocess.check_output([context.script], stderr=subprocess.STDOUT)
-    utils.logger.info('Create DIP script output:\n%s', output.decode())
+    logger.info('Create DIP script output:\n%s', output.decode())
 
 
 # Thens

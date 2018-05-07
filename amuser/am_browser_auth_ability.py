@@ -1,5 +1,7 @@
 """Archivematica Authentication Ability"""
 
+import logging
+
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -9,7 +11,7 @@ from . import utils
 from . import selenium_ability
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser Authentication')
 
 
 class ArchivematicaBrowserAuthenticationAbility(

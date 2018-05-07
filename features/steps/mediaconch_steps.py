@@ -1,11 +1,15 @@
 """Steps for the MediaConch-related Features."""
 
+import logging
 import os
 
 from behave import when, then, given
 from lxml import etree
 
 from features.steps import utils
+
+
+logger = logging.getLogger('AMAUAT Steps - MediaConch')
 
 
 MC_EVENT_DETAIL_PREFIX = 'program="MediaConch"'

@@ -1,5 +1,7 @@
 """Archivematica Browser Preservation Planning Ability"""
 
+import logging
+
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
@@ -8,7 +10,7 @@ from . import selenium_ability
 from . import utils
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser Preservation Planning')
 
 
 class ArchivematicaBrowserPreservationPlanningAbility(
@@ -93,18 +95,18 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         """Ensure there is an FPR validation command that checks a file against
         the MediaConch policy ``policy_file``.
         """
-        LOGGER.info('Ensuring there is an FPR validation command that checks a'
+        logger.info('Ensuring there is an FPR validation command that checks a'
                     ' file against the policy file named "%s".', policy_file)
         self.navigate(self.get_validation_commands_url())
         existing_policy_command_descriptions = \
             self.navigate_to_first_policy_check_validation_command()
         description = self.get_policy_command_description(policy_file)
         if description in existing_policy_command_descriptions:
-            LOGGER.info('The policy command already exists; no need to'
+            logger.info('The policy command already exists; no need to'
                         ' re-create it.')
             return
         policy_command = self.get_policy_command(policy_file, policy_path)
-        LOGGER.info('Creating the policy check FPR command.')
+        logger.info('Creating the policy check FPR command.')
         self.save_policy_check_command(policy_command, description)
 
     def get_policy_command(self, policy_file, policy_path):
@@ -141,7 +143,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         """Create and save a new FPR command using the string
         ``policy_command``.
         """
-        LOGGER.info('Creating an FPR policy check command with description'
+        logger.info('Creating an FPR policy check command with description'
                     ' "%s".', description)
         self.navigate(self.get_create_command_url())
         for option in self.driver.find_element_by_id(
@@ -157,7 +159,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         self.driver.find_element_by_id('id_command_usage').send_keys(
             'Validation')
         self.driver.find_element_by_css_selector('input[type=submit]').click()
-        LOGGER.info('Created the FPR policy check command')
+        logger.info('Created the FPR policy check command')
 
     def ensure_fpr_rule(self, purpose, format_, command_description):
         """Ensure that there is a new FPR rule with the purpose, format and
@@ -166,13 +168,13 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         /fpr/fprule/create/ expects, i.e., a colon-delimited triple like
         'Audio: Broadcast WAVE: Broadcast WAVE 1'.
         """
-        LOGGER.info('Ensuring there is an FPR rule with purpose "%s" that runs'
+        logger.info('Ensuring there is an FPR rule with purpose "%s" that runs'
                     ' command "%s" against files with format "%s".', purpose,
                     command_description, format_)
         if self.fpr_rule_already_exists(purpose, format_, command_description):
-            LOGGER.info('Such an FPR rule already exists.')
+            logger.info('Such an FPR rule already exists.')
             return
-        LOGGER.info('Creating the needed FPR rule.')
+        logger.info('Creating the needed FPR rule.')
         self.navigate(self.get_create_rule_url())
         Select(self.driver.find_element_by_id(
             'id_f-purpose')).select_by_visible_text(purpose)
@@ -181,7 +183,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         Select(self.driver.find_element_by_id(
             'id_f-command')).select_by_visible_text(command_description)
         self.driver.find_element_by_css_selector('input[type=submit]').click()
-        LOGGER.info('Created the needed FPR rule.')
+        logger.info('Created the needed FPR rule.')
 
     def fpr_rule_already_exists(self, purpose, format_, command_description):
         """Return ``True`` if an FPR rule already exists with the purpose,

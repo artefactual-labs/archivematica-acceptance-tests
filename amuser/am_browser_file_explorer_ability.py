@@ -1,5 +1,6 @@
 """Archivematica Browser File Explorer Ability"""
 
+import logging
 import time
 
 from selenium.webdriver.support.ui import WebDriverWait
@@ -17,7 +18,7 @@ from . import utils
 from . import selenium_ability
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser File Explorer')
 
 
 class ArchivematicaBrowserFileExplorerAbility(
@@ -76,7 +77,7 @@ class ArchivematicaBrowserFileExplorerAbility(
         path = path.strip('/')
         path_parts = path.split('/')
         for i, folder in enumerate(path_parts):
-            LOGGER.info('Clicking on "%s"', folder)
+            logger.info('Clicking on "%s"', folder)
             is_last = False
             if i == len(path_parts) - 1:
                 is_last = True
@@ -92,19 +93,19 @@ class ArchivematicaBrowserFileExplorerAbility(
             block.until(EC.presence_of_element_located(
                 (By.XPATH, folder_label_xpath)))
             if is_last:
-                LOGGER.info('Clicking to select folder "%s"', folder)
+                logger.info('Clicking to select folder "%s"', folder)
                 # Click target (leaf) folder and then "Add" button.
                 folder_el = self.driver.find_element_by_xpath(folder_label_xpath)
                 self.click_folder_label(folder_el)
                 time.sleep(4)
                 self.click_add_button()
                 self.driver.execute_script('window.scrollTo(0, 0);')
-                LOGGER.info('Clicked to select folder "%s"', folder)
+                logger.info('Clicked to select folder "%s"', folder)
             else:
                 # Click ancestor folder's icon to open its contents.
-                LOGGER.info('Clicking to open folder "%s"', folder)
+                logger.info('Clicking to open folder "%s"', folder)
                 self.click_folder(folder_label_xpath)
-                LOGGER.info('Clicked to open folder "%s"', folder)
+                logger.info('Clicked to open folder "%s"', folder)
 
     def click_add_folder(self, folder_id):
         """Click the "Add" link in the old AM file explorer interface, i.e., to
@@ -137,7 +138,7 @@ class ArchivematicaBrowserFileExplorerAbility(
         self.click_folder_old_browser(file_id, True)
 
     def click_folder_label(self, folder_el, offset=0):
-        LOGGER.info('Attempting to click folder element at offset %s.', offset)
+        logger.info('Attempting to click folder element at offset %s.', offset)
         counter = 0
         try:
             if counter > 10:
@@ -145,9 +146,9 @@ class ArchivematicaBrowserFileExplorerAbility(
             folder_el.click()
             if not self.driver.find_element_by_css_selector(
                     c.SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER).is_enabled():
-                LOGGER.info('The Add button has not become clickable.')
+                logger.info('The Add button has not become clickable.')
                 raise WebDriverException('ADD is not clickable')
-            LOGGER.info('The Add button has become clickable.')
+            logger.info('The Add button has become clickable.')
         except WebDriverException:
             counter += 1
             container_el = self.driver.find_element_by_css_selector(

@@ -1,5 +1,6 @@
 """Archivematica Browser Jobs & Tasks Ability"""
 
+import logging
 import time
 
 from selenium.common.exceptions import NoSuchElementException
@@ -9,7 +10,7 @@ from . import utils
 from . import selenium_ability
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser Jobs/Tasks')
 
 
 class ArchivematicaBrowserJobsTasksAbility(
@@ -38,7 +39,7 @@ class ArchivematicaBrowserJobsTasksAbility(
         representing the execution of the micro-service named ``ms_name`` on
         the transfer/SIP with UUID ``transfer_uuid``.
         """
-        LOGGER.info('exposing job %s', ms_name)
+        logger.info('exposing job %s', ms_name)
         # Navigate to the Transfers or Ingest tab, depending on ``unit_type``
         # (if we're not there already)
         unit_url = self.get_transfer_url()
@@ -46,7 +47,7 @@ class ArchivematicaBrowserJobsTasksAbility(
             unit_url = self.get_ingest_url()
         self.navigate(unit_url)
         ms_name, group_name = utils.micro_service2group(ms_name)
-        LOGGER.info('expecting job %s to be in group %s', ms_name, group_name)
+        logger.info('expecting job %s to be in group %s', ms_name, group_name)
         # If not visible, click the micro-service group to expand it.
         self.wait_for_transfer_micro_service_group(group_name, transfer_uuid)
         is_visible = self.get_transfer_micro_service_group_elem(
@@ -58,7 +59,7 @@ class ArchivematicaBrowserJobsTasksAbility(
                 group_name, transfer_uuid).click()
         self.wait_for_microservice_visibility(
             ms_name, group_name, transfer_uuid)
-        LOGGER.info('exposed job %s (%s)', ms_name, group_name)
+        logger.info('exposed job %s (%s)', ms_name, group_name)
         return ms_name, group_name
 
     def parse_job(self, ms_name, transfer_uuid, unit_type='transfer'):

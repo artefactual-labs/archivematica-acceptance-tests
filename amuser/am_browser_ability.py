@@ -6,6 +6,7 @@ Archivematica. This class provides an interface to Selenium for opening browser
 windows and interacting with Archivematica's GUIs.
 """
 
+import logging
 import time
 
 import requests
@@ -30,7 +31,7 @@ from . import am_browser_ss_ability as ss_abl
 from . import am_browser_preservation_planning_ability as pres_plan_abl
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser Browser')
 
 
 class ArchivematicaBrowserAbilityError(base.ArchivematicaUserError):
@@ -152,10 +153,10 @@ class ArchivematicaBrowserAbility(
                     'Unable to navigate to {}'.format(url))
             r = s.get(url)
             if r.status_code == requests.codes.ok:
-                LOGGER.info('Requests got OK status code %s when requesting'
+                logger.info('Requests got OK status code %s when requesting'
                             ' %s', r.status_code, url)
                 break
-            LOGGER.info('Requests got bad status code %s when requesting'
+            logger.info('Requests got bad status code %s when requesting'
                         ' %s; waiting for 1 second before trying'
                         ' again', r.status_code, url)
             attempt += 1

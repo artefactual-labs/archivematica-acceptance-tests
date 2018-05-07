@@ -4,6 +4,7 @@ This module contains the ``ArchivematicaUser`` class, which represents a user
 of Archivematica.
 """
 
+import logging
 import os
 import shlex
 import subprocess
@@ -18,7 +19,7 @@ from . import constants as c
 from . import utils
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser')
 
 
 class ArchivematicaUser(base.Base):
@@ -50,19 +51,19 @@ class ArchivematicaUser(base.Base):
         if extension == '.gpg':
             fname, extension = os.path.splitext(fname)
         if extension != '.7z':
-            LOGGER.info('decompress_package; extension %s of fname %s is NOT'
+            logger.info('decompress_package; extension %s of fname %s is NOT'
                         ' .7z', extension, fname)
             return False
         try:
             subprocess.check_output(['7z', '-h'])
         except FileNotFoundError:
-            LOGGER.info('7z is not installed; aborting decompression attempt')
+            logger.info('7z is not installed; aborting decompression attempt')
             return False
         try:
             subprocess.check_output(
                 ['7z', 'x', package_path, '-o{}'.format(c.TMP_DIR_NAME)])
         except subprocess.CalledProcessError:
-            LOGGER.info('7z extraction failed. File %s is not a .7z file or it'
+            logger.info('7z extraction failed. File %s is not a .7z file or it'
                         ' is encrypted', package_path)
             return None
         return fname
@@ -79,8 +80,8 @@ class ArchivematicaUser(base.Base):
         aip_dir_name = output.splitlines()[-3].split()[-1]
         aip_dir_path = os.path.join(aip_parent_dir_path, aip_dir_name)
         cmd = shlex.split('7z x {} -aoa'.format(aip_path))
-        LOGGER.info('Decompress AIP command: %s', cmd)
-        LOGGER.info('Decompress AIP cwd: %s', cwd)
+        logger.info('Decompress AIP command: %s', cmd)
+        logger.info('Decompress AIP cwd: %s', cwd)
         p = subprocess.Popen(
             cmd,
             cwd=cwd,

@@ -1,5 +1,6 @@
 """Selenium Ability"""
 
+import logging
 import os
 
 from selenium import webdriver
@@ -19,7 +20,7 @@ from . import utils
 from . import base
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser Selenium')
 
 
 class ArchivematicaSeleniumError(base.ArchivematicaUserError):
@@ -111,7 +112,7 @@ class ArchivematicaSeleniumAbility(base.Base):
 
     def wait_for_new_window(self, handles_before, timeout=10):
         def window_handles_count_has_changed(driver):
-            LOGGER.info('Previously we had %s window handles, now we have'
+            logger.info('Previously we had %s window handles, now we have'
                         ' %s', len(handles_before), len(driver.window_handles))
             return len(handles_before) != len(driver.window_handles)
         WebDriverWait(self.driver, timeout).until(

@@ -1,5 +1,6 @@
 """Steps for the Indexless ("No Elasticsearch") Feature."""
 
+import logging
 import os
 import re
 
@@ -7,6 +8,10 @@ from behave import when, then, given
 from lxml import etree
 
 from features.steps import utils
+
+
+logger = logging.getLogger('AMAUAT Steps - Indexless')
+
 
 # ==============================================================================
 # Step Definitions
@@ -19,7 +24,7 @@ from features.steps import utils
        ' exclude Elasticsearch')
 def step_impl(context, method):
     """This is an empty given. It should remain empty."""
-    utils.logger.info('We are assuming that Archivematica deployment method'
+    logger.info('We are assuming that Archivematica deployment method'
                       ' "%s" allows for "headless", i.e., Elasticsearch-less'
                       ' deployments', method)
 
@@ -27,7 +32,7 @@ def step_impl(context, method):
 @given('an Archivematica instance with Indexing disabled')
 def step_impl(context):
     """This is an empty given. It should remain empty."""
-    utils.logger.info('We are assuming that the Archivematica instance we are'
+    logger.info('We are assuming that the Archivematica instance we are'
                       ' targetting has been deployed headlessly.')
 
 
@@ -78,11 +83,11 @@ def step_impl(context, method):
     """
     context.scenario.idxls_dply_method = method
     if method == 'manual':
-        utils.logger.info(
+        logger.info(
             'Manual headless Archivematica installation cannot be performed by'
             ' these acceptance tests.')
     else:
-        utils.logger.info(
+        logger.info(
             'These acceptance tests could be modified to deploy headless'
             ' Archivematica using Vagrant/Ansible or Docker Compose.')
 
@@ -92,8 +97,6 @@ def step_impl(context, pc_decision):
     """Create SIP(s)"""
     options = context.am_user.browser.get_processing_config_decision_options(
         decision_label=pc_decision)
-    utils.logger.info('FROG options')
-    utils.logger.info(options)
     context.scenario.decision_options = options
 
 
@@ -169,14 +172,14 @@ def step_impl(context):
         try:
             assert es_ps is None
         except AssertionError:
-            utils.logger.warning(
+            logger.warning(
                 'An Elasticsearch container is running when we expect it not to'
                 ' be. Its state is %s', es_ps['state'])
             raise
     elif context.scenario.idxls_dply_method in ('ansible', 'manual'):
         context.am_user.ssh.assert_elasticsearch_not_installed()
     else:
-        utils.logger.warning(
+        logger.warning(
             'The "Then Elasticsearch is not running" step is not implemented'
             ' for deployment method "%s".', method)
 
@@ -224,10 +227,10 @@ def step_impl(context):
         counterpart = _get_path_counterpart(
             rel_path, indexed_rel_paths, indexless_dirname, indexed_dirname)
         assert counterpart, (
-            utils.logger.warning(
+            logger.warning(
                 'Relative path %s in the indexless AIP has no counterpart in'
                 ' the indexed one', rel_path))
-        utils.logger.info(
+        logger.info(
             'Relative path %s in the indexless AIP matches %s in'
             ' the indexed one', rel_path, counterpart)
     indexless_uuid = os.path.basename(

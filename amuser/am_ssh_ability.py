@@ -5,6 +5,7 @@ ability of an Archivematica user to use SSH and scp to interact with
 Archivematica.
 """
 
+import logging
 import os
 import shlex
 import string
@@ -16,7 +17,7 @@ from . import utils
 from . import base
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser SSH')
 
 
 class ArchivematicaSSHAbility(base.Base):
@@ -27,7 +28,7 @@ class ArchivematicaSSHAbility(base.Base):
     def scp_server_file_to_local(self, server_file_path):
         """Use scp to copy a file from the server to our local tmp directory."""
         if not self.ssh_accessible:
-            LOGGER.info('You do not have SSH access to the Archivematica'
+            logger.info('You do not have SSH access to the Archivematica'
                         ' server')
             return None
         filename = os.path.basename(server_file_path)
@@ -53,12 +54,12 @@ class ArchivematicaSSHAbility(base.Base):
                 child.sendline(self.server_password)
             child.expect(pexpect.EOF, timeout=20)
         else:
-            LOGGER.info('You must provide a server_user and a either a'
+            logger.info('You must provide a server_user and a either a'
                         ' server_password or a ssh_identity_file')
             return None
         if os.path.isfile(local_path):
             return local_path
-        LOGGER.info('Failed to scp %s:%s to %s', AM_IP, server_file_path,
+        logger.info('Failed to scp %s:%s to %s', AM_IP, server_file_path,
                     local_path)
         return False
 
@@ -67,7 +68,7 @@ class ArchivematicaSSHAbility(base.Base):
         directory.
         """
         if not self.ssh_accessible:
-            LOGGER.info('You do not have SSH access to the Archivematica'
+            logger.info('You do not have SSH access to the Archivematica'
                         ' server')
             return None
         if server_dir_path[-1] == '/':
@@ -91,7 +92,7 @@ class ArchivematicaSSHAbility(base.Base):
                    ' -o StrictHostKeyChecking=no'
                    ' {}@{}:{} {}'.format(
                        self.server_user, AM_IP, server_dir_path, local_path))
-            LOGGER.info('Command for scp-ing a remote directory to local:\n%s',
+            logger.info('Command for scp-ing a remote directory to local:\n%s',
                         cmd)
             child = pexpect.spawn(cmd)
             if self.ssh_requires_password:
@@ -99,12 +100,12 @@ class ArchivematicaSSHAbility(base.Base):
                 child.sendline(self.server_password)
             child.expect(pexpect.EOF, timeout=20)
         else:
-            LOGGER.info('You must provide a server_user and a either a'
+            logger.info('You must provide a server_user and a either a'
                         ' server_password or a ssh_identity_file')
             return None
         if os.path.isdir(local_path):
             return local_path
-        LOGGER.info('Failed to scp %s:%s to %s', AM_IP, server_dir_path,
+        logger.info('Failed to scp %s:%s to %s', AM_IP, server_dir_path,
                     local_path)
         return False
 
@@ -113,7 +114,7 @@ class ArchivematicaSSHAbility(base.Base):
         and expecting to find no file at /etc/init.d/elasticsearch.
         """
         if not self.ssh_accessible:
-            LOGGER.info('You do not have SSH access to the Archivematica'
+            logger.info('You do not have SSH access to the Archivematica'
                         ' server')
             return None
         AM_IP = ''.join([x for x in self.am_url if x in string.digits + '.'])
@@ -125,7 +126,7 @@ class ArchivematicaSSHAbility(base.Base):
                    ' ls /etc/init.d/elasticsearch'.format(
                        self.ssh_identity_file,
                        self.server_user, AM_IP))
-            LOGGER.info(
+            logger.info(
                 'Command for checking if Elasticsearch is installed: %s', cmd)
             try:
                 out = subprocess.check_output(
@@ -139,7 +140,7 @@ class ArchivematicaSSHAbility(base.Base):
                    ' {}@{}'
                    ' ls /etc/init.d/elasticsearch'.format(
                        self.server_user, AM_IP))
-            LOGGER.info(
+            logger.info(
                 'Command for checking if Elasticsearch is installed: %s', cmd)
             child = pexpect.spawn(cmd)
             if self.ssh_requires_password:
@@ -148,7 +149,7 @@ class ArchivematicaSSHAbility(base.Base):
             child.expect(pexpect.EOF, timeout=20)
             out = child.before.decode('utf8')
         else:
-            LOGGER.info('You must provide a server_user and a either a'
+            logger.info('You must provide a server_user and a either a'
                         ' server_password or a ssh_identity_file')
             return None
         needle = 'No such file or directory'

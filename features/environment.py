@@ -1,5 +1,14 @@
+import logging
+import os
+import sys
+
 import amuser
 import utils
+
+
+ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 
 
 # Change these to match your test environment
@@ -55,6 +64,20 @@ def get_am_user(userdata):
             'ssh_identity_file', SSH_IDENTITY_FILE)
     })
     return amuser.ArchivematicaUser(**userdata)
+
+
+def before_all(context):
+    logging_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    context.config.setup_logging(format=logging_format)
+    logger = logging.getLogger()
+    log_filename = 'AMAUAT.log'
+    root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    log_path = os.path.join(root_path, log_filename)
+    file_handler = logging.FileHandler(log_path)
+    file_handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(logging_format)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
 
 def before_scenario(context, scenario):

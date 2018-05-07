@@ -1,5 +1,6 @@
 """Steps for the AIP Encryption Feature."""
 
+import logging
 import os
 import tarfile
 
@@ -12,6 +13,10 @@ from features.steps import utils
 GPG_KEYS_DIR = 'etc/gpgkeys'
 STDRD_GPG_TB_REL_PATH = (
     'var/archivematica/sharedDirectory/www/AIPsStore/transferBacklogEncrypted')
+
+
+logger = logging.getLogger('Steps - AIP Encryption')
+
 
 # ==============================================================================
 # Step Definitions
@@ -129,7 +134,7 @@ def step_impl(context):
         'GnuPG Private Key': 'Archivematica Storage Service GPG Key'
     })['uuid']
     new_key_repr = '{} <{}>'.format(new_key_name, new_key_email)
-    utils.logger.info('Created a new GPG key "%s"', new_key_repr)
+    logger.info('Created a new GPG key "%s"', new_key_repr)
     context.am_user.browser.change_encrypted_space_key(standard_encr_space_uuid,
                                                        new_key_repr)
 
@@ -149,15 +154,15 @@ def step_impl(context, transfer_path):
 @when('the user attempts to delete the new GPG key')
 def step_impl(context):
     new_key_name = context.scenario.new_key_name
-    utils.logger.info('Attempting to delete GPG key "%s"', new_key_name)
+    logger.info('Attempting to delete GPG key "%s"', new_key_name)
     (context.scenario.delete_gpg_key_success,
      context.scenario.delete_gpg_key_msg) = (
          context.am_user.browser.delete_gpg_key(new_key_name))
     if context.scenario.delete_gpg_key_success:
-        utils.logger.info('Attempt to delete GPG key "%s" was SUCCESSFUL',
+        logger.info('Attempt to delete GPG key "%s" was SUCCESSFUL',
                           new_key_name)
     else:
-        utils.logger.info('Attempt to delete GPG key "%s" FAILED: "%s"',
+        logger.info('Attempt to delete GPG key "%s" FAILED: "%s"',
                           new_key_name, context.scenario.delete_gpg_key_msg)
 
 
@@ -409,7 +414,7 @@ def step_impl(context):
         STDRD_GPG_TB_REL_PATH,
         context.scenario.transfer_name,
         context.scenario.transfer_uuid)
-    utils.logger.info('expecting encrypted transfer to be at %s on server',
+    logger.info('expecting encrypted transfer to be at %s on server',
                       path_on_disk)
     if getattr(context.am_user.docker, 'docker_compose_path', None):
         dip_local_path = context.am_user.docker.cp_server_file_to_local(
@@ -418,14 +423,14 @@ def step_impl(context):
         dip_local_path = context.am_user.ssh.scp_server_file_to_local(
             path_on_disk)
     if dip_local_path is None:
-        utils.logger.info(
+        logger.info(
             'Unable to copy file %s from the server to the local file'
             ' system. Server is not accessible via SSH. Abandoning'
             ' attempt to assert that the DIP on disk is'
             ' encrypted.', path_on_disk)
         return
     elif dip_local_path is False:
-        utils.logger.info(
+        logger.info(
             'Unable to copy file %s from the server to the local file'
             ' system. Attempt to scp the file failed. Abandoning attempt'
             ' to assert that the DIP on disk is'
@@ -450,14 +455,14 @@ def step_impl(context, aips_store_path):
         aip_local_path = context.am_user.ssh.scp_server_file_to_local(
             aip_server_path)
     if aip_local_path is None:
-        utils.logger.info(
+        logger.info(
             'Unable to copy file %s from the server to the local file'
             ' system. Server is not accessible via SSH. Abandoning'
             ' attempt to assert that the AIP on disk is'
             ' encrypted.', aip_server_path)
         return
     elif aip_local_path is False:
-        utils.logger.info(
+        logger.info(
             'Unable to copy file %s from the server to the local file'
             ' system. Attempt to scp the file failed. Abandoning attempt'
             ' to assert that the AIP on disk is'
@@ -576,14 +581,14 @@ def get_aip_is_encrypted(context, aip_description):
         else:
             aip_local_path = context.am_user.ssh.scp_server_file_to_local(xlink_href)
         if aip_local_path is None:
-            utils.logger.warning(
+            logger.warning(
                 'Unable to copy file %s from the server to the local file'
                 ' system. Server is not accessible via SSH. Abandoning'
                 ' attempt to assert that the AIP on disk is'
                 ' encrypted.', xlink_href)
             return
         elif aip_local_path is False:
-            utils.logger.warning(
+            logger.warning(
                 'Unable to copy file %s from the server to the local file'
                 ' system. Attempt to scp the file failed. Abandoning attempt'
                 ' to assert that the AIP on disk is'

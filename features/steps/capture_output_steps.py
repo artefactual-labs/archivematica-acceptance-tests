@@ -1,8 +1,14 @@
 """Steps for the Capture Output Setting Feature."""
 
+import logging
+
 from behave import when, then, given
 
 from features.steps import utils
+
+
+logger = logging.getLogger('AMAUAT Steps - AIP Encryption')
+
 
 # ==============================================================================
 # Step Definitions
@@ -14,7 +20,7 @@ from features.steps import utils
 @given('an Archivematica instance that is deployed with output capturing'
        '{output_capture_state}')
 def step_impl(context, output_capture_state):
-    utils.logger.info('Assuming that this Archivematica instance has been'
+    logger.info('Assuming that this Archivematica instance has been'
                       ' deployed with output capturing %s',
                       output_capture_state)
 

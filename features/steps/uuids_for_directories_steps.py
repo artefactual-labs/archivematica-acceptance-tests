@@ -1,5 +1,6 @@
 """Steps for the UUIDs for the Direcotries Feature."""
 
+import logging
 import os
 import pprint
 
@@ -7,6 +8,10 @@ from behave import then, given
 from lxml import etree
 
 from features.steps import utils
+
+
+logger = logging.getLogger('AMAUAT Steps - UUIDs Directories')
+
 
 # ==============================================================================
 # Step Definitions
@@ -42,13 +47,13 @@ def step_impl(context, dir_path):
         msg = (
             'Unable to copy item {} from the server to the local file'
             ' system.'.format(dir_path))
-        utils.logger.warning(msg)
+        logger.warning(msg)
         raise Exception(msg)
     elif local_path is False:
         msg = (
             'Unable to copy item {} from the server to the local file'
             ' system. Attempt to copy the file/dir failed.'.format(dir_path))
-        utils.logger.warning(msg)
+        logger.warning(msg)
         raise Exception(msg)
     dir_local_path = local_path
     if dir_is_zipped:
@@ -225,13 +230,13 @@ def step_impl(context):
                 id_type = dmdSec_el.find('.//premis3:objectIdentifierType', ns).text.strip()
                 id_val = dmdSec_el.find('.//premis3:objectIdentifierValue', ns).text.strip()
             except AttributeError:
-                utils.logger.info(ns)
+                logger.info(ns)
                 msg = etree.tostring(dmdSec_el, pretty_print=True)
                 print(msg)
-                utils.logger.info(msg)
+                logger.info(msg)
                 raise
             assert id_type == 'UUID'
             assert utils.is_uuid(id_val)
-            utils.logger.info(
+            logger.info(
                 'Found UUID for directory "%s" in %s-type structmap',
                 dirpath, type_)

@@ -291,9 +291,9 @@ Chrome browsers and kill them::
 Logging
 --------------------------------------------------------------------------------
 
-By default, the ``ArchivematicaUser`` sends its logs to ``amuser/amuser.log``
-and the steps modules send their logs to ``features/steps/steps.log``. When
-debugging issue with the tests, these log files should be consulted.
+All log messages are written to a file named ``AMAUAT.log`` in the root
+directory. Passing the ``--no-logcapture`` flag to ``behave`` will cause all of
+the log messages to also be written to stdout.
 
 
 .. [1] The Gherkin syntax and the approach of defining features by describing

@@ -1,6 +1,12 @@
 """Steps for the Manual Normalization Feature."""
 
+import logging
+
 from behave import then, given
+
+
+logger = logging.getLogger('AMAUAT Steps - Manual Normalization')
+
 
 # ==============================================================================
 # Step Definitions

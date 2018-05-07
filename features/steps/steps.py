@@ -1,10 +1,14 @@
 """General-purpose Steps."""
 
+import logging
 import time
 
 from behave import when, then, given, use_step_matcher
 
 from features.steps import utils
+
+
+logger = logging.getLogger('AMAUAT Steps')
 
 
 # Givens
@@ -252,7 +256,7 @@ def step_impl(context, aip_description):
     context.scenario.aip_path = context.am_user.api.download_aip(
         transfer_name, uuid_val, context.am_user.browser.ss_api_key)
     attr_name = aip_description.replace(' ', '')
-    utils.logger.info('setting attribute %s to %s',
+    logger.info('setting attribute %s to %s',
                       attr_name, context.scenario.aip_path)
     setattr(context.scenario, attr_name, context.scenario.aip_path)
 
@@ -270,7 +274,7 @@ def step_impl(context):
     context.scenario.aip_pointer_path = app = (
         context.am_user.api.download_aip_pointer_file(
             uuid_val, context.am_user.browser.ss_api_key))
-    utils.logger.info('downloaded AIP pointer file for AIP %s to %s', uuid_val,
+    logger.info('downloaded AIP pointer file for AIP %s to %s', uuid_val,
                       app)
 
 
@@ -283,7 +287,7 @@ def step_impl(context, aip_description):
     setattr(context.scenario, aip_ptr_attr,
             context.am_user.api.download_aip_pointer_file(
                 aip_uuid, context.am_user.browser.ss_api_key))
-    utils.logger.info('downloaded AIP pointer file for %s AIP %s to %s',
+    logger.info('downloaded AIP pointer file for %s AIP %s to %s',
                       aip_description, aip_uuid,
                       getattr(context.scenario, aip_ptr_attr))
 

@@ -1,5 +1,6 @@
 """Archivematica Transfer & Ingest Tabs Ability"""
 
+import logging
 import time
 
 from selenium.webdriver.support.ui import Select
@@ -14,7 +15,7 @@ from . import am_browser_transfer_ability as transfer_abl
 from . import am_browser_ingest_ability as ingest_abl
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser Transfer/Ingest')
 
 
 class ArchivematicaBrowserTransferIngestAbilityError(
@@ -45,7 +46,7 @@ class ArchivematicaBrowserTransferIngestAbility(
         appear.
         """
         ms_name = utils.normalize_ms_name(ms_name, self.vn)
-        LOGGER.info('Await decision point "%s" with unit %s of type %s',
+        logger.info('Await decision point "%s" with unit %s of type %s',
                     ms_name, transfer_uuid, unit_type)
         ms_name, group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
         job_uuid, job_output = self.get_job_uuid(
@@ -184,7 +185,7 @@ class ArchivematicaBrowserTransferIngestAbility(
             name_elem_text = ms_group_elem.find_element_by_css_selector(
                 'span.microservice-group-name').text.strip()
             if name_elem_text == expected_name:
-                LOGGER.info('DOM name "%s" MATCHES expected name "%s"',
+                logger.info('DOM name "%s" MATCHES expected name "%s"',
                             name_elem_text, expected_name)
                 result = ms_group_elem
                 break

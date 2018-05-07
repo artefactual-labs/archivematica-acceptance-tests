@@ -7,15 +7,7 @@ import re
 import zipfile
 
 
-logger = logging.getLogger(__file__)
-log_filename = 'steps.log'
-log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        log_filename)
-handler = logging.FileHandler(log_path)
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger('AMAUAT Steps - Utils')
 
 
 class ArchivematicaStepsError(Exception):

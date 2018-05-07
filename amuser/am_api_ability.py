@@ -4,6 +4,7 @@ This module contains the ``ArchivematicaAPIAbility`` class, which represents a
 user's ability to use Archivematica's APIs to interact with Archivematica.
 """
 
+import logging
 import os
 import time
 
@@ -13,7 +14,7 @@ from . import base
 from . import utils
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser API')
 
 
 class ArchivematicaAPIAbilityError(base.ArchivematicaUserError):
@@ -42,14 +43,14 @@ class ArchivematicaAPIAbility(base.Base):
                 _save_download(r, aip_path)
                 return aip_path
             elif r.status_code in (404, 500) and attempt < max_attempts:
-                LOGGER.warning(
+                logger.warning(
                     'Trying again to download AIP %s via GET request to URL %s;'
                     ' SS returned status code %s and message %s',
                     sip_uuid, url, r.status_code, r.text)
                 attempt += 1
                 time.sleep(1)
             else:
-                LOGGER.warning('Unable to download AIP %s via GET request to'
+                logger.warning('Unable to download AIP %s via GET request to'
                                ' URL %s; SS returned status code %s and message'
                                ' %s', sip_uuid, url, r.status_code, r.text)
                 raise ArchivematicaAPIAbilityError(
@@ -72,14 +73,14 @@ class ArchivematicaAPIAbility(base.Base):
                 _save_download(r, pointer_file_path)
                 return pointer_file_path
             elif r.status_code in (404, 500) and attempt < max_attempts:
-                LOGGER.warning(
+                logger.warning(
                     'Trying again to download AIP %s pointer file via GET'
                     ' request to URL %s; SS returned status code %s and message'
                     ' %s', sip_uuid, url, r.status_code, r.text)
                 attempt += 1
                 time.sleep(1)
             else:
-                LOGGER.warning('Unable to download AIP %s pointer file via GET'
+                logger.warning('Unable to download AIP %s pointer file via GET'
                                ' request to URL %s; SS returned status code %s'
                                ' and message %s', sip_uuid, url, r.status_code,
                                r.text)

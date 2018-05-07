@@ -1,5 +1,6 @@
 """Archivematica Browser Storage Service Ability"""
 
+import logging
 import pprint
 
 from selenium.webdriver.support.ui import Select
@@ -10,7 +11,7 @@ from . import base
 from . import selenium_ability
 
 
-LOGGER = utils.LOGGER
+logger = logging.getLogger('ArchivematicaUser SS')
 
 
 class ArchivematicaBrowserStorageServiceAbilityError(
@@ -74,9 +75,9 @@ class ArchivematicaBrowserStorageServiceAbility(
         """
         matching_space = self.search_for_ss_space(attributes)
         if matching_space:
-            LOGGER.info('matching space:\n%s', pprint.pformat(matching_space))
+            logger.info('matching space:\n%s', pprint.pformat(matching_space))
             return matching_space['uuid']
-        LOGGER.info('space with attributes %s does NOT exist', attributes)
+        logger.info('space with attributes %s does NOT exist', attributes)
         return self.create_ss_space(attributes)
 
     def search_for_ss_space(self, attributes):
@@ -85,13 +86,13 @@ class ArchivematicaBrowserStorageServiceAbility(
             match = True
             for key, val in attributes.items():
                 if ex_space.get(key.lower()) != val:
-                    LOGGER.debug('%s\ndoes NOT match\n%s',
+                    logger.info('%s\ndoes NOT match\n%s',
                                  ex_space.get(key.lower()), val)
                     match = False
                     break
             if match:
                 return ex_space
-        LOGGER.debug('No SS space matching attributes %s', pprint.pformat(attributes))
+        logger.info('No SS space matching attributes %s', pprint.pformat(attributes))
         return None
 
     def create_ss_space(self, attributes):
@@ -225,7 +226,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         if matching_loc:
             loc_uuid = matching_loc['uuid']
         else:
-            LOGGER.info('location with attributes %s does NOT exist',
+            logger.info('location with attributes %s does NOT exist',
                         attributes)
             loc_uuid = self.create_ss_location(space_uuid, attributes)
         return loc_uuid
@@ -328,7 +329,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         try:
             assert len(matches) == 1
         except AssertionError:
-            LOGGER.info('Unable to delete GPG key with name "%s" because there'
+            logger.info('Unable to delete GPG key with name "%s" because there'
                         ' are %s keys matching that name', key_name,
                         len(matches))
             raise

@@ -3,6 +3,7 @@ Test/Feature.
 """
 
 import json
+import logging
 import os
 import time
 
@@ -10,6 +11,10 @@ from behave import when, then, given
 from lxml import etree
 
 from features.steps import utils
+
+
+logger = logging.getLogger('AMAUAT Steps - Performance No Capture')
+
 
 # ==============================================================================
 # Step Definitions
@@ -56,7 +61,7 @@ def step_impl(context, filename):
     with open(path, 'w') as fout:
         json.dump(data, fout, indent=4)
     context.scenario.performance_stats_path = path
-    utils.logger.info('Set performance_stats_path to %s', path)
+    logger.info('Set performance_stats_path to %s', path)
 
 
 # Thens
@@ -73,9 +78,9 @@ def step_impl(context, without_outputs_fname, with_outputs_fname):
     with_outputs_mets = with_outputs_stats['mets']
     without_outputs_mets_len = len(without_outputs_mets)
     with_outputs_mets_len = len(with_outputs_mets)
-    utils.logger.info(
+    logger.info(
         'METS length for without output tasks: %d', without_outputs_mets_len)
-    utils.logger.info(
+    logger.info(
         'METS length for with output tasks: %d', with_outputs_mets_len)
     assert without_outputs_mets_len < with_outputs_mets_len
 
@@ -94,8 +99,8 @@ def step_impl(context, without_outputs_fname, with_outputs_fname):
     with_outputs_tasks = add_duration_float(with_outputs_tasks)
     wo_o_sum_tasks = sum(t['duration_float'] for t in without_outputs_tasks)
     w_o_sum_tasks = sum(t['duration_float'] for t in with_outputs_tasks)
-    utils.logger.info('Total runtime for without output tasks: %f', wo_o_sum_tasks)
-    utils.logger.info('Total runtime for with output tasks: %f', w_o_sum_tasks)
+    logger.info('Total runtime for without output tasks: %f', wo_o_sum_tasks)
+    logger.info('Total runtime for with output tasks: %f', w_o_sum_tasks)
     assert wo_o_sum_tasks < w_o_sum_tasks, (
         'We expected the runtime {} of the "without output" AIP to be less'
         ' than the runtime {} of the "with output" AIP but our expectation was'
@@ -145,6 +150,6 @@ def get_newest_file_with_prefix(dirpath, filename_prefix):
 
 def get_stats_file_json(fname, permanent_path):
     fpath = get_newest_file_with_prefix(permanent_path, fname)
-    utils.logger.info('file path for %s is %s', fname, fpath)
+    logger.info('file path for %s is %s', fname, fpath)
     with open(fpath) as fi:
         return json.load(fi)

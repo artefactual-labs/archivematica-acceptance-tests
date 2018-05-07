@@ -9,15 +9,7 @@ import requests
 from . import constants as c
 
 
-LOGGER = logging.getLogger('ArchivematicaUser')
-log_filename = 'amuser.log'
-log_path = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), log_filename)
-handler = logging.FileHandler(log_path)
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-handler.setFormatter(formatter)
-LOGGER.addHandler(handler)
-LOGGER.setLevel(logging.DEBUG)
+logger = logging.getLogger('ArchivematicaUser utils')
 
 
 def squash(string_):
@@ -133,7 +125,7 @@ def micro_service2group(micro_service):
         if not groups:
             raise
     if len(groups) != 1:
-        LOGGER.info('WARNING: the micro-service "%s" belongs to multiple'
-                    ' micro-service groups; returning "%s"',
-                    micro_service, groups[0])
+        logger.warning('WARNING: the micro-service "%s" belongs to multiple'
+                       ' micro-service groups; returning "%s"',
+                       micro_service, groups[0])
     return micro_service, groups[0]
