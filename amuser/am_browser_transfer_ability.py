@@ -11,7 +11,6 @@ from selenium.common.exceptions import (
 )
 
 from . import constants as c
-from . import utils
 from . import selenium_ability
 
 
@@ -24,7 +23,7 @@ class ArchivematicaBrowserTransferAbility(
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.wait_for_transfer_to_appear_waits = 0
+        self.check_transfer_appeared_attempts = 0
 
     def start_transfer(self, transfer_path, transfer_name, accession_no=None,
                        transfer_type=None):
@@ -68,13 +67,13 @@ class ArchivematicaBrowserTransferAbility(
             'Unzipped bag': c.APPROVE_BAGIT_TRANSFER_UUID,
             'DSpace': c.APPROVE_DSPACE_TRANSFER_UUID
         }[transfer_type]
-        approve_transfer(transfer_div_elem, approve_option_uuid)
+        self.approve_transfer(transfer_div_elem, approve_option_uuid)
         return transfer_uuid, transfer_name
 
     def remove_all_transfers(self):
         """Remove all transfers in the Transfers tab."""
         self.navigate_to_transfer_tab()
-        self.wait_for_presence(c.SELECTOR_TRANSFER_DIV, 20)
+        self.wait_for_presence(c.SELECTOR_TRANSFER_DIV, self.nihilistic_wait)
         while True:
             top_transfer_elem = self.get_top_transfer()
             if not top_transfer_elem:
@@ -104,7 +103,7 @@ class ArchivematicaBrowserTransferAbility(
             self.wait_for_invisibility(dialog_selector)
             try:
                 while top_transfer_elem.is_displayed():
-                    time.sleep(0.5)
+                    time.sleep(self.quick_wait)
             except StaleElementReferenceException:
                 pass
 
@@ -120,7 +119,7 @@ class ArchivematicaBrowserTransferAbility(
         """Wait until the transfer appears in the transfer tab (after "Start
         transfer" has been clicked). The only way to do this seems to be to
         check each row for our unique ``transfer_name`` and do
-        ``time.sleep(0.25)`` until it appears, or a max number of waits is
+        ``time.sleep(self.micro_wait)`` until it appears, or a max number of waits is
         exceeded.
         Returns the transfer UUID and the transfer <div> element.
         """
@@ -157,17 +156,17 @@ class ArchivematicaBrowserTransferAbility(
                     transfer_uuid = transfer_uuid_div_elem.text.strip()
                 correct_transfer_div_elem = transfer_div_elem
         if not transfer_uuid:
-            self.wait_for_transfer_to_appear_waits += 1
-            if (self.wait_for_transfer_to_appear_waits <
-                    c.WAIT_FOR_TRANSFER_TO_APPEAR_MAX_WAITS):
-                time.sleep(0.5)
+            self.check_transfer_appeared_attempts += 1
+            if (self.check_transfer_appeared_attempts <
+                    self.max_check_transfer_appeared_attempts):
+                time.sleep(self.quick_wait)
                 transfer_uuid, correct_transfer_div_elem, transfer_name = (
                     self.wait_for_transfer_to_appear(
                         transfer_name, name_is_prefix=name_is_prefix))
             else:
-                self.wait_for_transfer_to_appear_waits = 0
+                self.check_transfer_appeared_attempts = 0
                 return None, None, None
-        time.sleep(0.5)
+        time.sleep(self.quick_wait)
         return transfer_uuid, correct_transfer_div_elem, transfer_name
 
     def click_start_transfer_button(self):
@@ -210,28 +209,27 @@ class ArchivematicaBrowserTransferAbility(
         self.driver.find_element_by_css_selector(
             c.SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER).click()
 
+    def approve_transfer(self, transfer_div_elem, approve_option_uuid):
+        """Click the "Approve transfer" select option to initiate the transfer
+        process.
 
-def approve_transfer(transfer_div_elem, approve_option_uuid):
-    """Click the "Approve transfer" select option to initiate the transfer
-    process.
-
-    TODO/WARNING: this some times triggers ElementNotVisibleException
-    when the click is attempted. Potential solution: catch exception and
-    re-click the micro-service <div> to make the hidden <select> visible
-    again.
-    """
-    approve_transfer_option_selector = "option[value='{}']".format(
-        approve_option_uuid)
-    while True:
-        try:
-            approve_transfer_option = (
-                transfer_div_elem.find_element_by_css_selector(
-                    approve_transfer_option_selector))
-        except NoSuchElementException:
-            logger.info('NoSuchElementException raised when attempting to'
-                        ' retrieve element with css selector %s',
-                        approve_transfer_option_selector)
-            time.sleep(1)
-        else:
-            break
-    approve_transfer_option.click()
+        TODO/WARNING: this some times triggers ElementNotVisibleException
+        when the click is attempted. Potential solution: catch exception and
+        re-click the micro-service <div> to make the hidden <select> visible
+        again.
+        """
+        approve_transfer_option_selector = "option[value='{}']".format(
+            approve_option_uuid)
+        while True:
+            try:
+                approve_transfer_option = (
+                    transfer_div_elem.find_element_by_css_selector(
+                        approve_transfer_option_selector))
+            except NoSuchElementException:
+                logger.info('NoSuchElementException raised when attempting to'
+                            ' retrieve element with css selector %s',
+                            approve_transfer_option_selector)
+                time.sleep(self.optimistic_wait)
+            else:
+                break
+        approve_transfer_option.click()

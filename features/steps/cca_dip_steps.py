@@ -9,8 +9,6 @@ import zipfile
 
 from behave import when, then, given
 
-from features.steps import utils
-
 
 logger = logging.getLogger('amauat.steps.ccadip')
 

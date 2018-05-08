@@ -7,7 +7,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 
-from . import utils
 from . import selenium_ability
 
 
@@ -28,9 +27,10 @@ class ArchivematicaBrowserAuthenticationAbility(
         try:
             element_present = EC.presence_of_element_located(
                 (By.ID, username_input_id))
-            WebDriverWait(self.driver, self.timeout).until(element_present)
+            WebDriverWait(
+                self.driver, self.pessimistic_wait).until(element_present)
         except TimeoutException:
-            print("Loading took too much time!")
+            logger.warning('Timed out when waiting for login page to load')
         username_elem = self.driver.find_element_by_id(username_input_id)
         username_elem.send_keys(self.am_username)
         password_elem = self.driver.find_element_by_id(password_input_id)
@@ -47,9 +47,10 @@ class ArchivematicaBrowserAuthenticationAbility(
         try:
             element_present = EC.presence_of_element_located(
                 (By.ID, username_input_id))
-            WebDriverWait(self.driver, self.timeout).until(element_present)
+            WebDriverWait(
+                self.driver, self.pessimistic_wait).until(element_present)
         except TimeoutException:
-            print("Loading took too much time!")
+            logger.warning('Timed out when waiting for SS login page to load')
         username_elem = self.driver.find_element_by_id(username_input_id)
         username_elem.send_keys(self.ss_username)
         password_elem = self.driver.find_element_by_id(password_input_id)

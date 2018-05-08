@@ -14,7 +14,6 @@ from selenium.common.exceptions import (
 from selenium.webdriver.common.action_chains import ActionChains
 
 from . import constants as c
-from . import utils
 from . import selenium_ability
 
 
@@ -40,7 +39,7 @@ class ArchivematicaBrowserFileExplorerAbility(
                 c.SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES)
             browse_button_elem.click()
         # Wait for the File Explorer modal dialog to open.
-        block = WebDriverWait(self.driver, self.timeout)
+        block = WebDriverWait(self.driver, self.pessimistic_wait)
         block.until(EC.visibility_of_element_located(
             (By.CSS_SELECTOR, c.SELECTOR_DIV_TRANSFER_SOURCE_BROWSE)))
         # Navigate to the leaf directory and click "Add".
@@ -50,17 +49,17 @@ class ArchivematicaBrowserFileExplorerAbility(
         """Click on each folder in ``path`` from the root on up, until we
         get to the leaf; then click "Add".
         This method recurses itself up to
-        ``max_click_transfer_directory_tries`` times if it fails. This may no
-        longer be necessary now that the file browser has been updated.
+        ``self.max_click_transfer_directory_attempts`` times if it fails. This
+        may no longer be necessary now that the file browser has been updated.
         """
         try:
             self._navigate_to_transfer_directory_and_click(path)
         except (TimeoutException, MoveTargetOutOfBoundsException):
             self.click_transfer_directory_tries += 1
             if (self.click_transfer_directory_tries >=
-                    c.MAX_CLICK_TRANSFER_DIRECTORY_TRIES):
-                print('Failed to navigate to transfer directory'
-                      ' {}'.format(path))
+                    self.max_click_transfer_directory_attempts):
+                logger.warning('Failed to navigate to transfer directory'
+                               ' %s', path)
                 self.click_transfer_directory_tries = 0
                 raise
             else:
@@ -97,7 +96,7 @@ class ArchivematicaBrowserFileExplorerAbility(
                 # Click target (leaf) folder and then "Add" button.
                 folder_el = self.driver.find_element_by_xpath(folder_label_xpath)
                 self.click_folder_label(folder_el)
-                time.sleep(4)
+                time.sleep(self.pessimistic_wait)
                 self.click_add_button()
                 self.driver.execute_script('window.scrollTo(0, 0);')
                 logger.info('Clicked to select folder "%s"', folder)
@@ -117,7 +116,7 @@ class ArchivematicaBrowserFileExplorerAbility(
         folder_elem = self.driver.find_element_by_id(folder_id)
         hover = ActionChains(self.driver).move_to_element(folder_elem)
         hover.perform()
-        time.sleep(0.25)  # seems to be necessary (! jQuery animations?)
+        time.sleep(self.micro_wait)  # seems to be necessary (! jQuery animations?)
         span_elem = self.driver.find_element_by_css_selector(
             'div#{} span.{}'.format(folder_id,
                                     c.CLASS_ADD_TRANSFER_FOLDER))
@@ -199,7 +198,7 @@ class ArchivematicaBrowserFileExplorerAbility(
         folder_elem = self.driver.find_element_by_id(folder_id)
         hover = ActionChains(self.driver).move_to_element(folder_elem)
         hover.perform()
-        time.sleep(0.25)  # seems to be necessary (! jQuery animations?)
+        time.sleep(self.micro_wait)  # seems to be necessary (! jQuery animations?)
         class_ = 'backbone-file-explorer-directory_icon_button'
         if is_file:
             class_ = 'backbone-file-explorer-directory_entry_name'

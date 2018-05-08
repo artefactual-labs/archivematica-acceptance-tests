@@ -79,7 +79,7 @@ class ArchivematicaBrowserTransferIngestAbility(
             try:
                 select_el = action_div_el.find_element_by_css_selector('select')
             except NoSuchElementException:
-                time.sleep(0.5)
+                time.sleep(self.quick_wait)
                 return self.make_choice(choice_text, decision_point, uuid_val,
                                         unit_type=unit_type)
             index = None
@@ -127,7 +127,7 @@ class ArchivematicaBrowserTransferIngestAbility(
                     'div.job-detail-microservice span'):
                 if utils.squash(span_elem.text) == utils.squash(ms_name):
                     return
-        time.sleep(0.25)
+        time.sleep(self.micro_wait)
         self.wait_for_microservice_visibility(ms_name, group_name,
                                               transfer_uuid)
 
@@ -152,12 +152,22 @@ class ArchivematicaBrowserTransferIngestAbility(
         """Wait for the micro-service group with name ``group_name`` to appear
         in the Transfer tab.
         """
+        max_attempts = self.max_check_for_ms_group_attempts
+        attempts = 0
         while True:
+            if attempts > max_attempts:
+                msg = (
+                    'Exceeded maxumim allowable attempts ({}) for checking'
+                    ' whether micro-service group {} of transfer {} is'
+                    ' visible.'.format(max_attempts, group_name, transfer_uuid))
+                logger.warning(msg)
+                raise ArchivematicaBrowserTransferIngestAbilityError(msg)
             ms_group_elem = self.get_transfer_micro_service_group_elem(
                 group_name, transfer_uuid)
             if ms_group_elem:
                 return
-            time.sleep(0.5)
+            time.sleep(self.quick_wait)
+            attempts += 1
 
     @selenium_ability.recurse_on_stale
     def get_transfer_micro_service_group_elem(self, group_name, transfer_uuid):
@@ -173,7 +183,7 @@ class ArchivematicaBrowserTransferIngestAbility(
             except NoSuchElementException:
                 pass
         if not transfer_div_elem:
-            # print('Unable to find Transfer {}.'.format(transfer_uuid))
+            logger.warning('Unable to find Transfer %s.', transfer_uuid)
             return None
         if self.vn == '1.6':
             expected_name = 'Micro-service: {}'.format(group_name)

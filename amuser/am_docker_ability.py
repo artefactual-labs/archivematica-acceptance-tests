@@ -10,7 +10,6 @@ import os
 import shlex
 import subprocess
 
-from . import utils
 from . import base
 
 

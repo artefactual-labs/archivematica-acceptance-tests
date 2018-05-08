@@ -87,7 +87,7 @@ class ArchivematicaBrowserStorageServiceAbility(
             for key, val in attributes.items():
                 if ex_space.get(key.lower()) != val:
                     logger.info('%s\ndoes NOT match\n%s',
-                                 ex_space.get(key.lower()), val)
+                                ex_space.get(key.lower()), val)
                     match = False
                     break
             if match:
@@ -359,7 +359,6 @@ class ArchivematicaBrowserStorageServiceAbility(
         cell_el = row_els[0].find_elements_by_css_selector('td')[9]
         disable_a_el = enable_a_el = None
         for a_el in cell_el.find_elements_by_css_selector('a'):
-            print(a_el.text)
             if a_el.text.strip() == 'Disable':
                 disable_a_el = a_el
             if a_el.text.strip() == 'Enable':

@@ -160,10 +160,10 @@ def step_impl(context):
          context.am_user.browser.delete_gpg_key(new_key_name))
     if context.scenario.delete_gpg_key_success:
         logger.info('Attempt to delete GPG key "%s" was SUCCESSFUL',
-                          new_key_name)
+                    new_key_name)
     else:
         logger.info('Attempt to delete GPG key "%s" FAILED: "%s"',
-                          new_key_name, context.scenario.delete_gpg_key_msg)
+                    new_key_name, context.scenario.delete_gpg_key_msg)
 
 
 @when('the user assigns a different GPG key to the standard GPG-encrypted'
@@ -415,7 +415,7 @@ def step_impl(context):
         context.scenario.transfer_name,
         context.scenario.transfer_uuid)
     logger.info('expecting encrypted transfer to be at %s on server',
-                      path_on_disk)
+                path_on_disk)
     if getattr(context.am_user.docker, 'docker_compose_path', None):
         dip_local_path = context.am_user.docker.cp_server_file_to_local(
             path_on_disk)

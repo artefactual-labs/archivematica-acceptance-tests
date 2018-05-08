@@ -229,12 +229,12 @@ def step_impl(context, choice, decision_point, unit_type):
 def step_impl(context):
     uuid_val = utils.get_uuid_val(context, 'sip')
     context.am_user.browser.wait_for_aip_in_archival_storage(uuid_val)
-    time.sleep(2)
+    time.sleep(context.am_user.medium_wait)
 
 
 @when('the user searches for the AIP UUID in the Storage Service')
 def step_impl(context):
-    time.sleep(1)
+    time.sleep(context.am_user.optimistic_wait)
     the_aip_uuid = utils.get_uuid_val(context, 'sip')
     context.scenario.aip_search_results = (
         context.am_user.browser.search_for_aip_in_storage_service(the_aip_uuid))
@@ -257,7 +257,7 @@ def step_impl(context, aip_description):
         transfer_name, uuid_val, context.am_user.browser.ss_api_key)
     attr_name = aip_description.replace(' ', '')
     logger.info('setting attribute %s to %s',
-                      attr_name, context.scenario.aip_path)
+                attr_name, context.scenario.aip_path)
     setattr(context.scenario, attr_name, context.scenario.aip_path)
 
 
@@ -270,12 +270,12 @@ def step_impl(context):
     # For some reason, it is necessary to pause a moment before downloading the
     # AIP pointer file because otherwise, e.g., after a re-ingest, it can be
     # out of date. See @reencrypt-different-key.
-    time.sleep(5)
+    time.sleep(context.am_user.pessimistic_wait)
     context.scenario.aip_pointer_path = app = (
         context.am_user.api.download_aip_pointer_file(
             uuid_val, context.am_user.browser.ss_api_key))
     logger.info('downloaded AIP pointer file for AIP %s to %s', uuid_val,
-                      app)
+                app)
 
 
 @when('the user downloads the {aip_description} pointer file')
@@ -283,13 +283,13 @@ def step_impl(context, aip_description):
     aip_attr = utils.aip_descr_to_attr(aip_description)
     aip_ptr_attr = utils.aip_descr_to_ptr_attr(aip_description)
     aip_uuid = getattr(context.scenario, aip_attr)
-    time.sleep(5)
+    time.sleep(context.am_user.pessimistic_wait)
     setattr(context.scenario, aip_ptr_attr,
             context.am_user.api.download_aip_pointer_file(
                 aip_uuid, context.am_user.browser.ss_api_key))
     logger.info('downloaded AIP pointer file for %s AIP %s to %s',
-                      aip_description, aip_uuid,
-                      getattr(context.scenario, aip_ptr_attr))
+                aip_description, aip_uuid,
+                getattr(context.scenario, aip_ptr_attr))
 
 
 @when('the user waits for the DIP to appear in transfer backlog')

@@ -13,9 +13,15 @@ from selenium.common.exceptions import (
     TimeoutException,
 )
 
+from . import base
 from . import constants as c
 from . import utils
 from . import selenium_ability
+
+
+class ArchivematicaBrowserMETSAbilityError(
+        base.ArchivematicaUserError):
+    pass
 
 
 logger = logging.getLogger('amuser.ingest')
@@ -27,7 +33,7 @@ class ArchivematicaBrowserIngestAbility(
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.click_aip_directory_tries = 0
+        self.click_aip_directory_attempts = 0
 
     def remove_all_ingests(self):
         """Remove all ingests in the Ingest tab."""
@@ -82,8 +88,17 @@ class ArchivematicaBrowserIngestAbility(
         original_window_handle = self.driver.window_handles[0]
         new_window_handle = self.driver.window_handles[1]
         self.driver.switch_to.window(new_window_handle)
+        attempts = 0
         while self.driver.current_url.strip() == 'about:blank':
-            time.sleep(1)
+            if attempts > self.max_check_mets_loaded_attempts:
+                msg = (
+                    'Exceeded maxumim allowable attempts ({}) for checking'
+                    ' if the METS file has loaded.'.format(
+                        self.max_check_mets_loaded_attempts))
+                logger.warning(msg)
+                raise ArchivematicaBrowserMETSAbilityError(msg)
+            time.sleep(self.optimistic_wait)
+            attempts += 1
         mets = self.driver.page_source
         self.driver.switch_to.window(original_window_handle)
         if parse_xml:
@@ -98,17 +113,17 @@ class ArchivematicaBrowserIngestAbility(
         try:
             self._navigate_to_aip_directory_and_click(path)
         except (TimeoutException, MoveTargetOutOfBoundsException):
-            self.click_aip_directory_tries += 1
-            if (self.click_aip_directory_tries >=
-                    c.MAX_CLICK_AIP_DIRECTORY_TRIES):
-                print('Failed to navigate to aip directory'
-                      ' {}'.format(path))
-                self.click_aip_directory_tries = 0
+            self.click_aip_directory_attempts += 1
+            if (self.click_aip_directory_attempts >=
+                    self.max_click_aip_directory_attempts):
+                logger.warning(
+                    'Failed to navigate to aip directory %s', path)
+                self.click_aip_directory_attempts = 0
                 raise
             else:
                 self.navigate_to_aip_directory_and_click(path)
         else:
-            self.click_aip_directory_tries = 0
+            self.click_aip_directory_attempts = 0
 
     def _navigate_to_aip_directory_and_click(self, path):
         self.cwd = [

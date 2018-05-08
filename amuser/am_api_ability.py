@@ -11,7 +11,6 @@ import time
 import requests
 
 from . import base
-from . import utils
 
 
 logger = logging.getLogger('amuser.api')
@@ -35,7 +34,7 @@ class ArchivematicaAPIAbility(base.Base):
         url = '{}api/v2/file/{}/download/'.format(self.ss_url, sip_uuid)
         aip_name = '{}-{}.7z'.format(transfer_name, sip_uuid)
         aip_path = os.path.join(self.tmp_path, aip_name)
-        max_attempts = 20
+        max_attempts = self.max_download_aip_attempts
         attempt = 0
         while True:
             r = requests.get(url, params=payload, stream=True)
@@ -48,7 +47,7 @@ class ArchivematicaAPIAbility(base.Base):
                     ' SS returned status code %s and message %s',
                     sip_uuid, url, r.status_code, r.text)
                 attempt += 1
-                time.sleep(1)
+                time.sleep(self.optimistic_wait)
             else:
                 logger.warning('Unable to download AIP %s via GET request to'
                                ' URL %s; SS returned status code %s and message'
@@ -65,7 +64,7 @@ class ArchivematicaAPIAbility(base.Base):
         url = '{}api/v2/file/{}/pointer_file/'.format(self.ss_url, sip_uuid)
         pointer_file_name = 'pointer.{}.xml'.format(sip_uuid)
         pointer_file_path = os.path.join(self.tmp_path, pointer_file_name)
-        max_attempts = 20
+        max_attempts = self.max_download_aip_attempts
         attempt = 0
         while True:
             r = requests.get(url, params=payload, stream=True)
@@ -78,7 +77,7 @@ class ArchivematicaAPIAbility(base.Base):
                     ' request to URL %s; SS returned status code %s and message'
                     ' %s', sip_uuid, url, r.status_code, r.text)
                 attempt += 1
-                time.sleep(1)
+                time.sleep(self.optimistic_wait)
             else:
                 logger.warning('Unable to download AIP %s pointer file via GET'
                                ' request to URL %s; SS returned status code %s'
@@ -88,7 +87,8 @@ class ArchivematicaAPIAbility(base.Base):
                     'Unable to download AIP {} pointer file'.format(sip_uuid))
 
     def poll_until_aip_stored(self, sip_uuid, ss_api_key, poll_interval=1,
-                              max_polls=60):
+                              max_polls=None):
+        max_polls = max_polls or self.max_check_aip_stored_attempts
         payload = {'username': self.ss_username, 'api_key': ss_api_key}
         url = '{}api/v2/file/{}/'.format(self.ss_url, sip_uuid)
         counter = 0

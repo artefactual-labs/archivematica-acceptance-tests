@@ -13,7 +13,6 @@ import subprocess
 
 import pexpect
 
-from . import utils
 from . import base
 
 
@@ -52,7 +51,7 @@ class ArchivematicaSSHAbility(base.Base):
             if self.ssh_requires_password:
                 child.expect('assword:')
                 child.sendline(self.server_password)
-            child.expect(pexpect.EOF, timeout=20)
+            child.expect(pexpect.EOF, timeout=self.nihilistic_wait)
         else:
             logger.info('You must provide a server_user and a either a'
                         ' server_password or a ssh_identity_file')
@@ -98,7 +97,7 @@ class ArchivematicaSSHAbility(base.Base):
             if self.ssh_requires_password:
                 child.expect('assword:')
                 child.sendline(self.server_password)
-            child.expect(pexpect.EOF, timeout=20)
+            child.expect(pexpect.EOF, timeout=self.nihilistic_wait)
         else:
             logger.info('You must provide a server_user and a either a'
                         ' server_password or a ssh_identity_file')
@@ -146,7 +145,7 @@ class ArchivematicaSSHAbility(base.Base):
             if self.ssh_requires_password:
                 child.expect('assword:')
                 child.sendline(self.server_password)
-            child.expect(pexpect.EOF, timeout=20)
+            child.expect(pexpect.EOF, timeout=self.nihilistic_wait)
             out = child.before.decode('utf8')
         else:
             logger.info('You must provide a server_user and a either a'

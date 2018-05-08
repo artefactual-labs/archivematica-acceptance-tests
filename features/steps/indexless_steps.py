@@ -25,15 +25,15 @@ logger = logging.getLogger('amauat.steps.indexless')
 def step_impl(context, method):
     """This is an empty given. It should remain empty."""
     logger.info('We are assuming that Archivematica deployment method'
-                      ' "%s" allows for "headless", i.e., Elasticsearch-less'
-                      ' deployments', method)
+                ' "%s" allows for "headless", i.e., Elasticsearch-less'
+                ' deployments', method)
 
 
 @given('an Archivematica instance with Indexing disabled')
 def step_impl(context):
     """This is an empty given. It should remain empty."""
     logger.info('We are assuming that the Archivematica instance we are'
-                      ' targetting has been deployed headlessly.')
+                ' targetting has been deployed headlessly.')
 
 
 @given('local indexed AIP at {indexed_AIP} created from {transfer_path} with'

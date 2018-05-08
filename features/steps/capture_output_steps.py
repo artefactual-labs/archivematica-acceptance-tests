@@ -4,8 +4,6 @@ import logging
 
 from behave import when, then, given
 
-from features.steps import utils
-
 
 logger = logging.getLogger('amauat.steps.captureoutput')
 
@@ -21,8 +19,8 @@ logger = logging.getLogger('amauat.steps.captureoutput')
        '{output_capture_state}')
 def step_impl(context, output_capture_state):
     logger.info('Assuming that this Archivematica instance has been'
-                      ' deployed with output capturing %s',
-                      output_capture_state)
+                ' deployed with output capturing %s',
+                output_capture_state)
 
 
 # Whens

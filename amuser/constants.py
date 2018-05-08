@@ -19,8 +19,6 @@ JOB_OUTPUTS_COMPLETE = (
     'Awaiting decision')
 TMP_DIR_NAME = '.amsc-tmp'
 PERM_DIR_NAME = 'data'
-# General timeout for page load and JS changes (in seconds)
-GENERAL_TIMEOUT = 5
 
 
 # CSS classes and selectors
@@ -328,15 +326,6 @@ PC_DECISION2ID = {
         'id_92879a29-45bf-4f0b-ac43-e64474f0f2f9'
 }
 
-
-# Wait/attempt count constants
-# =========================================================================
-
-WAIT_FOR_TRANSFER_TO_APPEAR_MAX_WAITS = 1000
-MAX_CLICK_TRANSFER_DIRECTORY_TRIES = 5
-MAX_CLICK_AIP_DIRECTORY_TRIES = 5
-
-
 # Namespace map for parsing METS XML.
 METS_NSMAP = {
     'mets': 'http://www.loc.gov/METS/',
@@ -346,3 +335,35 @@ METS_NSMAP = {
     'dcterms': 'http://purl.org/dc/terms/',
     'xlink': 'http://www.w3.org/1999/xlink'
 }
+
+
+# Waits and Timeouts
+# =========================================================================
+#
+# Note that there is redundancy between this and the configuration in
+# features/environment.py. These values are specified here also so that
+# ``ArchivematicaUser`` can technically remain independent of its use within a
+# ``behave`` feature-running context. The proper way to customize these values
+# when using ``behave`` is to use Behave "user data" flags, e.g.,
+# ``behave -D nihilistic_wait=30``.
+
+# Generable, reusable wait times, in seconds
+NIHILISTIC_WAIT = 20
+APATHETIC_WAIT = 10
+PESSIMISTIC_WAIT = 5
+MEDIUM_WAIT = 3
+OPTIMISTIC_WAIT = 1
+QUICK_WAIT = 0.5
+MICRO_WAIT = 0.25
+
+# Use-case-specific maximum attempt counters
+MAX_CLICK_TRANSFER_DIRECTORY_ATTEMPTS = 5
+MAX_CLICK_AIP_DIRECTORY_ATTEMPTS = 5
+MAX_NAVIGATE_AIP_ARCHIVAL_STORAGE_ATTEMPTS = 10
+MAX_DOWNLOAD_AIP_ATTEMPTS = 20
+MAX_CHECK_AIP_STORED_ATTEMPTS = 60
+MAX_CHECK_METS_LOADED_ATTEMPTS = 60
+MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS = 120
+MAX_SEARCH_DIP_BACKLOG_ATTEMPTS = 120
+MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS = 1000
+MAX_CHECK_FOR_MS_GROUP_ATTEMPTS = 7200

@@ -16,7 +16,6 @@ from . import am_ssh_ability
 from . import am_mets_ability
 from . import base
 from . import constants as c
-from . import utils
 
 
 logger = logging.getLogger('amuser')

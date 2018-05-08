@@ -1,7 +1,6 @@
 """Utilities for AM User."""
 
 import logging
-import os
 import time
 
 import requests
@@ -35,13 +34,15 @@ def is_hdl(idfr, entity_type, accession_no=None):
     try:
         _, pid = idfr.split('/')
     except ValueError:
-        print('Unable to get exactly two values by splitting {} on a forward'
-              ' slash'.format(idfr))
+        logger.info(
+            'Unable to get exactly two values by splitting %s on a forward'
+            ' slash', idfr)
         return False
     if accession_no and entity_type == 'aip':
-        print('PID {} should equal accession number {}'.format(pid, accession_no))
+        logger.info('PID %s should equal accession number %s', pid,
+                    accession_no)
         return pid == accession_no
-    print('PID {} should be a UUID'.format(pid))
+    logger.info('PID %s should be a UUID', pid)
     return is_uuid(pid)
 
 
@@ -60,7 +61,7 @@ def normalize_ms_name(ms_name, vn):
     elif ms_name == 'Approve normalization Review' and vn == '1.6':
         new_ms_name = 'Approve normalization (review)'
     if ms_name != new_ms_name:
-        print('Treating microservice "%s" as "%s"', ms_name, new_ms_name)
+        logger.info('Treating microservice "%s" as "%s"', ms_name, new_ms_name)
     return new_ms_name
 
 

@@ -15,8 +15,6 @@ from selenium.common.exceptions import (
 )
 from selenium.webdriver.common.action_chains import ActionChains
 
-from . import constants as c
-from . import utils
 from . import base
 
 
@@ -31,8 +29,6 @@ class ArchivematicaSeleniumAbility(base.Base):
     """Archivematica Selenium Ability: common, reusable Selenium-based
     functionality for superclasses.
     """
-
-    timeout = c.GENERAL_TIMEOUT
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -64,7 +60,7 @@ class ArchivematicaSeleniumAbility(base.Base):
                 desired_capabilities=DesiredCapabilities.FIREFOX)
         else:
             driver = getattr(webdriver, self.driver_name)()
-        driver.set_script_timeout(10)
+        driver.set_script_timeout(self.apathetic_wait)
         self.all_drivers.append(driver)
         return driver
 
@@ -110,7 +106,8 @@ class ArchivematicaSeleniumAbility(base.Base):
                     self.login()
         self.driver.get(url)
 
-    def wait_for_new_window(self, handles_before, timeout=10):
+    def wait_for_new_window(self, handles_before, timeout=None):
+        timeout = timeout or self.apathetic_wait
         def window_handles_count_has_changed(driver):
             logger.info('Previously we had %s window handles, now we have'
                         ' %s', len(handles_before), len(driver.window_handles))
@@ -150,16 +147,16 @@ class ArchivematicaSeleniumAbility(base.Base):
         exists, as defined by existence_detector.
         """
         if not timeout:
-            timeout = self.timeout
+            timeout = self.pessimistic_wait
         try:
             element_exists = existence_detector(
                 (By.CSS_SELECTOR, crucial_element_css_selector))
             WebDriverWait(self.driver, timeout).until(element_exists)
         except TimeoutException:
-            pass
-            # print("Waiting for existence ('presence' or 'visibility') of"
-            #       " element matching selector {} took too much"
-            #       " time!".format(crucial_element_css_selector))
+            logger.warning(
+                "Waiting for existence ('presence' or 'visibility') of element"
+                " matching selector %s took too much time!",
+                crucial_element_css_selector)
 
 
 def recurse_on_stale(func):

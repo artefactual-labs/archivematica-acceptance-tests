@@ -90,7 +90,7 @@ class ArchivematicaBrowserJobsTasksAbility(
         # db, they have a sensible exit code.
         # TODO: this doesn't solve the problem. Figure out why these strange
         # exit codes sometimes show up.
-        time.sleep(1)
+        time.sleep(self.optimistic_wait)
         # Getting the Job UUID also means waiting for the job to terminate.
         job_uuid, job_output = self.get_job_uuid(ms_name, group_name,
                                                  transfer_uuid)
@@ -214,7 +214,7 @@ class ArchivematicaBrowserJobsTasksAbility(
                     if job_output in job_outputs:
                         return (span_elem.get_attribute('title').strip(),
                                 job_output)
-                    time.sleep(0.5)
+                    time.sleep(self.quick_wait)
                     return self.get_job_uuid(ms_name, group_name, transfer_uuid)
         return None, None
 

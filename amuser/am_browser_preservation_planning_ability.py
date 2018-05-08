@@ -7,7 +7,6 @@ from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
 
 from . import selenium_ability
-from . import utils
 
 
 logger = logging.getLogger('amuser.preservationplanning')

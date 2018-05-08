@@ -23,7 +23,6 @@ from selenium.webdriver.support.ui import (
 )
 
 from . import constants as c
-from . import utils
 from . import base
 from . import am_browser_auth_ability as auth_abl
 from . import am_browser_transfer_ingest_ability as tra_ing_abl
@@ -88,8 +87,8 @@ class ArchivematicaBrowserAbility(
         """Wait for the AIP with UUID ``aip_uuid`` to appear in the Archival
         storage tab.
         """
-        max_seconds = 120
-        seconds = 0
+        max_attempts = self.max_search_aip_archival_storage_attempts
+        attempts = 0
         while True:
             self.navigate(self.get_archival_storage_url(), reload=True)
             self.driver.find_element_by_css_selector(
@@ -104,12 +103,12 @@ class ArchivematicaBrowserAbility(
             summary_el = self.driver.find_element_by_css_selector(
                 'div.search-summary')
             if 'No results, please try another search.' in summary_el.text:
-                seconds += 1
-                if seconds > max_seconds:
+                attempts += 1
+                if attempts > max_attempts:
                     break
-                time.sleep(1)
+                time.sleep(self.optimistic_wait)
             else:
-                time.sleep(1)  # Sleep a little longer, for good measure
+                time.sleep(self.optimistic_wait)  # Sleep a little longer, for good measure
                 break
 
     def request_aip_delete(self, aip_uuid):
@@ -118,7 +117,8 @@ class ArchivematicaBrowserAbility(
         """
         self.navigate_to_aip_in_archival_storage(aip_uuid)
         delete_tab_selector = 'a[href="#tab-delete"]'
-        self.wait_for_presence(delete_tab_selector, timeout=10)
+        self.wait_for_presence(delete_tab_selector,
+                               timeout=self.apathetic_wait)
         while True:
             try:
                 self.driver.find_element_by_id('id_delete-uuid').click()
@@ -126,7 +126,7 @@ class ArchivematicaBrowserAbility(
             except (ElementNotVisibleException, ElementNotInteractableException):
                 self.driver.find_element_by_css_selector(
                     delete_tab_selector).click()
-                time.sleep(1)
+                time.sleep(self.optimistic_wait)
         self.driver.find_element_by_id('id_delete-uuid').send_keys(aip_uuid)
         self.driver.find_element_by_id('id_delete-reason').send_keys(
             'Cuz wanna')
@@ -138,7 +138,7 @@ class ArchivematicaBrowserAbility(
 
     def navigate_to_aip_in_archival_storage(self, aip_uuid):
         url = self.get_aip_in_archival_storage_url(aip_uuid)
-        max_attempts = 10
+        max_attempts = self.max_navigate_aip_archival_storage_attempts
         attempt = 0
         s = requests.session()
         s.headers.update(
@@ -160,13 +160,14 @@ class ArchivematicaBrowserAbility(
                         ' %s; waiting for 1 second before trying'
                         ' again', r.status_code, url)
             attempt += 1
-            time.sleep(1)
+            time.sleep(self.optimistic_wait)
         self.navigate(url, reload=True)
 
     def initiate_reingest(self, aip_uuid, reingest_type='metadata-only'):
         self.navigate_to_aip_in_archival_storage(aip_uuid)
         reingest_tab_selector = 'a[href="#tab-reingest"]'
-        self.wait_for_presence(reingest_tab_selector, timeout=10)
+        self.wait_for_presence(reingest_tab_selector,
+                               timeout=self.apathetic_wait)
         type_selector = {
             'metadata-only': 'input#id_reingest-reingest_type_1',
             'metadata-and-objects': 'input#id_reingest-reingest_type_2'
@@ -183,7 +184,7 @@ class ArchivematicaBrowserAbility(
             else:
                 self.driver.find_element_by_css_selector(
                     reingest_tab_selector).click()
-                time.sleep(1)
+                time.sleep(self.optimistic_wait)
         self.driver.find_element_by_css_selector(type_selector).click()
         self.driver.find_element_by_css_selector(
             'button[name=submit-reingest-form]').click()
@@ -200,7 +201,7 @@ class ArchivematicaBrowserAbility(
     def wait_for_dip_in_transfer_backlog(self, dip_uuid):
         """Wait for the DIP with UUID ``dip_uuid`` to appear in the Backlog tab.
         """
-        max_seconds = 120
+        max_seconds = self.max_search_dip_backlog_attempts
         seconds = 0
         while True:
             self.navigate(self.get_transfer_backlog_url(), reload=True)
@@ -217,10 +218,16 @@ class ArchivematicaBrowserAbility(
             if summary_el.text.strip() == 'Showing 0 to 0 of 0 entries':
                 seconds += 1
                 if seconds > max_seconds:
+                    logger.warning('In waiting for DIP %s to appear in the'
+                                   ' transfer backlog, we exceeded the maximum'
+                                   ' wait period of %s seconds.', dip_uuid,
+                                   max_seconds)
                     break
-                time.sleep(1)
+                time.sleep(self.optimistic_wait)
             else:
-                time.sleep(1)  # Sleep a little longer, for good measure
+                logger.info('Found DIP %s in the transfer backlog after waiting'
+                            ' for %s seconds.', dip_uuid, seconds)
+                time.sleep(self.medium_wait)  # Sleep a little longer, for good measure
                 break
 
     # ==========================================================================
