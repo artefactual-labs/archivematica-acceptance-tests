@@ -296,6 +296,21 @@ directory. Passing the ``--no-logcapture`` flag to ``behave`` will cause all of
 the log messages to also be written to stdout.
 
 
+Timeouts and attempt counters
+--------------------------------------------------------------------------------
+
+At various points, these tests wait for fixed periods of time or attempt to
+perform some action a fixed number of times before giving up the attempt. The
+variables holding these *wait* and *attempt* values are listed with their
+defaults in `features/environment.py <features/environment.py`_, e.g.,
+``MAX_DOWNLOAD_AIP_ATTEMPTS``. If you find that tests are failing because of
+timeouts being exceeded, or conversely that tests that should be failing are
+waiting too long for an event that will never happen, you can modify these
+*wait* and *attempt* values using behave user data flags, e.g.,
+``-D max_download_aip_attempts=200``.
+
+
+
 .. [1] The Gherkin syntax and the approach of defining features by describing
    user behaviours came out of the `behavior-driven development (BDD)`_
    process, which focuses on what a user wants a system to do, and not on how
