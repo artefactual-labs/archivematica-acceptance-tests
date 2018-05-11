@@ -17,20 +17,26 @@
 #     $ make bootstrap
 #     $ make restart-am-services
 #
-# Then run the following `behave` command, after replacing the
-# `docker_compose_path` userdata option with the appropriate value for your
+# Then run the following ``behave`` command, after replacing the
+# ``docker_compose_path`` userdata option with the appropriate value for your
 # development system::
 #
-#     behave \
-#         --tags=performance-no-stdout \
-#         --no-skipped \
-#         --no-capture \
-#         -D driver_name=Firefox \
-#         -D am_url=http://127.0.0.1:62080/ \
-#         -D am_password=test \
-#         -D am_version=1.7 \
-#         -D docker_compose_path=/abs/path/to/am/compose \
-#         -D home=archivematica
+#     $ behave \
+#           --tags=performance-no-stdout \
+#           --tags=transfer.name.size-11M-files-10 \
+#           --no-skipped \
+#           --no-capture \
+#           -D driver_name=Firefox \
+#           -D am_url=http://127.0.0.1:62080/ \
+#           -D am_password=test \
+#           -D am_version=1.7 \
+#           -D docker_compose_path=/abs/path/to/am/compose \
+#           -D home=archivematica
+#
+# Note the flag ``--tags=transfer.name.size-11M-files-10`` in the above
+# command. This tells behave to only run the scenario on the row of the
+# ``Examples`` table with name ``size-11M-files-10``. Omit this flag to run all
+# example rows or change it to another to run a different row.
 
 # Results
 # ==============================================================================
@@ -105,6 +111,7 @@ Feature: Performance increase: stop saving stdout/stderr
   from sending their stdout and stderr to MCPServer to be saved to the database
   will result in a significant performance increase.
 
+  @transfer.name.<name>
   Scenario Outline: Joel creates an AIP on an Archivematica instance that saves stdout/err and on one that does not. He expects that the processing time of the AIP on the first instance will be less than that of the AIP on the second one.
     Given an Archivematica instance that passes client script output streams to MCPServer
     And the default processing config is set to automate a transfer through to "Store AIP"
@@ -128,11 +135,11 @@ Feature: Performance increase: stop saving stdout/stderr
     # And the size of the without_outputs_stats METS file is less than that of the with_outputs_stats METS file
 
     Examples: Archivematica transfer sources
-    | transfer_source                                                                       |
-    #| ~/archivematica-sampledata/TestTransfers/small                                        |
-    #| ~/archivematica-sampledata/SampleTransfers/Images                                     |
-    | ~/archivematica-sampledata/TestTransfers/acceptance-tests/performance/images-17M-each |
-    #| ~/archivematica-sampledata/TestTransfers/acceptance-tests/performance/video-14M-each  |
+    | name                | transfer_source                                                                       |
+    | size-4K-files-1     | ~/archivematica-sampledata/TestTransfers/small                                        |
+    | size-11M-files-10   | ~/archivematica-sampledata/SampleTransfers/Images                                     |
+    | size-1.9G-files-113 | ~/archivematica-sampledata/TestTransfers/acceptance-tests/performance/images-17M-each |
+    | size-11G-files-669  | ~/archivematica-sampledata/TestTransfers/acceptance-tests/performance/video-14M-each  |
 
     # Listed below are possible metrics of performance increase. Those checked
     # off are relatively easy to measure and are described in the scenario
