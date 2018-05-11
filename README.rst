@@ -29,7 +29,9 @@ implemented by *step* functions in Python modules located in the
 GUIs and APIs by calling methods of an ``ArchivematicaUser`` instance as
 defined in the ``amuser`` package. For detailed guidance on adding feature
 files, implementing steps, or adding AM user abilities, please see the
-`Developer documentation <docs/developer-documentation.rst>`_.
+`Developer documentation <docs/developer-documentation.rst>`_. For examples of
+using these tests to run (performance) experiments on Archivematica, see
+`Running Experiments with the AMAUAT <docs/running-experiments.rst>`_.
 
 
 Table of Contents
