@@ -67,7 +67,8 @@ class ArchivematicaBrowserTransferAbility(
             'Unzipped bag': c.APPROVE_BAGIT_TRANSFER_UUID,
             'DSpace': c.APPROVE_DSPACE_TRANSFER_UUID
         }[transfer_type]
-        self.approve_transfer(transfer_div_elem, approve_option_uuid)
+        self.approve_transfer(transfer_div_elem, approve_option_uuid,
+                              transfer_name, name_is_prefix)
         return transfer_uuid, transfer_name
 
     def remove_all_transfers(self):
@@ -209,7 +210,8 @@ class ArchivematicaBrowserTransferAbility(
         self.driver.find_element_by_css_selector(
             c.SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER).click()
 
-    def approve_transfer(self, transfer_div_elem, approve_option_uuid):
+    def approve_transfer(self, transfer_div_elem, approve_option_uuid,
+                         transfer_name, name_is_prefix):
         """Click the "Approve transfer" select option to initiate the transfer
         process.
 
@@ -232,4 +234,17 @@ class ArchivematicaBrowserTransferAbility(
                 time.sleep(self.optimistic_wait)
             else:
                 break
-        approve_transfer_option.click()
+        try:
+            select_el = approve_transfer_option.find_element_by_xpath('..')
+            select_inst = Select(select_el)
+            select_inst.select_by_value(approve_option_uuid)
+        except StaleElementReferenceException:
+            # Get a new transfer <div> element and recurse.
+            logger.info('The select element has gone stale before we could use'
+                        ' it to approve the transfer. Trying again with a new'
+                        ' one.')
+            _, transfer_div_elem, transfer_name = (
+                self.wait_for_transfer_to_appear(
+                    transfer_name, name_is_prefix=name_is_prefix))
+            self.approve_transfer(transfer_div_elem, approve_option_uuid,
+                                  transfer_name, name_is_prefix)
