@@ -2,6 +2,7 @@
 # pylint: disable=too-many-instance-attributes
 
 import os
+import re
 import shutil
 
 from . import constants as c
@@ -61,6 +62,8 @@ class Base:
         ('max_check_for_ms_group_attempts', c.MAX_CHECK_FOR_MS_GROUP_ATTEMPTS),
     )
 
+    url_stdports_re = re.compile(r':(?:80|443)/?$')
+
     def set_url_getters(self):
         """Create functions as attributes on this instance which return needed
         URLs, given the function names and format templates defined in the urls
@@ -71,6 +74,8 @@ class Base:
                                    (self.ss_url, urls.SS_URLS)):
             for getter_name, template in url_spec:
                 def getter(*args, t=template, b=base_url):
+                    # Remove standard port suffix from netloc.
+                    b = re.sub(self.url_stdports_re, '/', b)
                     return t.format(*(b,) + args)
                 setattr(self, getter_name, getter)
 
