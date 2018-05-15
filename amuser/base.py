@@ -83,6 +83,7 @@ class Base:
 
     def __init__(self, **kwargs):
         self.here = ROOT
+        self._ss_api_key = None  # Make pylint happy.
         for kwarg, default in self.expected_args:
             setattr(self,
                     self.kwarg2attr_filter.get(kwarg, kwarg),
@@ -95,7 +96,6 @@ class Base:
         self.set_url_getters()
         self.metadata_attrs = c.METADATA_ATTRS
         self.dummy_val = c.DUMMY_VAL
-        self._ss_api_key = None
         self.cwd = None
         self._tmp_path = None
         self._permanent_path = None
