@@ -5,6 +5,11 @@ import os
 import re
 import shutil
 
+try:
+    from urllib import parse
+except ImportError:  # above is available in py3+, below is py2.7
+    import urlparse as parse
+
 from . import constants as c
 from . import urls
 from . import utils
@@ -127,3 +132,7 @@ class Base:
                 os.unlink(thing_path)
             elif os.path.isdir(thing_path):
                 shutil.rmtree(thing_path)
+
+    @property
+    def am_hostname(self):
+        return parse.urlparse(self.am_url).hostname
