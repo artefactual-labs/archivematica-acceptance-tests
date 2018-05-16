@@ -115,6 +115,7 @@ class ArchivematicaBrowserStorageServiceAbility(
                                 else:
                                     input_el.send_keys(val)
         self.driver.find_element_by_css_selector('input[type=submit]').click()
+        self.wait_for_presence('div.alert-success', self.nihilistic_wait)
         header = self.driver.find_element_by_tag_name('h1').text.strip()
         space_uuid = header.split()[0].replace('"', '').replace(':', '')
         return space_uuid
