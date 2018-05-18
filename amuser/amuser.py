@@ -74,9 +74,7 @@ class ArchivematicaUser(base.Base):
             devnull = getattr(subprocess, 'DEVNULL')
         except AttributeError:
             devnull = open(os.devnull, 'wb')
-        cmd = shlex.split('7z l {}'.format(aip_path))
-        output=subprocess.check_output(cmd).decode('utf8')
-        aip_dir_name = output.splitlines()[-3].split()[-1]
+        aip_dir_name = get_aip_dir_name_from_archive(aip_path)
         aip_dir_path = os.path.join(aip_parent_dir_path, aip_dir_name)
         cmd = shlex.split('7z x {} -aoa'.format(aip_path))
         logger.info('Decompress AIP command: %s', cmd)
@@ -92,3 +90,18 @@ class ArchivematicaUser(base.Base):
             'Failed to create dir {} from compressed AIP at {}'.format(
                 aip_dir_path, aip_path))
         return aip_dir_path
+
+
+def get_aip_dir_name_from_archive(aip_path):
+    cmd = shlex.split('7z l {}'.format(aip_path))
+    output = subprocess.check_output(cmd).decode('utf8')
+    in_table = False
+    paths = []
+    for line in output.splitlines():
+        if line.startswith('--------'):
+            in_table = not in_table
+            continue
+        if in_table:
+            paths.append(line.split()[-1])
+    paths.sort(key=len)
+    return paths[0]
