@@ -38,6 +38,8 @@ def step_impl(context):
     """
     context.execute_steps(
         'Given the default processing config is in its default state\n'
+        'And the processing config decision "Assign UUIDs to directories" is'
+        ' set to "No"\n'
         'When a transfer is initiated on directory'
         ' ~/archivematica-sampledata/TestTransfers/fixityCheckShouldFail\n'
         'And the user waits for the "Verify metadata directory checksums"'
