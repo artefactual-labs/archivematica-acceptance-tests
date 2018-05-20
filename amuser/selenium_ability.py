@@ -4,7 +4,6 @@ import logging
 import os
 
 from selenium import webdriver
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -36,28 +35,25 @@ class ArchivematicaSeleniumAbility(base.Base):
         self.all_drivers = []
 
     def get_driver(self):
+        try:
+            headless = os.environ['HEADLESS'] == '1'
+        except KeyError:
+            headless = False
         if self.driver_name == 'Chrome':
-            driver = webdriver.Chrome()
+            options = webdriver.ChromeOptions()
+            if headless:
+                options.add_argument('headless')
+            driver = webdriver.Chrome(chrome_options=options)
             driver.set_window_size(1700, 900)
-        elif self.driver_name == 'Chrome-Hub':
-            capabilities = DesiredCapabilities.CHROME.copy()
-            capabilities["chrome.switches"] = [
-                "--start-maximized",
-                '--ignore-certificate-errors',
-                '--test-type']
-            driver = webdriver.Remote(
-                command_executor=os.environ.get('HUB_ADDRESS'),
-                desired_capabilities=capabilities)
-            driver.set_window_size(1200, 900)
         elif self.driver_name == 'Firefox':
             fp = webdriver.FirefoxProfile()
             fp.set_preference("dom.max_chrome_script_run_time", 0)
             fp.set_preference("dom.max_script_run_time", 0)
-            driver = webdriver.Firefox(firefox_profile=fp)
-        elif self.driver_name == 'Firefox-Hub':
-            driver = webdriver.Remote(
-                command_executor=os.environ.get('HUB_ADDRESS'),
-                desired_capabilities=DesiredCapabilities.FIREFOX)
+            options = webdriver.FirefoxOptions()
+            if headless:
+                options.add_argument('-headless')
+            driver = webdriver.Firefox(firefox_profile=fp,
+                                       firefox_options=options)
         else:
             driver = getattr(webdriver, self.driver_name)()
         driver.set_script_timeout(self.apathetic_wait)
