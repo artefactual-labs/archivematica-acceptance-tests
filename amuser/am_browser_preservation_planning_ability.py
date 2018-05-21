@@ -40,7 +40,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
                 break
 
     def wait_for_rule_edit_interface(self):
-        self.wait_for_presence('#id_f-purpose')
+        self.wait_for_presence('#id_f-command')
 
     def set_fpr_command(self, command_name):
         command_select_el = self.driver.find_element_by_id('id_f-command')
@@ -202,6 +202,8 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         terse_format = format_.split(':')[2].strip()
         search_term = '{} {} {}'.format(purpose, terse_format,
                                         command_description)
+        logger.info('Searching for FPR rule using search term "%s"',
+                    search_term)
         self.search_rules(search_term)
 
     def ensure_fpr_rule_enabled(self, purpose, format_, command_description):
