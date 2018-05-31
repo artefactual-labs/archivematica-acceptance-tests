@@ -82,6 +82,8 @@ def get_am_user(userdata):
         'server_password': userdata.get('server_password', SERVER_PASSWORD),
         'ssh_identity_file': userdata.get(
             'ssh_identity_file', SSH_IDENTITY_FILE),
+        'runtime_supplied_transfer_path': userdata.get(
+            'runtime_supplied_transfer_path'),
         # User-customizable wait values:
         'nihilistic_wait': userdata.get('nihilistic_wait', NIHILISTIC_WAIT),
         'apathetic_wait': userdata.get('apathetic_wait', APATHETIC_WAIT),
