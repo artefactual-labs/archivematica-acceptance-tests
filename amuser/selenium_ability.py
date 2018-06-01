@@ -2,7 +2,7 @@
 
 import logging
 import os
-
+import sys
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support.ui import WebDriverWait
@@ -14,6 +14,7 @@ from selenium.common.exceptions import (
     WebDriverException
 )
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 
 from . import base
 
@@ -53,7 +54,10 @@ class ArchivematicaSeleniumAbility(base.Base):
             fp = webdriver.FirefoxProfile()
             fp.set_preference("dom.max_chrome_script_run_time", 0)
             fp.set_preference("dom.max_script_run_time", 0)
-            driver = webdriver.Firefox(firefox_profile=fp)
+            os.environ['MOZ_HEADLESS'] = '1'
+            binary = FirefoxBinary('firefox', log_file=sys.stdout)
+            driver = webdriver.Firefox(firefox_binary=binary)
+            #driver = webdriver.Firefox(firefox_profile=fp)
         elif self.driver_name == 'Firefox-Hub':
             driver = webdriver.Remote(
                 command_executor=os.environ.get('HUB_ADDRESS'),
