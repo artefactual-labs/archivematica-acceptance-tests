@@ -17,6 +17,9 @@ from . import selenium_ability
 logger = logging.getLogger('amuser.transfer')
 
 
+WAIT_FOR_TRANSFER_TO_APPEAR_INITIAL_WAIT = 1
+WAIT_FOR_TRANSFER_TO_APPEAR_MAX_WAIT = 64
+
 class ArchivematicaBrowserTransferAbility(
         selenium_ability.ArchivematicaSeleniumAbility):
     """Archivematica Browser Transfer Tab Ability."""
@@ -24,6 +27,11 @@ class ArchivematicaBrowserTransferAbility(
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.check_transfer_appeared_attempts = 0
+
+        self.wait_for_transfer_to_appear_wait = (
+            WAIT_FOR_TRANSFER_TO_APPEAR_INITIAL_WAIT)
+        self.wait_for_transfer_to_appear_max_wait = (
+            WAIT_FOR_TRANSFER_TO_APPEAR_MAX_WAIT)
 
     def start_transfer(self, transfer_path, transfer_name, accession_no=None,
                        transfer_type=None):
@@ -160,14 +168,25 @@ class ArchivematicaBrowserTransferAbility(
             self.check_transfer_appeared_attempts += 1
             if (self.check_transfer_appeared_attempts <
                     self.max_check_transfer_appeared_attempts):
-                time.sleep(self.quick_wait)
+                time.sleep(self.wait_for_transfer_to_appear_wait)
+                self.wait_for_transfer_to_appear_wait = (
+                    2 * self.wait_for_transfer_to_appear_wait)
+                if (self.wait_for_transfer_to_appear_wait >
+                        self.wait_for_transfer_to_appear_max_wait):
+                    self.wait_for_transfer_to_appear_wait = (
+                        self.wait_for_transfer_to_appear_max_wait)
                 transfer_uuid, correct_transfer_div_elem, transfer_name = (
                     self.wait_for_transfer_to_appear(
                         transfer_name, name_is_prefix=name_is_prefix))
             else:
                 self.check_transfer_appeared_attempts = 0
+                self.wait_for_transfer_to_appear_wait = (
+                    WAIT_FOR_TRANSFER_TO_APPEAR_INITIAL_WAIT)
                 return None, None, None
         time.sleep(self.quick_wait)
+        self.check_transfer_appeared_attempts = 0
+        self.wait_for_transfer_to_appear_wait = (
+            WAIT_FOR_TRANSFER_TO_APPEAR_INITIAL_WAIT)
         return transfer_uuid, correct_transfer_div_elem, transfer_name
 
     def click_start_transfer_button(self):
