@@ -5,6 +5,7 @@
 #
 #     $ behave \
 #           --tags=infinite-aips \
+#           --tags=decision.id.not-norm \
 #           --no-skipped \
 #           --no-logcapture \
 #           -D runtime_supplied_transfer_path='~/archivematica-sampledata/TestTransfers/small' \
@@ -22,9 +23,17 @@ Feature: Infinite AIPs
   that make Archivematica more resilient when system resource and service
   limits are reached.
 
-  Scenario: Joel creates an AIP from a runtime-supplied transfer source path repeatedly until something goes wrong.
+  @decision.id.<id>
+  Scenario Outline: Joel creates an AIP from a runtime-supplied transfer source path repeatedly until something goes wrong.
     Given a default processing config that creates and stores an AIP
+    And the processing config decision "Normalize" is set to "<decision>"
     When a transfer is initiated on the runtime-supplied directory
     And the user waits for the AIP to appear in archival storage
     # The following is a recursive step that calls the above two and then itself
     And the user creates the same AIP all over again
+
+    Examples: Normalization decisions
+    | id        | decision                   |
+    | not-norm  | Do not normalize           |
+    | norm-pres | Normalize for preservation |
+
