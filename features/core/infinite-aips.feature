@@ -1,7 +1,9 @@
 # Infinite AIPs Feature File
 # ==============================================================================
-
-# Example behave command to run this feature::
+#
+# Example behave command to run this feature. Note that we are setting
+# ``max_check_aip_stored_attempts`` to 86400 so that we can poll the SS API for
+# up to a day waiting for an AIP to be created::
 #
 #     $ behave \
 #           --tags=infinite-aips \
@@ -16,7 +18,8 @@
 #           -D ss_password=test \
 #           -D ss_api_key=test \
 #           -D am_version=1.7 \
-#           -D home=archivematica
+#           -D home=archivematica \
+#           -D max_check_aip_stored_attempts=86400
 
 @infinite-aips
 Feature: Infinite AIPs
