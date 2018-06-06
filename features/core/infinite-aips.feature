@@ -12,9 +12,11 @@
 #           -D driver_name=Firefox \
 #           -D am_url=http://127.0.0.1:62080/ \
 #           -D am_password=test \
+#           -D ss_url=http://127.0.0.1:62081/ \
+#           -D ss_password=test \
+#           -D ss_api_key=test \
 #           -D am_version=1.7 \
 #           -D home=archivematica
-#
 
 @infinite-aips
 Feature: Infinite AIPs
@@ -28,7 +30,7 @@ Feature: Infinite AIPs
     Given a default processing config that creates and stores an AIP
     And the processing config decision "Normalize" is set to "<decision>"
     When a transfer is initiated on the runtime-supplied directory
-    And the user waits for the AIP to appear in archival storage
+    And the user queries the API until the AIP has been stored
     # The following is a recursive step that calls the above two and then itself
     And the user creates the same AIP all over again
 
@@ -36,4 +38,3 @@ Feature: Infinite AIPs
     | id        | decision                   |
     | not-norm  | Do not normalize           |
     | norm-pres | Normalize for preservation |
-
