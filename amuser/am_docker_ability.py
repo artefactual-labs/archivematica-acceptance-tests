@@ -25,6 +25,13 @@ class ArchivematicaDockerAbility(base.Base):
     def docker_compose_file_path(self):
         return os.path.join(self.docker_compose_path, 'docker-compose.yml')
 
+    def stop_archivematica(self):
+        """Stop Archivematica by calling docker-compose's ``down`` subcommand.
+        """
+        dc_down_cmd = 'docker-compose -f {} down'.format(self.docker_compose_file_path)
+        subprocess.run(shlex.split(dc_down_cmd))
+
+
     def recreate_archivematica(self, capture_output=False):
         """Recreate the docker-compose deploy of Archivematica by calling
         docker-compose's ``up`` subcommand.
