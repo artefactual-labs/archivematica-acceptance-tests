@@ -61,6 +61,11 @@ class ArchivematicaBrowserIngestAbility(
         sip_uuid, _, _ = (
             self.wait_for_transfer_to_appear(transfer_name))
         logger.info('Got SIP UUID %s', sip_uuid)
+
+        if sip_uuid is None:
+            logger.error("Can't continue without a SIP UUID")
+            raise
+
         return sip_uuid
 
     def get_mets(self, transfer_name, sip_uuid=None, parse_xml=True):
