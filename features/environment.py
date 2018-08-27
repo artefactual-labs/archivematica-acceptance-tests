@@ -134,7 +134,7 @@ def before_all(context):
     log_filename = 'AMAUAT.log'
     root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     log_path = os.path.join(root_path, log_filename)
-    file_handler = logging.FileHandler(log_path)
+    file_handler = logging.FileHandler("/tmp/AMAUAT.log")
     file_handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter(logging_format)
     file_handler.setFormatter(formatter)

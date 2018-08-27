@@ -4,6 +4,7 @@ import logging
 import os
 
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -49,11 +50,16 @@ class ArchivematicaSeleniumAbility(base.Base):
             fp = webdriver.FirefoxProfile()
             fp.set_preference("dom.max_chrome_script_run_time", 0)
             fp.set_preference("dom.max_script_run_time", 0)
-            options = webdriver.FirefoxOptions()
+            kw = {
+                "firefox_profile": fp,
+                "log_path": "/home/archivematica/geckodriver.log",
+            }
             if headless:
-                options.add_argument('-headless')
-            driver = webdriver.Firefox(firefox_profile=fp,
-                                       firefox_options=options)
+                options = FirefoxOptions()
+                options.add_argument("-headless")
+                kw["firefox_options"] = options
+            driver = webdriver.Firefox(**kw)
+
         else:
             driver = getattr(webdriver, self.driver_name)()
         driver.set_script_timeout(self.apathetic_wait)

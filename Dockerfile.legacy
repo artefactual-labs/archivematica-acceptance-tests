@@ -1,0 +1,46 @@
+FROM selenium/standalone-firefox-debug:3.6.0-darmstadtium
+
+USER root
+
+RUN apt-get -qqy update \
+	&& apt-get -qqy --no-install-recommends install \
+		gnupg \
+		bzip2 \
+		ca-certificates \
+		tzdata \
+		sudo \
+		unzip \
+		curl \
+		wget \
+		git \
+		build-essential \
+		openssh-client \
+		p7zip-full \
+		python \
+		python3-pip \
+		python3-setuptools \
+		python3-dev \
+		supervisor \
+		tmux \
+		vim \
+		libxml2-dev \
+		libxslt-dev \
+		zlib1g-dev \
+	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+RUN groupadd archivematica --gid 333 \
+	&& useradd archivematica --uid 333 --no-user-group \
+		--groups archivematica,sudo --shell /bin/bash --create-home \
+	&& echo 'archivematica:secret' | chpasswd
+
+COPY requirements /home/archivematica/acceptance-tests/requirements/
+RUN curl --silent https://bootstrap.pypa.io/get-pip.py | python3 \
+	&& pip3 install -r /home/archivematica/acceptance-tests/requirements/base.txt \
+	&& pip3 install -r /home/archivematica/acceptance-tests/requirements/test.txt \
+	&& pip3 install selenium==3.6.0
+COPY . /home/archivematica/acceptance-tests
+WORKDIR /home/archivematica/acceptance-tests
+RUN chown -R archivematica:archivematica /home/archivematica
+
+COPY ./etc/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
