@@ -133,6 +133,7 @@ def before_all(context):
     logger = logging.getLogger()
     log_filename = 'AMAUAT.log'
     root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    root_path = "/tmp"
     log_path = os.path.join(root_path, log_filename)
     file_handler = logging.FileHandler(log_path)
     file_handler.setLevel(logging.DEBUG)

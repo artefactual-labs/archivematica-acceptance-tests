@@ -4,6 +4,7 @@ from os import environ
 
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 
 
 TEST_URL = "https://www.artefactual.com"
@@ -19,14 +20,15 @@ def get_chrome_driver():
 
 
 def get_firefox_driver():
-    fp = webdriver.FirefoxProfile()
-    fp.set_preference("dom.max_chrome_script_run_time", 0)
-    fp.set_preference("dom.max_script_run_time", 0)
-    options = webdriver.FirefoxOptions()
+    profile = webdriver.FirefoxProfile()
+    profile.set_preference("dom.max_chrome_script_run_time", 0)
+    profile.set_preference("dom.max_script_run_time", 0)
+    options = FirefoxOptions()
     options.add_argument('-headless')
-    driver = webdriver.Firefox(
-        firefox_profile=fp, firefox_options=options)
-    return driver
+    return webdriver.Firefox(
+        firefox_profile=profile,
+        firefox_options=options,
+        log_path="/home/archivematica/geckodriver.log")
 
 
 def run_test(driver_getter, name):

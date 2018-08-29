@@ -34,10 +34,10 @@ ENV TZ "UTC"
 RUN echo "${TZ}" > /etc/timezone \
 	&& dpkg-reconfigure --frontend noninteractive tzdata
 
-RUN useradd artefactual --shell /bin/bash --create-home \
-	&& usermod -a -G sudo artefactual \
-	&& echo 'ALL ALL = (ALL) NOPASSWD: ALL' >> /etc/sudoers \
-	&& echo 'artefactual:secret' | chpasswd
+RUN groupadd archivematica --gid 333 \
+	&& useradd archivematica --uid 333 --no-user-group \
+		--groups archivematica,sudo --shell /bin/bash --create-home \
+	&& echo 'archivematica:secret' | chpasswd
 
 #
 # Chrome
@@ -90,14 +90,14 @@ RUN GK_VERSION=$(if [ ${GECKODRIVER_VERSION:-latest} = "latest" ]; then echo $(w
 	&& chmod 755 /opt/geckodriver-$GK_VERSION \
 	&& ln -fs /opt/geckodriver-$GK_VERSION /usr/bin/geckodriver
 
-COPY requirements /home/artefactual/acceptance-tests/requirements/
+COPY requirements /home/archivematica/acceptance-tests/requirements/
 RUN pip3 install wheel \
-	&& pip3 install -r /home/artefactual/acceptance-tests/requirements/base.txt \
-	&& pip3 install -r /home/artefactual/acceptance-tests/requirements/test.txt
-COPY . /home/artefactual/acceptance-tests
-WORKDIR /home/artefactual/acceptance-tests
-RUN chown -R artefactual:artefactual /home/artefactual
+	&& pip3 install -r /home/archivematica/acceptance-tests/requirements/base.txt \
+	&& pip3 install -r /home/archivematica/acceptance-tests/requirements/test.txt
+COPY . /home/archivematica/acceptance-tests
+WORKDIR /home/archivematica/acceptance-tests
+RUN chown -R archivematica:archivematica /home/archivematica
 
-USER artefactual
-ENV HOME /home/artefactual
-ENV USER artefactual
+USER archivematica
+ENV HOME /home/archivematica
+ENV USER archivematica
