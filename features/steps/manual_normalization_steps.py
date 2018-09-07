@@ -47,6 +47,8 @@ def step_impl(context):
         ' "Store AIP in standard Archivematica Directory"\n'
         'And the processing config decision "Upload DIP" is set to'
         ' "Do not upload DIP"\n'
+        'And the processing config decision "Document empty directories"'
+        ' is set to "No"\n'
     )
 
 
@@ -72,7 +74,9 @@ def step_impl(context):
         try:
             assert skipping_msg in task['stdout']
         except AssertionError:
-            assert already_nmlzd_msg in task['stdout']
+            assert already_nmlzd_msg in task['stdout'], (
+                '{} is not in {}\n\n{}'.format(
+                    already_nmlzd_msg, task['stdout'], task))
 
 
 @then('each manually normalized file is matched to an original')
