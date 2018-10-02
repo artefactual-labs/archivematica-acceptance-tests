@@ -4,6 +4,7 @@ import logging
 import os
 
 from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -52,8 +53,11 @@ class ArchivematicaSeleniumAbility(base.Base):
             options = webdriver.FirefoxOptions()
             if headless:
                 options.add_argument('-headless')
+            capabilities = DesiredCapabilities.FIREFOX.copy()
+            capabilities["moz:webdriverClick"] = False
             driver = webdriver.Firefox(firefox_profile=fp,
-                                       firefox_options=options)
+                                       firefox_options=options,
+                                       desired_capabilities=capabilities)
         else:
             driver = getattr(webdriver, self.driver_name)()
         driver.set_script_timeout(self.apathetic_wait)

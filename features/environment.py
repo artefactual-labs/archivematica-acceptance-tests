@@ -2,6 +2,15 @@ import logging
 import os
 
 import amuser
+from amuser.constants import (
+    NIHILISTIC_WAIT,
+    APATHETIC_WAIT,
+    PESSIMISTIC_WAIT,
+    MEDIUM_WAIT,
+    OPTIMISTIC_WAIT,
+    QUICK_WAIT,
+    MICRO_WAIT,
+)
 import utils
 
 
@@ -37,15 +46,6 @@ SSH_REQUIRES_PASSWORD = True
 SSH_IDENTITY_FILE = None
 SERVER_USER = 'vagrant'
 SERVER_PASSWORD = 'vagrant'
-
-# Generable, reusable wait times, in seconds
-NIHILISTIC_WAIT = 20
-APATHETIC_WAIT = 10
-PESSIMISTIC_WAIT = 5
-MEDIUM_WAIT = 3
-OPTIMISTIC_WAIT = 1
-QUICK_WAIT = 0.5
-MICRO_WAIT = 0.25
 
 # Use-case-specific maximum attempt counters
 MAX_CLICK_TRANSFER_DIRECTORY_ATTEMPTS = 5

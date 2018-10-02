@@ -347,14 +347,16 @@ METS_NSMAP = {
 # when using ``behave`` is to use Behave "user data" flags, e.g.,
 # ``behave -D nihilistic_wait=30``.
 
+WAIT_FACTOR = 4
+
 # Generable, reusable wait times, in seconds
-NIHILISTIC_WAIT = 20
-APATHETIC_WAIT = 10
-PESSIMISTIC_WAIT = 5
-MEDIUM_WAIT = 3
-OPTIMISTIC_WAIT = 1
-QUICK_WAIT = 0.5
-MICRO_WAIT = 0.25
+NIHILISTIC_WAIT = WAIT_FACTOR * 20
+APATHETIC_WAIT = WAIT_FACTOR * 10
+PESSIMISTIC_WAIT = WAIT_FACTOR * 5
+MEDIUM_WAIT = WAIT_FACTOR * 3
+OPTIMISTIC_WAIT = WAIT_FACTOR * 1
+QUICK_WAIT = WAIT_FACTOR * 0.5
+MICRO_WAIT = WAIT_FACTOR * 0.25
 
 # Use-case-specific maximum attempt counters
 MAX_CLICK_TRANSFER_DIRECTORY_ATTEMPTS = 5
