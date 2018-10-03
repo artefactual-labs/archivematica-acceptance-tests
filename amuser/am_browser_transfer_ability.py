@@ -42,8 +42,8 @@ class ArchivematicaBrowserTransferAbility(
         if transfer_type:
             self.set_transfer_type(transfer_type)
             # For some reason selecting a transfer type can cause the window to
-            # scroll and will prevent Selenium from clicking the "Browse" button
-            # so the following line is necessary.
+            # scroll and will prevent Selenium from clicking the "Browse"
+            # button so the following line is necessary.
             self.driver.execute_script('window.scrollTo(0, 0);')
             if transfer_type == 'Zipped bag':
                 name_is_prefix = True
@@ -57,18 +57,22 @@ class ArchivematicaBrowserTransferAbility(
             self.enter_accession_no(accession_no)
         self.add_transfer_directory(transfer_path)
         self.click_start_transfer_button()
+
         transfer_uuid, transfer_div_elem, transfer_name = (
             self.wait_for_transfer_to_appear(
                 transfer_name, name_is_prefix=name_is_prefix))
-        # UUID for the "Approve transfer" option
-        approve_option_uuid = {
-            'Standard': c.APPROVE_STANDARD_TRANSFER_UUID,
-            'Zipped bag': c.APPROVE_ZIPPED_BAGIT_TRANSFER_UUID,
-            'Unzipped bag': c.APPROVE_BAGIT_TRANSFER_UUID,
-            'DSpace': c.APPROVE_DSPACE_TRANSFER_UUID
-        }[transfer_type]
-        self.approve_transfer(transfer_div_elem, approve_option_uuid,
-                              transfer_name, name_is_prefix)
+
+        # In Archivematica 1.8 transfers can be automatically approved. This
+        # is the default in the system. Use the ``am_version`` flag to make
+        # sure that approval is not a required step for tests >= 1.8.
+        if self.vn < '1.8':
+            # UUID for the "Approve transfer" option
+            approve_option_uuid = {
+                'Standard': c.APPROVE_STANDARD_TRANSFER_UUID,
+                'Zipped bag': c.APPROVE_ZIPPED_BAGIT_TRANSFER_UUID,
+            }[transfer_type]
+            self.approve_transfer(transfer_div_elem, approve_option_uuid,
+                                  transfer_name, name_is_prefix)
         return transfer_uuid, transfer_name
 
     def remove_all_transfers(self):
@@ -120,8 +124,8 @@ class ArchivematicaBrowserTransferAbility(
         """Wait until the transfer appears in the transfer tab (after "Start
         transfer" has been clicked). The only way to do this seems to be to
         check each row for our unique ``transfer_name`` and do
-        ``time.sleep(self.micro_wait)`` until it appears, or a max number of waits is
-        exceeded.
+        ``time.sleep(self.micro_wait)`` until it appears, or a max number of
+        waits is exceeded.
         Returns the transfer UUID and the transfer <div> element.
         """
         transfer_name_div_selector = 'div.sip-detail-directory'

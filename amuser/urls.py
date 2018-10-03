@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+
+"""URLS used across the AMAUAT suite plus getters to help retrieve those values
+consistently in tests.
+"""
+
 AM_URLS = (
     ('get_admin_general_url', '{}administration/general/'),
     ('get_aip_in_archival_storage_url', '{}archival-storage/{}/'),
@@ -22,6 +28,7 @@ AM_URLS = (
     ('get_appraisal_url', '{}appraisal/'),
     ('get_transfer_url', '{}transfer/'),
     ('get_validation_commands_url', '{}fpr/fpcommand/validation/'),
+    ('get_aip_preview_url', '{}ingest/preview/aip/{}'),
 )
 
 SS_URLS = (
@@ -38,6 +45,7 @@ SS_URLS = (
     ('get_spaces_url', '{}spaces/'),
     ('get_spaces_create_url', '{}spaces/create/'),
     ('get_ss_login_url', '{}login/'),
-    ('get_ss_package_delete_request_url', '{}packages/package_delete_request/'),
+    ('get_ss_package_delete_request_url',
+     '{}packages/package_delete_request/'),
     ('get_ss_users_url', '{}administration/users/'),
 )

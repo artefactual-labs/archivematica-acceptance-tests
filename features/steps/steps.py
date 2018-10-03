@@ -115,6 +115,13 @@ def step_impl(context):
         ' originals" is set to "No"\n'
         'And the processing config decision "Document empty directories"'
         ' is set to "No"\n'
+        'And the processing config decision "Generate thumbnails" is set to'
+        ' "No"\n'
+        'And the processing config decision "Upload DIP" is set to '
+        '"Do not upload DIP"\n'
+        'And the processing config decision "Store DIP" is set to '
+        '"Do not store"\n'
+        'And the processing config decision "Store AIP" is set to "None"\n'
     )
 
 

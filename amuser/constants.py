@@ -61,12 +61,6 @@ XPATH_TREEITEM_NEXT_SIBLING = '/following-sibling::treeitem/ul/li/'
 APPROVE_STANDARD_TRANSFER_UUID = '6953950b-c101-4f4c-a0c3-0cd0684afe5e'
 APPROVE_ZIPPED_BAGIT_TRANSFER_UUID = '167dc382-4ab1-4051-8e22-e7f1c1bf3e6f'
 
-# Note: the UUIDs below are incorrect...
-APPROVE_BAGIT_TRANSFER_UUID = 'df1c53e4-1b69-441e-bdc9-6d08c3b47c9b'
-APPROVE_MAILDIR_TRANSFER_UUID = 'acf7bd62-1587-4bff-b640-5b34b7196386'
-APPROVE_DSPACE_TRANSFER_UUID = 'fa3e0099-b891-43f6-a4bc-390d544fa3e9'
-APPROVE_TRIM_TRANSFER_UUID = '07bf7432-fd9b-456e-9d17-5b387087723a'
-
 
 def varvn(varname, vn):
     """Return global var/constant named ``varname`` for version ``vn``, if it
@@ -85,38 +79,48 @@ def varvn(varname, vn):
 # A map from each micro-service name (i.e., description) to the tuple of
 # micro-service groups that it belongs to.
 MICRO_SERVICES2GROUPS = {
-    'Add processed structMap to METS.xml document': ('Update METS.xml document',),
+    'Add processed structMap to METS.xml document':
+        ('Update METS.xml document',),
     'Approve AIP reingest': ('Reingest AIP',),
     'Approve normalization': ('Normalize',),
     'Approve normalization (review)': ('Normalize',),
     'Approve normalization Review': ('Normalize',),
     'Approve standard transfer': ('Approve transfer',),
-    'Assign checksums and file sizes to metadata': ('Process metadata directory',),
-    'Assign checksums and file sizes to objects': ('Assign file UUIDs and checksums',),
+    'Assign checksums and file sizes to metadata':
+        ('Process metadata directory',),
+    'Assign checksums and file sizes to objects':
+        ('Assign file UUIDs and checksums',),
     'Assign checksums and file sizes to submissionDocumentation': (
         'Process submission documentation',),
     'Assign file UUIDs to metadata': ('Process metadata directory',),
     'Assign file UUIDs to objects': ('Assign file UUIDs and checksums',),
-    'Assign file UUIDs to submission documentation': ('Process submission documentation',),
+    'Assign file UUIDs to submission documentation':
+        ('Process submission documentation',),
     'Assign UUIDs to directories?': ('Assign file UUIDs and checksums',),
     'Attempt restructure for compliance': ('Verify transfer compliance',),
     'Bind PIDs?': ('Bind PIDs',),
-    'Characterize and extract metadata': ('Characterize and extract metadata',),
-    'Characterize and extract metadata on metadata files': ('Process metadata directory',),
+    'Characterize and extract metadata':
+        ('Characterize and extract metadata',),
+    'Characterize and extract metadata on metadata files':
+        ('Process metadata directory',),
     'Characterize and extract metadata on submission documentation': (
         'Process submission documentation',),
     'Check for Access directory': ('Normalize',),
     'Check for Service directory': ('Normalize',),
-    'Check for manual normalized files': ('Process manually normalized files',),
+    'Check for manual normalized files':
+        ('Process manually normalized files',),
     'Check for specialized processing': ('Examine contents',),
-    'Check for submission documentation': ('Process submission documentation',),
+    'Check for submission documentation':
+        ('Process submission documentation',),
     'Check if AIP is a file or directory': ('Prepare AIP',),
     'Check if DIP should be generated': ('Prepare AIP',),
-    'Check if SIP is from Maildir Transfer': ('Rename SIP directory with SIP UUID',),
+    'Check if SIP is from Maildir Transfer':
+        ('Rename SIP directory with SIP UUID',),
     'Check transfer directory for objects': ('Create SIP from Transfer',),
     'Compress AIP': ('Prepare AIP',),
     'Copy submission documentation': ('Prepare AIP',),
-    'Copy transfer submission documentation': ('Process submission documentation',),
+    'Copy transfer submission documentation':
+        ('Process submission documentation',),
     'Copy transfers metadata and logs': ('Process metadata directory',),
     'Create AIP Pointer File': ('Prepare AIP',),
     'Create SIP from transfer objects': ('Create SIP from Transfer',),
@@ -129,8 +133,10 @@ MICRO_SERVICES2GROUPS = {
     'Document empty directories?': ('Generate AIP METS',),
     'Examine contents?': ('Examine contents',),
     'Find type to process as': ('Quarantine',),
-    'Generate METS.xml document': ('Generate METS.xml document', 'Generate AIP METS'),
-    'Generate transfer structure report': ('Generate transfer structure report',),
+    'Generate METS.xml document':
+        ('Generate METS.xml document', 'Generate AIP METS'),
+    'Generate transfer structure report':
+        ('Generate transfer structure report',),
     'Grant normalization options for no pre-existing DIP': ('Normalize',),
     'Identify file format': (
         'Identify file format',
@@ -172,12 +178,15 @@ MICRO_SERVICES2GROUPS = {
     'Normalize': ('Normalize',),
     'Normalize for preservation': ('Normalize',),
     'Normalize for thumbnails': ('Normalize',),
-    'Perform policy checks on access derivatives?': ('Policy checks for derivatives',),
+    'Perform policy checks on access derivatives?':
+        ('Policy checks for derivatives',),
     'Perform policy checks on originals?': ('Validation',),
-    'Perform policy checks on preservation derivatives?': ('Policy checks for derivatives',),
+    'Perform policy checks on preservation derivatives?':
+        ('Policy checks for derivatives',),
     'Policy checks for access derivatives': ('Policy checks for derivatives',),
     'Policy checks for originals': ('Validation',),
-    'Policy checks for preservation derivatives': ('Policy checks for derivatives',),
+    'Policy checks for preservation derivatives':
+        ('Policy checks for derivatives',),
     'Prepare AIP': ('Prepare AIP',),
     'Process JSON metadata': ('Process metadata directory',),
     'Process transfer JSON metadata': ('Reformat metadata files',),
@@ -185,7 +194,8 @@ MICRO_SERVICES2GROUPS = {
         'Process manually normalized files',),
     'Reminder: add metadata if desired': ('Add final metadata',),
     'Remove cache files': ('Remove cache files',),
-    'Remove empty manual normalization directories': ('Process metadata directory',),
+    'Remove empty manual normalization directories':
+        ('Process metadata directory',),
     'Remove files without linking information (failed normalization'
     ' artifacts etc.)': ('Process submission documentation', 'Normalize'),
     'Remove from quarantine': ('Quarantine',),
@@ -193,13 +203,16 @@ MICRO_SERVICES2GROUPS = {
     'Remove the processing directory': ('Store AIP',),
     'Remove unneeded files': ('Verify transfer compliance',),
     'Removed bagged files': ('Prepare AIP',),
-    'Rename SIP directory with SIP UUID': ('Rename SIP directory with SIP UUID',),
+    'Rename SIP directory with SIP UUID':
+        ('Rename SIP directory with SIP UUID',),
     'Rename with transfer UUID': ('Rename with transfer UUID',),
-    'Resume after normalization file identification tool selected.': ('Normalize',),
+    'Resume after normalization file identification tool selected.':
+        ('Normalize',),
     'Retrieve AIP Storage Locations': ('Store AIP',),
     'Sanitize SIP name': ('Clean up names',),
     'Sanitize Transfer name': ('Clean up names',),
-    'Sanitize file and directory names in metadata': ('Process metadata directory',),
+    'Sanitize file and directory names in metadata':
+        ('Process metadata directory',),
     'Sanitize file and directory names in submission documentation': (
         'Process submission documentation',),
     "Sanitize object's file and directory names": ('Clean up names',),
@@ -222,7 +235,8 @@ MICRO_SERVICES2GROUPS = {
         'Verify transfer compliance',
         'Verify SIP compliance',
         'Prepare AIP'),
-    'Set remove preservation and access normalized files to renormalize link.': ('Normalize',),
+    'Set remove preservation and access normalized files to renormalize link.':
+        ('Normalize',),
     'Set transfer type: Standard': ('Verify transfer compliance',),
     'Store AIP': ('Store AIP',),
     'Store AIP (review)': ('Store AIP',),
@@ -309,7 +323,8 @@ PC_DECISION2ID = {
         'id_eeb23509-57e2-4529-8857-9d62525db048',
     'Transcribe files (OCR)':
         'id_7079be6d-3a25-41e6-a481-cee5f352fe6e',
-    'Select file format identification command (Submission documentation & metadata)':
+    'Select file format identification command '
+    '(Submission documentation & metadata)':
         'id_087d27be-c719-47d8-9bbb-9a7d8b609c44',
     'Select compression algorithm':
         'id_01d64f58-8295-4b7b-9cab-8f1b153a504f',
@@ -319,11 +334,14 @@ PC_DECISION2ID = {
         'id_2d32235c-02d4-4686-88a6-96f4d6c7b1c3',
     'Store AIP location':
         'id_b320ce81-9982-408a-9502-097d0daa48fa',
+    'Store DIP':
+        'id_5e58066d-e113-4383-b20b-f301ed4d751c',
     'Store DIP location':
-        # 'id_b7a83da6-ed5a-47f7-a643-1e9f9f46e364',
         'id_cd844b6e-ab3c-4bc6-b34f-7103f88715de',
     'Upload DIP':
-        'id_92879a29-45bf-4f0b-ac43-e64474f0f2f9'
+        'id_92879a29-45bf-4f0b-ac43-e64474f0f2f9',
+    'Generate thumbnails':
+        'id_498f7a6d-1b8c-431a-aa5d-83f14f3c5e65',
 }
 
 # Namespace map for parsing METS XML.
