@@ -141,7 +141,7 @@ class ArchivematicaBrowserIngestAbility(
                 is_last = True
             self.cwd.append(folder)
             folder_id = '_'.join(self.cwd)
-            block = WebDriverWait(self.driver, 1)
+            block = WebDriverWait(self.driver, self.medium_wait)
             block.until(EC.presence_of_element_located(
                 (By.ID, 'explorer')))
             if is_last:

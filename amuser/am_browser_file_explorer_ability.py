@@ -88,7 +88,7 @@ class ArchivematicaBrowserFileExplorerAbility(
             # should be, i.e., this is now an absolute XPath.
             folder_label_xpath = c.XPATH_TREEITEM_NEXT_SIBLING.join(xtrail)
             # Wait until folder is visible.
-            block = WebDriverWait(self.driver, 3)
+            block = WebDriverWait(self.driver, self.pessimistic_wait)
             block.until(EC.presence_of_element_located(
                 (By.XPATH, folder_label_xpath)))
             if is_last:

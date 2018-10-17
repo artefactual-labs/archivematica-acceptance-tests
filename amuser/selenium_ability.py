@@ -147,7 +147,9 @@ class ArchivematicaSeleniumAbility(base.Base):
         exists, as defined by existence_detector.
         """
         if not timeout:
-            timeout = self.pessimistic_wait
+            # Our default used to be ``pessimistic_wait`` but it was sadly
+            # not enough in some cases.
+            timeout = self.nihilistic_wait
         try:
             element_exists = existence_detector(
                 (By.CSS_SELECTOR, crucial_element_css_selector))
