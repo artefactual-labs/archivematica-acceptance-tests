@@ -108,10 +108,11 @@ class ArchivematicaBrowserJobsTasksAbility(
         return table_dict
 
     def _parse_tasks_table(self, tasks_url, table_dict, vn):
-        return {'1.6': self._parse_tasks_table_am_1_6,
-                '1.7': self._parse_tasks_table_am_1_7}.get(
-                    vn, self._parse_tasks_table_am_1_6)(
-                        tasks_url, table_dict)
+        return {
+            '1.6': self._parse_tasks_table_am_1_6,
+            '1.7': self._parse_tasks_table_am_gte_1_7,
+            '1.8': self._parse_tasks_table_am_gte_1_7,
+        }.get(vn, self._parse_tasks_table_am_1_6)(tasks_url, table_dict)
 
     def _parse_tasks_table_am_1_6(self, tasks_url, table_dict):
         self.driver = self.get_driver()
@@ -146,7 +147,7 @@ class ArchivematicaBrowserJobsTasksAbility(
                 next_tasks_url, table_dict)
         return table_dict
 
-    def _parse_tasks_table_am_1_7(self, tasks_url, table_dict):
+    def _parse_tasks_table_am_gte_1_7(self, tasks_url, table_dict):
         """Parse all the Task <article> elements at ``task_url`` and return
         them as a dict in ``table_dict``. Note: <table> elements are no longer
         used in AM 1.7+ for this but we call the returned dict a ``table_dict``
@@ -193,7 +194,7 @@ class ArchivematicaBrowserJobsTasksAbility(
                     self.am_url, link_button.get_attribute('href'))
         self.driver.quit()
         if next_tasks_url:
-            table_dict = self._parse_tasks_table_am_1_7(
+            table_dict = self._parse_tasks_table_am_gte_1_7(
                 next_tasks_url, table_dict)
         return table_dict
 

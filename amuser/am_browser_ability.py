@@ -460,7 +460,7 @@ class ArchivematicaBrowserAbility(
         self.set_processing_config_decision(
             decision_label='Store DIP location',
             choice_value='None')
-        if self.vn == '1.7':
+        if self.vn in ('1.7', '1.8'):
             self.set_processing_config_decision(
                 decision_label='Perform policy checks on access derivatives',
                 choice_value='None')
@@ -479,7 +479,10 @@ class ArchivematicaBrowserAbility(
             self.set_processing_config_decision(
                 decision_label='Document empty directories',
                 choice_value='None')
-
+        if self.vn in ('1.8',):
+            self.set_processing_config_decision(
+                decision_label='Generate thumbnails',
+                choice_value='No')
 
         self.save_default_processing_config()
 
