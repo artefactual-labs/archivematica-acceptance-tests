@@ -186,7 +186,7 @@ class ArchivematicaBrowserTransferAbility(
         if self.driver.current_url != url:
             self.login()
         self.driver.get(url)
-        transfer_name_input_id = 'transfer-name'
+        transfer_name_input_id = 'transfer-browser-form'
         self.wait_for_presence('#{}'.format(transfer_name_input_id))
         assert "Archivematica Dashboard - Transfer" in self.driver.title
 
