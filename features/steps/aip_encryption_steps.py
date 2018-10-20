@@ -419,8 +419,11 @@ def step_impl(context):
     if getattr(context.am_user.docker, 'docker_compose_path', None):
         dip_local_path = context.am_user.docker.cp_server_file_to_local(
             path_on_disk)
-    else:
+    elif context.am_user.ssh_accessible:
         dip_local_path = context.am_user.ssh.scp_server_file_to_local(
+            path_on_disk)
+    else:
+        dip_local_path = context.am_user.localfs.read_server_file(
             path_on_disk)
     if dip_local_path is None:
         logger.info(
@@ -451,8 +454,11 @@ def step_impl(context, aips_store_path):
     if getattr(context.am_user.docker, 'docker_compose_path', None):
         aip_local_path = context.am_user.docker.cp_server_file_to_local(
             aip_server_path)
-    else:
+    elif context.am_user.ssh_accessible:
         aip_local_path = context.am_user.ssh.scp_server_file_to_local(
+            aip_server_path)
+    else:
+        aip_local_path = context.am_user.localfs.read_server_file(
             aip_server_path)
     if aip_local_path is None:
         logger.info(
@@ -574,12 +580,14 @@ def get_aip_is_encrypted(context, aip_description):
         file_el = doc.find('mets:fileSec/mets:fileGrp/mets:file', ns)
         flocat_el = file_el.find('mets:FLocat', ns)
         xlink_href = flocat_el.get('{' + ns['xlink'] + '}href')
-        # Use `scp` or `docker cp` to copy the AIP on the server to a local
-        # directory.
+        # Copy the AIP on the server to a local directory.
         if getattr(context.am_user.docker, 'docker_compose_path', None):
             aip_local_path = context.am_user.docker.cp_server_file_to_local(xlink_href)
-        else:
+        elif context.am_user.ssh_accessible:
             aip_local_path = context.am_user.ssh.scp_server_file_to_local(xlink_href)
+        else:
+            aip_local_path = context.am_user.localfs.read_server_file(
+                xlink_href)
         if aip_local_path is None:
             logger.warning(
                 'Unable to copy file %s from the server to the local file'

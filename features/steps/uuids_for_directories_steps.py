@@ -35,14 +35,18 @@ def step_impl(context, dir_path):
         if getattr(context.am_user.docker, 'docker_compose_path', None):
             local_path = context.am_user.docker.cp_server_file_to_local(
                 dir_path)
-        else:
+        elif context.am_user.ssh_accessible:
             local_path = context.am_user.ssh.scp_server_file_to_local(
                 dir_path)
+        else:
+            local_path = context.am_user.localfs.read_server_file(dir_path)
     else:
         if getattr(context.am_user.docker, 'docker_compose_path', None):
             local_path = context.am_user.docker.cp_server_dir_to_local(dir_path)
-        else:
+        elif context.am_user.ssh_accessible:
             local_path = context.am_user.ssh.scp_server_dir_to_local(dir_path)
+        else:
+            local_path = context.am_user.localfs.read_server_file(dir_path)
     if local_path is None:
         msg = (
             'Unable to copy item {} from the server to the local file'
@@ -58,7 +62,8 @@ def step_impl(context, dir_path):
     dir_local_path = local_path
     if dir_is_zipped:
         dir_local_path = utils.unzip(local_path)
-    assert os.path.isdir(dir_local_path)
+    assert os.path.isdir(dir_local_path), \
+        "%s is not a directory" % dir_local_path
     non_root_paths = []
     non_root_file_paths = []
     empty_dirs = []

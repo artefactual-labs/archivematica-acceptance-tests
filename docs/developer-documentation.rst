@@ -310,6 +310,11 @@ ones.
     ``ssh`` calls.
   - ``.docker``: the docker ability that spawns subprocesses to make calls to
     ``docker`` or ``docker-compose``.
+  - ``.localfs``: the localfs ability that makes posible to retrieve files
+    when ``docker cp`` or ``scp`` are not available, e.g. when ``behave`` can
+    be executed in the same machine where Archivematica is installed or inside
+    a container with access to the needed assets like it is done in the
+    Archivematica development environment based in Docker Compose.
   - ``.api``: the API ability that uses Python's Requests library to make API
     requests to Archivematica endpoints.
   - ``.mets``: the METS ability that can parse Archivematica METS files and
