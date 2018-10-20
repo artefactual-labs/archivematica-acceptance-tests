@@ -34,8 +34,8 @@ ENV TZ "UTC"
 RUN echo "${TZ}" > /etc/timezone \
 	&& dpkg-reconfigure --frontend noninteractive tzdata
 
-RUN useradd artefactual --shell /bin/bash --create-home \
-	&& usermod -a -G sudo artefactual \
+RUN groupadd --gid 333 archivematica \
+	&& useradd --shell /bin/bash --groups sudo,archivematica --create-home artefactual \
 	&& echo 'ALL ALL = (ALL) NOPASSWD: ALL' >> /etc/sudoers \
 	&& echo 'artefactual:secret' | chpasswd
 
