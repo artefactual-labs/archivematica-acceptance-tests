@@ -74,9 +74,9 @@ def get_am_user(userdata):
         'ss_url': userdata.get('ss_url', SS_URL),
         'ss_api_key': userdata.get('ss_api_key', SS_API_KEY),
         'driver_name': userdata.get('driver_name', DRIVER_NAME),
-        'ssh_accessible': bool(
+        'ssh_accessible': _bool(
             userdata.get('ssh_accessible', SSH_ACCESSIBLE)),
-        'ssh_requires_password': bool(
+        'ssh_requires_password': _bool(
             userdata.get('ssh_requires_password', SSH_REQUIRES_PASSWORD)),
         'server_user': userdata.get('server_user', SERVER_USER),
         'server_password': userdata.get('server_password', SERVER_PASSWORD),
@@ -174,3 +174,10 @@ def after_scenario(context, scenario):
             ' than that of the AIP on the second one.'):
         context.am_user.docker.recreate_archivematica(capture_output=True)
     context.am_user.browser.tear_down()
+
+
+def _bool(value):
+    """Parse boolean values encoded as strings."""
+    if isinstance(value, bool):
+        return value
+    return value.lower() in ("yes", "true", "1")
