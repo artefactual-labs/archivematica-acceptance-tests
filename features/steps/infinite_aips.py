@@ -30,7 +30,7 @@ def step_impl(context):
     context.scenario.sip_uuid = None
     context.execute_steps(
         'When a transfer is initiated on the runtime-supplied directory\n'
-        'And the user waits for the AIP to appear in archival storage\n'
+        'And the user queries the API until the AIP has been stored\n'
         'And the user creates the same AIP all over again\n'  # <= recursive
     )
 

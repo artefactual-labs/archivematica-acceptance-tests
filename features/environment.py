@@ -56,7 +56,7 @@ MAX_CHECK_AIP_STORED_ATTEMPTS = 60
 MAX_CHECK_METS_LOADED_ATTEMPTS = 60
 MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS = 120
 MAX_SEARCH_DIP_BACKLOG_ATTEMPTS = 120
-MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS = 1000
+MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS = 990
 MAX_CHECK_FOR_MS_GROUP_ATTEMPTS = 7200
 
 
@@ -85,44 +85,48 @@ def get_am_user(userdata):
         'runtime_supplied_transfer_path': userdata.get(
             'runtime_supplied_transfer_path'),
         # User-customizable wait values:
-        'nihilistic_wait': userdata.get('nihilistic_wait', NIHILISTIC_WAIT),
-        'apathetic_wait': userdata.get('apathetic_wait', APATHETIC_WAIT),
-        'pessimistic_wait': userdata.get('pessimistic_wait', PESSIMISTIC_WAIT),
-        'medium_wait': userdata.get('medium_wait', MEDIUM_WAIT),
-        'optimistic_wait': userdata.get('optimistic_wait', OPTIMISTIC_WAIT),
-        'quick_wait': userdata.get('quick_wait', QUICK_WAIT),
-        'micro_wait': userdata.get('micro_wait', MICRO_WAIT),
+        'nihilistic_wait': float(
+            userdata.get('nihilistic_wait', NIHILISTIC_WAIT)),
+        'apathetic_wait': float(
+            userdata.get('apathetic_wait', APATHETIC_WAIT)),
+        'pessimistic_wait': float(
+            userdata.get('pessimistic_wait', PESSIMISTIC_WAIT)),
+        'medium_wait': float(userdata.get('medium_wait', MEDIUM_WAIT)),
+        'optimistic_wait': float(
+            userdata.get('optimistic_wait', OPTIMISTIC_WAIT)),
+        'quick_wait': float(userdata.get('quick_wait', QUICK_WAIT)),
+        'micro_wait': float(userdata.get('micro_wait', MICRO_WAIT)),
         # User-customizable max attempt values:
         'max_click_transfer_directory_attempts':
-            userdata.get('max_click_transfer_directory_attempts',
-                         MAX_CLICK_TRANSFER_DIRECTORY_ATTEMPTS),
+            int(userdata.get('max_click_transfer_directory_attempts',
+                             MAX_CLICK_TRANSFER_DIRECTORY_ATTEMPTS)),
         'max_click_aip_directory_attempts':
-            userdata.get('max_click_aip_directory_attempts',
-                         MAX_CLICK_AIP_DIRECTORY_ATTEMPTS),
+            int(userdata.get('max_click_aip_directory_attempts',
+                             MAX_CLICK_AIP_DIRECTORY_ATTEMPTS)),
         'max_navigate_aip_archival_storage_attempts':
-            userdata.get('max_navigate_aip_archival_storage_attempts',
-                         MAX_NAVIGATE_AIP_ARCHIVAL_STORAGE_ATTEMPTS),
+            int(userdata.get('max_navigate_aip_archival_storage_attempts',
+                             MAX_NAVIGATE_AIP_ARCHIVAL_STORAGE_ATTEMPTS)),
         'max_download_aip_attempts':
-            userdata.get('max_download_aip_attempts',
-                         MAX_DOWNLOAD_AIP_ATTEMPTS),
+            int(userdata.get('max_download_aip_attempts',
+                             MAX_DOWNLOAD_AIP_ATTEMPTS)),
         'max_check_aip_stored_attempts':
-            userdata.get('max_check_aip_stored_attempts',
-                         MAX_CHECK_AIP_STORED_ATTEMPTS),
+            int(userdata.get('max_check_aip_stored_attempts',
+                             MAX_CHECK_AIP_STORED_ATTEMPTS)),
         'max_check_mets_loaded_attempts':
-            userdata.get('max_check_mets_loaded_attempts',
-                         MAX_CHECK_METS_LOADED_ATTEMPTS),
+            int(userdata.get('max_check_mets_loaded_attempts',
+                             MAX_CHECK_METS_LOADED_ATTEMPTS)),
         'max_search_aip_archival_storage_attempts':
-            userdata.get('max_search_aip_archival_storage_attempts',
-                         MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS),
+            int(userdata.get('max_search_aip_archival_storage_attempts',
+                             MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS)),
         'max_search_dip_backlog_attempts':
-            userdata.get('max_search_dip_backlog_attempts',
-                         MAX_SEARCH_DIP_BACKLOG_ATTEMPTS),
+            int(userdata.get('max_search_dip_backlog_attempts',
+                             MAX_SEARCH_DIP_BACKLOG_ATTEMPTS)),
         'max_check_transfer_appeared_attempts':
-            userdata.get('max_check_transfer_appeared_attempts',
-                         MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS),
+            int(userdata.get('max_check_transfer_appeared_attempts',
+                             MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS)),
         'max_check_for_ms_group_attempts':
-            userdata.get('max_check_for_ms_group_attempts',
-                         MAX_CHECK_FOR_MS_GROUP_ATTEMPTS)
+            int(userdata.get('max_check_for_ms_group_attempts',
+                             MAX_CHECK_FOR_MS_GROUP_ATTEMPTS)),
     })
     return amuser.ArchivematicaUser(**userdata)
 
