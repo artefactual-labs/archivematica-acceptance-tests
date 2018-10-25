@@ -70,9 +70,9 @@ def step_impl(context, filename):
 @then('the size of the {without_outputs_fname} METS file is less than that of'
       ' the {with_outputs_fname} METS file')
 def step_impl(context, without_outputs_fname, with_outputs_fname):
-    without_outputs_stats = get_stats_file_json(
+    without_outputs_stats = utils.get_stats_file_json(
         without_outputs_fname, context.am_user.permanent_path)
-    with_outputs_stats = get_stats_file_json(
+    with_outputs_stats = utils.get_stats_file_json(
         with_outputs_fname, context.am_user.permanent_path)
     without_outputs_mets = without_outputs_stats['mets']
     with_outputs_mets = with_outputs_stats['mets']
@@ -88,9 +88,9 @@ def step_impl(context, without_outputs_fname, with_outputs_fname):
 @then('the runtime of client scripts in {without_outputs_fname} is less'
       ' than the runtime of client scripts in {with_outputs_fname}')
 def step_impl(context, without_outputs_fname, with_outputs_fname):
-    without_outputs_stats = get_stats_file_json(
+    without_outputs_stats = utils.get_stats_file_json(
         without_outputs_fname, context.am_user.permanent_path)
-    with_outputs_stats = get_stats_file_json(
+    with_outputs_stats = utils.get_stats_file_json(
         with_outputs_fname, context.am_user.permanent_path)
     without_outputs_tasks = without_outputs_stats['tasks']
     with_outputs_tasks = with_outputs_stats['tasks']
@@ -141,15 +141,3 @@ def add_duration_float(tasks):
     for task in tasks:
         task['duration_float'] = utils.get_duration_as_float(task['duration'])
     return tasks
-
-
-def get_newest_file_with_prefix(dirpath, filename_prefix):
-    files = [f for f in os.listdir(dirpath) if f.startswith(filename_prefix)]
-    return os.path.join(dirpath, sorted(files)[-1])
-
-
-def get_stats_file_json(fname, permanent_path):
-    fpath = get_newest_file_with_prefix(permanent_path, fname)
-    logger.info('file path for %s is %s', fname, fpath)
-    with open(fpath) as fi:
-        return json.load(fi)

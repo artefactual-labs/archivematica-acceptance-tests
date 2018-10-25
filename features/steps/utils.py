@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import zipfile
+import json
 
 
 logger = logging.getLogger('amauat.steps.utils')
@@ -252,3 +253,15 @@ def unzip(zip_path):
     if os.path.isdir(directory_to_extract_to):
         return directory_to_extract_to
     return None
+
+
+def get_newest_file_with_prefix(dirpath, filename_prefix):
+    files = [f for f in os.listdir(dirpath) if f.startswith(filename_prefix)]
+    return os.path.join(dirpath, sorted(files)[-1])
+
+
+def get_stats_file_json(fname, permanent_path):
+    fpath = get_newest_file_with_prefix(permanent_path, fname)
+    logger.info('file path for %s is %s', fname, fpath)
+    with open(fpath) as fi:
+        return json.load(fi)

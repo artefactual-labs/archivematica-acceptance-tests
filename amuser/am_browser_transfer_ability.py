@@ -130,49 +130,47 @@ class ArchivematicaBrowserTransferAbility(
         """
         transfer_name_div_selector = 'div.sip-detail-directory'
         transfer_uuid_div_selector = 'div.sip-detail-uuid'
-        self.wait_for_presence(transfer_name_div_selector)
-        transfer_uuid = correct_transfer_div_elem = None
-        for transfer_div_elem in self.driver\
-                .find_elements_by_css_selector(c.SELECTOR_TRANSFER_DIV):
-            transfer_name_div_elem = transfer_div_elem\
-                .find_element_by_css_selector(transfer_name_div_selector)
-            transfer_uuid_div_elem = transfer_div_elem\
-                .find_element_by_css_selector(transfer_uuid_div_selector)
-            # Identify the transfer by its name. The complication here is that
-            # AM detects a narrow browser window and hides the UUID in the
-            # narrow case. So depending on the visibility/width of things, we
-            # find the UUID in different places.
-            transfer_name_in_dom = transfer_name_div_elem.text.strip()
-            if transfer_name_in_dom.endswith('UUID'):
-                transfer_name_in_dom = transfer_name_in_dom[:-4].strip()
-            if name_is_prefix:
-                cond = transfer_name_in_dom.startswith(transfer_name)
-            else:
-                cond = transfer_name_in_dom == transfer_name
-            if cond:
-                logger.info('Changed transfer name from %s to %s',
-                            transfer_name, transfer_name_in_dom)
-                transfer_name = transfer_name_in_dom
-                abbr_elem = transfer_name_div_elem.find_element_by_tag_name(
-                    'abbr')
-                if abbr_elem and abbr_elem.is_displayed():
-                    transfer_uuid = abbr_elem.get_attribute('title').strip()
+        for attempt in range(self.max_check_transfer_appeared_attempts):
+            self.wait_for_presence(transfer_name_div_selector)
+            transfer_uuid = correct_transfer_div_elem = None
+            for transfer_div_elem in self.driver\
+                    .find_elements_by_css_selector(c.SELECTOR_TRANSFER_DIV):
+                transfer_name_div_elem = transfer_div_elem\
+                    .find_element_by_css_selector(transfer_name_div_selector)
+                transfer_uuid_div_elem = transfer_div_elem\
+                    .find_element_by_css_selector(transfer_uuid_div_selector)
+                # Identify the transfer by its name. The complication here is that
+                # AM detects a narrow browser window and hides the UUID in the
+                # narrow case. So depending on the visibility/width of things, we
+                # find the UUID in different places.
+                transfer_name_in_dom = transfer_name_div_elem.text.strip()
+                if transfer_name_in_dom.endswith('UUID'):
+                    transfer_name_in_dom = transfer_name_in_dom[:-4].strip()
+                if name_is_prefix:
+                    cond = transfer_name_in_dom.startswith(transfer_name)
                 else:
-                    transfer_uuid = transfer_uuid_div_elem.text.strip()
-                correct_transfer_div_elem = transfer_div_elem
-        if not transfer_uuid:
-            self.check_transfer_appeared_attempts += 1
-            if (self.check_transfer_appeared_attempts <
-                    self.max_check_transfer_appeared_attempts):
-                time.sleep(self.quick_wait)
-                transfer_uuid, correct_transfer_div_elem, transfer_name = (
-                    self.wait_for_transfer_to_appear(
-                        transfer_name, name_is_prefix=name_is_prefix))
+                    cond = transfer_name_in_dom == transfer_name
+                if cond:
+                    logger.info('Changed transfer name from %s to %s',
+                                transfer_name, transfer_name_in_dom)
+                    transfer_name = transfer_name_in_dom
+                    abbr_elem = transfer_name_div_elem.find_element_by_tag_name(
+                        'abbr')
+                    if abbr_elem and abbr_elem.is_displayed():
+                        transfer_uuid = abbr_elem.get_attribute('title').strip()
+                    else:
+                        transfer_uuid = transfer_uuid_div_elem.text.strip()
+                    correct_transfer_div_elem = transfer_div_elem
+            time.sleep(self.quick_wait)
+            if transfer_uuid:
+                return transfer_uuid, correct_transfer_div_elem, transfer_name
             else:
-                self.check_transfer_appeared_attempts = 0
-                return None, None, None
-        time.sleep(self.quick_wait)
-        return transfer_uuid, correct_transfer_div_elem, transfer_name
+                # retry
+                pass
+
+        logger.info("Giving up waiting for transfer after %d attempts",
+                    self.check_transfer_appeared_attempts)
+        return None, None, None
 
     def click_start_transfer_button(self):
         start_transfer_button_elem = self.driver.find_element_by_css_selector(
