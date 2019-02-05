@@ -1,0 +1,3 @@
+[submodule "automation-tools"]
+	path = automation-tools
+	url = https://github.com/artefactual/automation-tools
