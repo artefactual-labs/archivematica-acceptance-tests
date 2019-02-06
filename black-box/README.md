@@ -3,6 +3,38 @@
 These tests are a work in progress. They primarily test Archivematica by
 using the Archivematica API.
 
+### To run
+
+Access the `black-box` directory and using python 2, either:
+
+`$ python behave`
+
+or
+
+`$ python2 -m behave`
+
+**NB.** There are some Unicode issues to iron out using Python 3. These exist
+across AMAUAT and `amclient.py`.
+
+### Directory Layout
+
+From the Behave [documentation][#behave-1] an environment might looks as
+follows:
+
+```
+features/
+features/signup.feature
+features/login.feature
+features/account_details.feature
+features/environment.py
+features/steps/
+features/steps/website.py
+features/steps/utils.py
+```
+
+Hooks in `encironment.py` won't run for example if the file sits at the 'steps'
+level.
+
 ### Generating Steps Files
 
 Create your feature, e.g.
@@ -23,7 +55,7 @@ $ behave features/create-aip.feature
 ```
 
 An outline for a steps implementation will be created by Behave:
-```
+``` python
 You can implement step definitions for undefined steps with these snippets:
 
 @given(u'the transfer ‘DemoTransfer’ is started with the automatedProcessingMCP processing configuration.')
@@ -50,3 +82,10 @@ def step_impl(context):
 def step_impl(context):
     raise NotImplementedError(u'STEP: Then the AIP METS can be accessed and parsed by mets-reader-writer')
 ```
+
+You can then create a steps file in your steps directory and develop the
+automated tests from there.
+
+[//]: # (References)
+
+[behave-1]: https://behave.readthedocs.io/en/latest/tutorial.html#features
