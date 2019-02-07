@@ -75,11 +75,10 @@ def step_impl(context):
 @then(u'an AIP can be downloaded')
 def step_impl(context):
     """Step 4"""
-    context.aip_location = utils.download_aip(context)
-    #
-    # Or we can download an individual METS file too... up to you!
-    #
-    print("\n", "AIP output to:", context.aip_location, "\n")
+    # Download of individual files is package-type agnostic.
+    context.aip_mets_location = utils.download_mets(context)
+    print("\n", "AIP output to:", context.aip_mets_location, "\n")
+    assert False
 
 
 @then(u'the AIP METS can be accessed and parsed by mets-reader-writer')
