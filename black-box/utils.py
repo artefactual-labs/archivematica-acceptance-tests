@@ -15,6 +15,7 @@ automation_tools = os.path.join(
 
 sys.path.append(automation_tools)
 
+from aips.create_dip import extract_aip as automation_tools_extract_aip
 from transfers.amclient import AMClient
 
 
@@ -125,3 +126,16 @@ def download_mets(context):
     mets_file = "{}-{}/data/METS.{}.xml"\
         .format(context.transfer_name, context.sip_uuid, context.sip_uuid)
     return download_file(context, mets_file)
+
+
+# TODO: Make a decision about keeping this. Probably not if not used.
+def extract_aip(context):
+    tmp = tempfile.gettempdir()
+    return automation_tools_extract_aip(
+        context.aip_location, context.sip_uuid, tmp)
+
+
+# TODO: Make a decision about keeping this. Probably not if not used.
+def get_mets_path(extracted_aip_dir, sip_uuid):
+    mets_filename = 'METS.{}.xml'.format(sip_uuid)
+    return os.path.join(extracted_aip_dir, 'data', mets_filename)

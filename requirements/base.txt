@@ -1,5 +1,6 @@
 behave>=1.0
 lxml
+metsrw==0.2.4
 pexpect
 requests<3.0
 selenium==3.14.0

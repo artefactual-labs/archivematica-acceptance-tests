@@ -13,6 +13,7 @@ import sys
 import time
 
 from behave import given, when, then
+import metsrw
 
 import environment
 import utils
@@ -78,14 +79,15 @@ def step_impl(context):
     # Download of individual files is package-type agnostic.
     context.aip_mets_location = utils.download_mets(context)
     print("\n", "AIP output to:", context.aip_mets_location, "\n")
-    assert False
 
 
 @then(u'the AIP METS can be accessed and parsed by mets-reader-writer')
 def step_impl(context):
     """Step 5"""
-    if os.path.exists(context.aip_location):
+    if os.path.exists(context.aip_mets_location):
         """Validate its contents."""
-    raise NotImplementedError(
-        u'STEP: Then the AIP METS can be accessed and parsed by '
-        'mets-reader-writer')
+        # XXX: is it worth putting the extracted_aip_dir in context?
+        # extracted_aip_dir = utils.extract_aip(context)
+        # mets_path = utils.get_mets_path(extracted_aip_dir, context.sip_uuid)
+        mets = metsrw.METSDocument.fromfile(context.aip_mets_location)
+        assert mets.get_file(type='Directory', label='objects') is not None
