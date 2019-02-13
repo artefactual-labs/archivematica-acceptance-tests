@@ -411,7 +411,7 @@ class ArchivematicaBrowserAbility(
             decision_label='Generate transfer structure report',
             choice_value='No')
         self.set_processing_config_decision(
-            decision_label=('Select file format identification command'
+            decision_label=('Perform file format identification'
                             ' (Transfer)'),
             choice_value='None')
         self.set_processing_config_decision(
@@ -427,8 +427,8 @@ class ArchivematicaBrowserAbility(
             decision_label='Create SIP(s)',
             choice_value='None')
         self.set_processing_config_decision(
-            decision_label='Select file format identification command (Ingest)',
-            choice_value='Use existing data')
+            decision_label='Perform file format identification (Ingest)',
+            choice_value='No, use existing data')
         self.set_processing_config_decision(
             decision_label='Normalize',
             choice_value='None')
@@ -442,7 +442,7 @@ class ArchivematicaBrowserAbility(
             decision_label='Transcribe files (OCR)',
             choice_value='No')
         self.set_processing_config_decision(
-            decision_label=('Select file format identification command'
+            decision_label=('Perform file format identification'
                             ' (Submission documentation & metadata)'),
             choice_value='None')
         self.set_processing_config_decision(
