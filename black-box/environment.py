@@ -90,7 +90,7 @@ def before_all(context):
 
     # One transfer path that we know exists in sample-data. We should be able
     # to figure out how to make it possible to use this with arbitrary data.
-    context.demo_transfer_path = demo_transfer_path.encode()
+    context.demo_transfer_path = demo_transfer_path
 
 
 def after_all(context):

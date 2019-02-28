@@ -41,7 +41,7 @@ def return_default_ts_location(context):
     """Do nothing"""
     am = configure_ss_client(context)
     try:
-        resp = am.list_locations()['objects']
+        resp = am.list_storage_locations()['objects']
         for location_object in resp:
             if location_object.get("description") == "" \
                 and location_object.get("enabled") is True \
@@ -71,12 +71,12 @@ def start_transfer(
     """Do nothing"""
     am = configure_am_client(context)
     am.transfer_source = context.location_uuid
-    am.transfer_path = context.demo_transfer_path
+    am.transfer_directory = context.demo_transfer_path
+    am.transfer_name = transfer_name
+    am.processing_config = processing_config
     try:
         context.transfer_name = transfer_name
-        return am.create_package(
-            name=transfer_name,
-            processing_config=processing_config).get("id")
+        return am.create_package().get("id")
     except (KeyError, TypeError) as err:
         raise environment.EnvironmentError(
             "Error making API call: {}".format(err))
@@ -112,12 +112,14 @@ def download_aip(context):
 def download_file(context, relative_path):
     """Do nothing"""
     tmp = tempfile.gettempdir()
-    tmp_file_location = os.path.join(tmp, os.path.split(relative_path)[-1:][0])
+    fname = os.path.split(relative_path)[-1:][0]
+    tmp_file_location = os.path.join(tmp, fname)
     am = configure_ss_client(context)
-    file = am.extract_file(
-        context.sip_uuid, relative_path)
-    with open(tmp_file_location, 'w') as write_file:
-        write_file.write(file)
+    am.package_uuid = context.sip_uuid
+    am.relative_path = relative_path
+    am.saveas_filename = fname
+    am.directory = tmp
+    file = am.extract_file()
     return tmp_file_location
 
 
