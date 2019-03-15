@@ -8,7 +8,7 @@ import requests
 from . import constants as c
 
 
-logger = logging.getLogger('amuser.utils')
+logger = logging.getLogger("amuser.utils")
 
 
 def squash(string_):
@@ -16,15 +16,14 @@ def squash(string_):
     equality even if they have incidental (for our purposes) formatting
     differences.
     """
-    return string_.strip().lower().replace(' ', '')
+    return string_.strip().lower().replace(" ", "")
 
 
 def is_uuid(idfr):
     """Return true if ``idfr`` is a UUID."""
-    return (
-        [8, 4, 4, 4, 12] == [
-            len([x for x in y if x in '1234567890abcdef'])
-            for y in idfr.split('-')])
+    return [8, 4, 4, 4, 12] == [
+        len([x for x in y if x in "1234567890abcdef"]) for y in idfr.split("-")
+    ]
 
 
 def is_hdl(idfr, entity_type, accession_no=None):
@@ -32,17 +31,17 @@ def is_hdl(idfr, entity_type, accession_no=None):
     '12345/7432cdc5-a66a-4149-aa44-ebd802323196'.
     """
     try:
-        _, pid = idfr.split('/')
+        _, pid = idfr.split("/")
     except ValueError:
         logger.info(
-            'Unable to get exactly two values by splitting %s on a forward'
-            ' slash', idfr)
+            "Unable to get exactly two values by splitting %s on a forward" " slash",
+            idfr,
+        )
         return False
-    if accession_no and entity_type == 'aip':
-        logger.info('PID %s should equal accession number %s', pid,
-                    accession_no)
+    if accession_no and entity_type == "aip":
+        logger.info("PID %s should equal accession number %s", pid, accession_no)
         return pid == accession_no
-    logger.info('PID %s should be a UUID', pid)
+    logger.info("PID %s should be a UUID", pid)
     return is_uuid(pid)
 
 
@@ -52,14 +51,14 @@ def normalize_ms_name(ms_name, vn):
     change a whole bunch of feature files to accommodate such changes.
     """
     new_ms_name = ms_name
-    if ms_name == 'Approve normalization (review)' and vn != '1.6':
-        new_ms_name = 'Approve normalization Review'
-    elif ms_name == 'Store AIP (review)' and vn != '1.6':
-        new_ms_name = 'Store AIP Review'
-    elif ms_name == 'Store AIP Review' and vn == '1.6':
-        new_ms_name = 'Store AIP (review)'
-    elif ms_name == 'Approve normalization Review' and vn == '1.6':
-        new_ms_name = 'Approve normalization (review)'
+    if ms_name == "Approve normalization (review)" and vn != "1.6":
+        new_ms_name = "Approve normalization Review"
+    elif ms_name == "Store AIP (review)" and vn != "1.6":
+        new_ms_name = "Store AIP Review"
+    elif ms_name == "Store AIP Review" and vn == "1.6":
+        new_ms_name = "Store AIP (review)"
+    elif ms_name == "Approve normalization Review" and vn == "1.6":
+        new_ms_name = "Approve normalization (review)"
     if ms_name != new_ms_name:
         logger.info('Treating microservice "%s" as "%s"', ms_name, new_ms_name)
     return new_ms_name
@@ -111,7 +110,7 @@ def all_urls_resolve(urls):
 
 
 def micro_service2group(micro_service):
-    parts = micro_service.split('|')
+    parts = micro_service.split("|")
     if len(parts) == 2:
         return tuple(parts)
     map_ = c.MICRO_SERVICES2GROUPS
@@ -126,7 +125,10 @@ def micro_service2group(micro_service):
         if not groups:
             raise
     if len(groups) != 1:
-        logger.warning('WARNING: the micro-service "%s" belongs to multiple'
-                       ' micro-service groups; returning "%s"',
-                       micro_service, groups[0])
+        logger.warning(
+            'WARNING: the micro-service "%s" belongs to multiple'
+            ' micro-service groups; returning "%s"',
+            micro_service,
+            groups[0],
+        )
     return micro_service, groups[0]

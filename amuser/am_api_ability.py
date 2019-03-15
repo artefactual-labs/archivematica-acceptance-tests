@@ -13,7 +13,7 @@ import requests
 from . import base
 
 
-logger = logging.getLogger('amuser.api')
+logger = logging.getLogger("amuser.api")
 
 
 class ArchivematicaAPIAbilityError(base.ArchivematicaUserError):
@@ -30,9 +30,9 @@ class ArchivematicaAPIAbility(base.Base):
         Calls http://localhost:8000/api/v2/file/<SIP-UUID>/download/\
                   ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
         """
-        payload = {'username': self.ss_username, 'api_key': ss_api_key}
-        url = '{}api/v2/file/{}/download/'.format(self.ss_url, sip_uuid)
-        aip_name = '{}-{}.7z'.format(transfer_name, sip_uuid)
+        payload = {"username": self.ss_username, "api_key": ss_api_key}
+        url = "{}api/v2/file/{}/download/".format(self.ss_url, sip_uuid)
+        aip_name = "{}-{}.7z".format(transfer_name, sip_uuid)
         aip_path = os.path.join(self.tmp_path, aip_name)
         max_attempts = self.max_download_aip_attempts
         attempt = 0
@@ -43,26 +43,37 @@ class ArchivematicaAPIAbility(base.Base):
                 return aip_path
             elif r.status_code in (404, 500) and attempt < max_attempts:
                 logger.warning(
-                    'Trying again to download AIP %s via GET request to URL %s;'
-                    ' SS returned status code %s and message %s',
-                    sip_uuid, url, r.status_code, r.text)
+                    "Trying again to download AIP %s via GET request to URL %s;"
+                    " SS returned status code %s and message %s",
+                    sip_uuid,
+                    url,
+                    r.status_code,
+                    r.text,
+                )
                 attempt += 1
                 time.sleep(self.optimistic_wait)
             else:
-                logger.warning('Unable to download AIP %s via GET request to'
-                               ' URL %s; SS returned status code %s and message'
-                               ' %s', sip_uuid, url, r.status_code, r.text)
+                logger.warning(
+                    "Unable to download AIP %s via GET request to"
+                    " URL %s; SS returned status code %s and message"
+                    " %s",
+                    sip_uuid,
+                    url,
+                    r.status_code,
+                    r.text,
+                )
                 raise ArchivematicaAPIAbilityError(
-                    'Unable to download AIP {}'.format(sip_uuid))
+                    "Unable to download AIP {}".format(sip_uuid)
+                )
 
     def download_aip_pointer_file(self, sip_uuid, ss_api_key):
         """Use the AM SS API to download the completed AIP's pointer file.
         Calls http://localhost:8000/api/v2/file/<SIP-UUID>/pointer_file/\
                   ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
         """
-        payload = {'username': self.ss_username, 'api_key': ss_api_key}
-        url = '{}api/v2/file/{}/pointer_file/'.format(self.ss_url, sip_uuid)
-        pointer_file_name = 'pointer.{}.xml'.format(sip_uuid)
+        payload = {"username": self.ss_username, "api_key": ss_api_key}
+        url = "{}api/v2/file/{}/pointer_file/".format(self.ss_url, sip_uuid)
+        pointer_file_name = "pointer.{}.xml".format(sip_uuid)
         pointer_file_path = os.path.join(self.tmp_path, pointer_file_name)
         max_attempts = self.max_download_aip_attempts
         attempt = 0
@@ -73,31 +84,43 @@ class ArchivematicaAPIAbility(base.Base):
                 return pointer_file_path
             elif r.status_code in (404, 500) and attempt < max_attempts:
                 logger.warning(
-                    'Trying again to download AIP %s pointer file via GET'
-                    ' request to URL %s; SS returned status code %s and message'
-                    ' %s', sip_uuid, url, r.status_code, r.text)
+                    "Trying again to download AIP %s pointer file via GET"
+                    " request to URL %s; SS returned status code %s and message"
+                    " %s",
+                    sip_uuid,
+                    url,
+                    r.status_code,
+                    r.text,
+                )
                 attempt += 1
                 time.sleep(self.optimistic_wait)
             else:
-                logger.warning('Unable to download AIP %s pointer file via GET'
-                               ' request to URL %s; SS returned status code %s'
-                               ' and message %s', sip_uuid, url, r.status_code,
-                               r.text)
+                logger.warning(
+                    "Unable to download AIP %s pointer file via GET"
+                    " request to URL %s; SS returned status code %s"
+                    " and message %s",
+                    sip_uuid,
+                    url,
+                    r.status_code,
+                    r.text,
+                )
                 raise ArchivematicaAPIAbilityError(
-                    'Unable to download AIP {} pointer file'.format(sip_uuid))
+                    "Unable to download AIP {} pointer file".format(sip_uuid)
+                )
 
-    def poll_until_aip_stored(self, sip_uuid, ss_api_key, poll_interval=1,
-                              max_polls=None):
+    def poll_until_aip_stored(
+        self, sip_uuid, ss_api_key, poll_interval=1, max_polls=None
+    ):
         max_polls = max_polls or self.max_check_aip_stored_attempts
-        payload = {'username': self.ss_username, 'api_key': ss_api_key}
-        url = '{}api/v2/file/{}/'.format(self.ss_url, sip_uuid)
+        payload = {"username": self.ss_username, "api_key": ss_api_key}
+        url = "{}api/v2/file/{}/".format(self.ss_url, sip_uuid)
         counter = 0
         while True:
             counter += 1
             if counter > max_polls:
                 raise ArchivematicaAPIAbilityError(
-                    'Polled too many times waiting for AIP %s to be stored' %
-                    sip_uuid)
+                    "Polled too many times waiting for AIP %s to be stored" % sip_uuid
+                )
             r = requests.get(url, params=payload)
             if r.ok:
                 break
@@ -105,6 +128,6 @@ class ArchivematicaAPIAbility(base.Base):
 
 
 def _save_download(request, file_path):
-    with open(file_path, 'wb') as f:
+    with open(file_path, "wb") as f:
         for block in request.iter_content(1024):
             f.write(block)
