@@ -46,7 +46,6 @@ def step_impl(context, transfer_path):
     does normalization for preservation, approves normalization, and creates an
     AIP without storing it
     """
-    pass
 
 
 @given('directory {transfer_path} contains a processing config that does'
@@ -56,7 +55,6 @@ def step_impl(context, transfer_path):
     does normalization for access, approves normalization, and creates an
     AIP without storing it
     """
-    pass
 
 
 @given('a base processing configuration for MediaConch tests')
@@ -140,7 +138,6 @@ def step_impl(context, transfer_path):
     ``transfer_path`` using MediaConch v. 16.12, then MediaConch will hang. See
     https://github.com/artefactual/archivematica/issues/966.
     """
-    pass
 
 
 @given('a processing configuration for conformance checks on access'

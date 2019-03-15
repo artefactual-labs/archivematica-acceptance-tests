@@ -314,7 +314,7 @@ def return_default_ts_location(context):
 
 
 def start_transfer(
-    context, transfer_name="amauat-transfer", processing_config="automated"):
+        context, transfer_name="amauat-transfer", processing_config="automated"):
     """Start a transfer using the create_package endpoint and return its uuid"""
     am = configure_am_client(context)
     am.transfer_source = return_default_ts_location(context)
@@ -427,7 +427,7 @@ def _automation_tools_extract_aip(aip_file, aip_uuid, tmp_dir):
         return extracted_entry
 
     # Re-try extraction if it's not a directory
-    return extract_aip(extracted_entry, aip_uuid, tmp_dir)
+    return _automation_tools_extract_aip(extracted_entry, aip_uuid, tmp_dir)
 
 
 # TODO: Make a decision about keeping this. Probably not if not used.

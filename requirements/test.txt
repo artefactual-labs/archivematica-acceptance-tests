@@ -1,4 +1,4 @@
 -r base.txt
 
-pylint==1.7.5
+pylint==2.3.1
 tox
