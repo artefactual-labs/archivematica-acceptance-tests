@@ -10,14 +10,21 @@ from amuser.constants import (
     OPTIMISTIC_WAIT,
     QUICK_WAIT,
     MICRO_WAIT,
+    METS_NSMAP,
 )
 import utils
 
 
+class EnvironmentError(Exception):
+    """Return this when there is a problem setting up the environment"""
+
+
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-
-
+# Archivematica sample-data paths.
+demo_transfer_path = os.path.join(
+    "archivematica", "archivematica-sampledata", "SampleTransfers",
+    "DemoTransferCSV"
+)
 
 # Change these to match your test environment
 # These may also be overridden as Behave userdata options
@@ -156,6 +163,8 @@ def before_scenario(context, scenario):
     context.HOME = userdata.get('home', HOME)
     context.AUTOMATION_TOOLS_PATH = userdata.get(
         'automation_tools_path', AUTOMATION_TOOLS_PATH)
+    context.mets_nsmap = METS_NSMAP
+    context.demo_transfer_path = demo_transfer_path
 
 
 def after_scenario(context, scenario):
