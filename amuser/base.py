@@ -19,7 +19,6 @@ class ArchivematicaUserError(Exception):
     pass
 
 
-
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -29,45 +28,52 @@ class Base:
     """
 
     expected_args = (
-        ('am_username', c.DEFAULT_AM_USERNAME),
-        ('am_password', c.DEFAULT_AM_PASSWORD),
-        ('am_url', c.DEFAULT_AM_URL),
-        ('am_version', c.DEFAULT_AM_VERSION),
-        ('am_api_key', c.DEFAULT_AM_API_KEY),
-        ('ss_username', c.DEFAULT_SS_USERNAME),
-        ('ss_password', c.DEFAULT_SS_PASSWORD),
-        ('ss_url', c.DEFAULT_SS_URL),
-        ('ss_api_key', c.DEFAULT_SS_API_KEY),
-        ('driver_name', c.DEFAULT_DRIVER_NAME),
-        ('ssh_accessible', None),
-        ('ssh_requires_password', None),
-        ('server_user', None),
-        ('server_password', None),
-        ('nihilistic_wait', c.NIHILISTIC_WAIT),
-        ('apathetic_wait', c.APATHETIC_WAIT),
-        ('pessimistic_wait', c.PESSIMISTIC_WAIT),
-        ('medium_wait', c.MEDIUM_WAIT),
-        ('optimistic_wait', c.OPTIMISTIC_WAIT),
-        ('quick_wait', c.QUICK_WAIT),
-        ('micro_wait', c.MICRO_WAIT),
-        ('max_click_transfer_directory_attempts',
-         c.MAX_CLICK_TRANSFER_DIRECTORY_ATTEMPTS),
-        ('max_click_aip_directory_attempts',
-         c.MAX_CLICK_AIP_DIRECTORY_ATTEMPTS),
-        ('max_navigate_aip_archival_storage_attempts',
-         c.MAX_NAVIGATE_AIP_ARCHIVAL_STORAGE_ATTEMPTS),
-        ('max_download_aip_attempts', c.MAX_DOWNLOAD_AIP_ATTEMPTS),
-        ('max_check_aip_stored_attempts', c.MAX_CHECK_AIP_STORED_ATTEMPTS),
-        ('max_check_mets_loaded_attempts', c.MAX_CHECK_METS_LOADED_ATTEMPTS),
-        ('max_search_aip_archival_storage_attempts',
-         c.MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS),
-        ('max_search_dip_backlog_attempts', c.MAX_SEARCH_DIP_BACKLOG_ATTEMPTS),
-        ('max_check_transfer_appeared_attempts',
-         c.MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS),
-        ('max_check_for_ms_group_attempts', c.MAX_CHECK_FOR_MS_GROUP_ATTEMPTS),
+        ("am_username", c.DEFAULT_AM_USERNAME),
+        ("am_password", c.DEFAULT_AM_PASSWORD),
+        ("am_url", c.DEFAULT_AM_URL),
+        ("am_version", c.DEFAULT_AM_VERSION),
+        ("am_api_key", c.DEFAULT_AM_API_KEY),
+        ("ss_username", c.DEFAULT_SS_USERNAME),
+        ("ss_password", c.DEFAULT_SS_PASSWORD),
+        ("ss_url", c.DEFAULT_SS_URL),
+        ("ss_api_key", c.DEFAULT_SS_API_KEY),
+        ("driver_name", c.DEFAULT_DRIVER_NAME),
+        ("ssh_accessible", None),
+        ("ssh_requires_password", None),
+        ("server_user", None),
+        ("server_password", None),
+        ("nihilistic_wait", c.NIHILISTIC_WAIT),
+        ("apathetic_wait", c.APATHETIC_WAIT),
+        ("pessimistic_wait", c.PESSIMISTIC_WAIT),
+        ("medium_wait", c.MEDIUM_WAIT),
+        ("optimistic_wait", c.OPTIMISTIC_WAIT),
+        ("quick_wait", c.QUICK_WAIT),
+        ("micro_wait", c.MICRO_WAIT),
+        (
+            "max_click_transfer_directory_attempts",
+            c.MAX_CLICK_TRANSFER_DIRECTORY_ATTEMPTS,
+        ),
+        ("max_click_aip_directory_attempts", c.MAX_CLICK_AIP_DIRECTORY_ATTEMPTS),
+        (
+            "max_navigate_aip_archival_storage_attempts",
+            c.MAX_NAVIGATE_AIP_ARCHIVAL_STORAGE_ATTEMPTS,
+        ),
+        ("max_download_aip_attempts", c.MAX_DOWNLOAD_AIP_ATTEMPTS),
+        ("max_check_aip_stored_attempts", c.MAX_CHECK_AIP_STORED_ATTEMPTS),
+        ("max_check_mets_loaded_attempts", c.MAX_CHECK_METS_LOADED_ATTEMPTS),
+        (
+            "max_search_aip_archival_storage_attempts",
+            c.MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS,
+        ),
+        ("max_search_dip_backlog_attempts", c.MAX_SEARCH_DIP_BACKLOG_ATTEMPTS),
+        (
+            "max_check_transfer_appeared_attempts",
+            c.MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS,
+        ),
+        ("max_check_for_ms_group_attempts", c.MAX_CHECK_FOR_MS_GROUP_ATTEMPTS),
     )
 
-    url_stdports_re = re.compile(r':(?:80|443)/?$')
+    url_stdports_re = re.compile(r":(?:80|443)/?$")
 
     def set_url_getters(self):
         """Create functions as attributes on this instance which return needed
@@ -75,24 +81,30 @@ class Base:
         module. E.g., this creates pseudo-methods like
         ``self.get_ss_login_url()``.
         """
-        for base_url, url_spec in ((self.am_url, urls.AM_URLS),
-                                   (self.ss_url, urls.SS_URLS)):
+        for base_url, url_spec in (
+            (self.am_url, urls.AM_URLS),
+            (self.ss_url, urls.SS_URLS),
+        ):
             for getter_name, template in url_spec:
+
                 def getter(*args, t=template, b=base_url):
                     # Remove standard port suffix from netloc.
-                    b = re.sub(self.url_stdports_re, '/', b)
+                    b = re.sub(self.url_stdports_re, "/", b)
                     return t.format(*(b,) + args)
+
                 setattr(self, getter_name, getter)
 
-    kwarg2attr_filter = {'ss_api_key': '_ss_api_key'}
+    kwarg2attr_filter = {"ss_api_key": "_ss_api_key"}
 
     def __init__(self, **kwargs):
         self.here = ROOT
         self._ss_api_key = None  # Make pylint happy.
         for kwarg, default in self.expected_args:
-            setattr(self,
-                    self.kwarg2attr_filter.get(kwarg, kwarg),
-                    kwargs.get(kwarg, default))
+            setattr(
+                self,
+                self.kwarg2attr_filter.get(kwarg, kwarg),
+                kwargs.get(kwarg, default),
+            )
         self.vn = self.am_version
         expected_kwargs = [x[0] for x in self.expected_args]
         for k, v in kwargs.items():
@@ -107,7 +119,7 @@ class Base:
 
     @staticmethod
     def unique_name(name):
-        return '{}_{}'.format(name, utils.unixtimestamp())
+        return "{}_{}".format(name, utils.unixtimestamp())
 
     @property
     def permanent_path(self):

@@ -5,7 +5,7 @@ import logging
 from behave import then, given
 
 
-logger = logging.getLogger('amauat.steps.manualnormalization')
+logger = logging.getLogger("amauat.steps.manualnormalization")
 
 
 # ==============================================================================
@@ -15,14 +15,15 @@ logger = logging.getLogger('amauat.steps.manualnormalization')
 # Givens
 # ------------------------------------------------------------------------------
 
-@given('a processing configuration for testing manual normalization')
+
+@given("a processing configuration for testing manual normalization")
 def step_impl(context):
     """Create a processing configuration that moves a transfer through to
     "Store AIP" and runs normalization for preservation.
     """
     context.execute_steps(
-        'Given that the user has ensured that the default processing config is'
-        ' in its default state\n'
+        "Given that the user has ensured that the default processing config is"
+        " in its default state\n"
         'And the processing config decision "Assign UUIDs to directories" is'
         ' set to "No"\n'
         'And the processing config decision "Perform policy checks on'
@@ -52,8 +53,10 @@ def step_impl(context):
     )
 
 
-@given('transfer source {transfer_path} which contains a manually normalized'
-       ' file whose path is a prefix of another manually normalized file')
+@given(
+    "transfer source {transfer_path} which contains a manually normalized"
+    " file whose path is a prefix of another manually normalized file"
+)
 def step_impl(context, transfer_path):
     pass
 
@@ -65,25 +68,27 @@ def step_impl(context, transfer_path):
 # Thens
 # ------------------------------------------------------------------------------
 
-@then('all preservation tasks recognize the manually normalized derivatives')
+
+@then("all preservation tasks recognize the manually normalized derivatives")
 def step_impl(context):
-    skipping_msg = ('is file group usage manualNormalization instead of'
-                    '  original  - skipping')
-    already_nmlzd_msg = 'was already manually normalized into'
-    for task in context.scenario.job['tasks'].values():
+    skipping_msg = (
+        "is file group usage manualNormalization instead of" "  original  - skipping"
+    )
+    already_nmlzd_msg = "was already manually normalized into"
+    for task in context.scenario.job["tasks"].values():
         try:
-            assert skipping_msg in task['stdout']
+            assert skipping_msg in task["stdout"]
         except AssertionError:
-            assert already_nmlzd_msg in task['stdout'], (
-                '{} is not in {}\n\n{}'.format(
-                    already_nmlzd_msg, task['stdout'], task))
+            assert already_nmlzd_msg in task["stdout"], "{} is not in {}\n\n{}".format(
+                already_nmlzd_msg, task["stdout"], task
+            )
 
 
-@then('each manually normalized file is matched to an original')
+@then("each manually normalized file is matched to an original")
 def step_impl(context):
-    for task in context.scenario.job['tasks'].values():
-        assert 'Matched original file' in task['stdout']
-        assert 'to  preservation file' in task['stdout']
+    for task in context.scenario.job["tasks"].values():
+        assert "Matched original file" in task["stdout"]
+        assert "to  preservation file" in task["stdout"]
 
 
 # ==============================================================================

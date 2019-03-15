@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-from os import environ
-
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 
@@ -23,9 +21,8 @@ def get_firefox_driver():
     fp.set_preference("dom.max_chrome_script_run_time", 0)
     fp.set_preference("dom.max_script_run_time", 0)
     options = webdriver.FirefoxOptions()
-    options.add_argument('-headless')
-    driver = webdriver.Firefox(
-        firefox_profile=fp, firefox_options=options)
+    options.add_argument("-headless")
+    driver = webdriver.Firefox(firefox_profile=fp, firefox_options=options)
     return driver
 
 
@@ -52,4 +49,3 @@ if __name__ == "__main__":
     print("Starting tests...")
     run_test(get_chrome_driver, "Chrome")
     run_test(get_firefox_driver, "Firefox")
-

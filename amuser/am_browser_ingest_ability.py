@@ -19,16 +19,14 @@ from . import utils
 from . import selenium_ability
 
 
-class ArchivematicaBrowserMETSAbilityError(
-        base.ArchivematicaUserError):
+class ArchivematicaBrowserMETSAbilityError(base.ArchivematicaUserError):
     pass
 
 
-logger = logging.getLogger('amuser.ingest')
+logger = logging.getLogger("amuser.ingest")
 
 
-class ArchivematicaBrowserIngestAbility(
-        selenium_ability.ArchivematicaSeleniumAbility):
+class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAbility):
     """Archivematica Browser Ingest Tab Ability."""
 
     def __init__(self, **kwargs):
@@ -50,7 +48,7 @@ class ArchivematicaBrowserIngestAbility(
             self.remove_top_transfer(top_transfer_elem)
 
     def get_sip_uuid(self, transfer_name):
-        logger.info('Getting SIP UUID from transfer name %s', transfer_name)
+        logger.info("Getting SIP UUID from transfer name %s", transfer_name)
         self.driver.quit()
         self.driver = self.get_driver()
         ingest_url = self.get_ingest_url()
@@ -58,9 +56,8 @@ class ArchivematicaBrowserIngestAbility(
         if self.driver.current_url != ingest_url:
             self.login()
         self.driver.get(ingest_url)
-        sip_uuid, _, _ = (
-            self.wait_for_transfer_to_appear(transfer_name))
-        logger.info('Got SIP UUID %s', sip_uuid)
+        sip_uuid, _, _ = self.wait_for_transfer_to_appear(transfer_name)
+        logger.info("Got SIP UUID %s", sip_uuid)
         return sip_uuid
 
     def get_mets(self, transfer_name, sip_uuid=None, parse_xml=True):
@@ -75,13 +72,13 @@ class ArchivematicaBrowserIngestAbility(
         ingest_url = self.get_ingest_url()
         self.navigate(ingest_url)
         # Wait for the "Store AIP" micro-service.
-        ms_name = utils.normalize_ms_name('Store AIP (review)', self.vn)
-        self.expose_job(ms_name, sip_uuid, 'ingest')
+        ms_name = utils.normalize_ms_name("Store AIP (review)", self.vn)
+        self.expose_job(ms_name, sip_uuid, "ingest")
         aip_preview_url = self.get_aip_preview_url(sip_uuid).format(
-            self.am_url, sip_uuid)
+            self.am_url, sip_uuid
+        )
         self.navigate(aip_preview_url)
-        mets_path = 'storeAIP/{0}-{1}/METS.{1}.xml'.format(
-            transfer_name, sip_uuid)
+        mets_path = "storeAIP/{0}-{1}/METS.{1}.xml".format(transfer_name, sip_uuid)
         handles_before = self.driver.window_handles
         self.navigate_to_aip_directory_and_click(mets_path)
         self.wait_for_new_window(handles_before)
@@ -89,12 +86,14 @@ class ArchivematicaBrowserIngestAbility(
         new_window_handle = self.driver.window_handles[1]
         self.driver.switch_to.window(new_window_handle)
         attempts = 0
-        while self.driver.current_url.strip() == 'about:blank':
+        while self.driver.current_url.strip() == "about:blank":
             if attempts > self.max_check_mets_loaded_attempts:
                 msg = (
-                    'Exceeded maxumim allowable attempts ({}) for checking'
-                    ' if the METS file has loaded.'.format(
-                        self.max_check_mets_loaded_attempts))
+                    "Exceeded maxumim allowable attempts ({}) for checking"
+                    " if the METS file has loaded.".format(
+                        self.max_check_mets_loaded_attempts
+                    )
+                )
                 logger.warning(msg)
                 raise ArchivematicaBrowserMETSAbilityError(msg)
             time.sleep(self.optimistic_wait)
@@ -102,7 +101,7 @@ class ArchivematicaBrowserIngestAbility(
         mets = self.driver.page_source
         self.driver.switch_to.window(original_window_handle)
         if parse_xml:
-            return etree.fromstring(mets.encode('utf8'))
+            return etree.fromstring(mets.encode("utf8"))
         return mets
 
     def navigate_to_aip_directory_and_click(self, path):
@@ -114,10 +113,11 @@ class ArchivematicaBrowserIngestAbility(
             self._navigate_to_aip_directory_and_click(path)
         except (TimeoutException, MoveTargetOutOfBoundsException):
             self.click_aip_directory_attempts += 1
-            if (self.click_aip_directory_attempts >=
-                    self.max_click_aip_directory_attempts):
-                logger.warning(
-                    'Failed to navigate to aip directory %s', path)
+            if (
+                self.click_aip_directory_attempts
+                >= self.max_click_aip_directory_attempts
+            ):
+                logger.warning("Failed to navigate to aip directory %s", path)
                 self.click_aip_directory_attempts = 0
                 raise
             else:
@@ -126,24 +126,22 @@ class ArchivematicaBrowserIngestAbility(
             self.click_aip_directory_attempts = 0
 
     def _navigate_to_aip_directory_and_click(self, path):
-        self.cwd = [
-            'explorer_var_archivematica_sharedDirectory_watchedDirectories']
-        while path.startswith('/'):
+        self.cwd = ["explorer_var_archivematica_sharedDirectory_watchedDirectories"]
+        while path.startswith("/"):
             path = path[1:]
-        while path.endswith('/'):
+        while path.endswith("/"):
             path = path[:-1]
-        path_parts = path.split('/')
-        if path_parts[-1].startswith('METS.'):
-            path_parts[-1] = 'METS__{}'.format(path_parts[-1][5:])
+        path_parts = path.split("/")
+        if path_parts[-1].startswith("METS."):
+            path_parts[-1] = "METS__{}".format(path_parts[-1][5:])
         for i, folder in enumerate(path_parts):
             is_last = False
             if i == len(path_parts) - 1:
                 is_last = True
             self.cwd.append(folder)
-            folder_id = '_'.join(self.cwd)
+            folder_id = "_".join(self.cwd)
             block = WebDriverWait(self.driver, self.medium_wait)
-            block.until(EC.presence_of_element_located(
-                (By.ID, 'explorer')))
+            block.until(EC.presence_of_element_located((By.ID, "explorer")))
             if is_last:
                 self.click_file_old_browser(folder_id)
                 # self.click_file(folder_id)
@@ -153,20 +151,20 @@ class ArchivematicaBrowserIngestAbility(
 
     def add_dummy_metadata(self, sip_uuid):
         self.navigate(self.get_ingest_url())
-        self.driver.find_element_by_id('sip-row-{}'.format(sip_uuid))\
-            .find_element_by_css_selector('a.btn_show_metadata').click()
+        self.driver.find_element_by_id(
+            "sip-row-{}".format(sip_uuid)
+        ).find_element_by_css_selector("a.btn_show_metadata").click()
         self.navigate(self.get_metadata_add_url(sip_uuid))
         for attr in self.metadata_attrs:
-            self.driver.find_element_by_id('id_{}'.format(attr))\
-                .send_keys(self.dummy_val)
+            self.driver.find_element_by_id("id_{}".format(attr)).send_keys(
+                self.dummy_val
+            )
         try:
-            self.driver.find_element_by_css_selector(
-                'input[value=Create]').click()
+            self.driver.find_element_by_css_selector("input[value=Create]").click()
         except NoSuchElementException:
             # Should be a "Create" button but sometimes during development the
             # metadata already exists so it is a "Save" button.
-            self.driver.find_element_by_css_selector(
-                'input[value=Save]').click()
+            self.driver.find_element_by_css_selector("input[value=Save]").click()
 
     def parse_normalization_report(self, sip_uuid):
         """Wait for the "Approve normalization" job to appear and then open the
@@ -180,24 +178,24 @@ class ArchivematicaBrowserIngestAbility(
         if self.driver.current_url != url:
             self.login()
         self.driver.get(url)
-        ms_name = utils.normalize_ms_name(
-            'Approve normalization (review)', self.vn)
-        self.expose_job(ms_name, sip_uuid, 'sip')
+        ms_name = utils.normalize_ms_name("Approve normalization (review)", self.vn)
+        self.expose_job(ms_name, sip_uuid, "sip")
         nrmlztn_rprt_url = self.get_normalization_report_url(sip_uuid)
         self.driver.get(nrmlztn_rprt_url)
         if self.driver.current_url != nrmlztn_rprt_url:
             self.login()
         self.driver.get(nrmlztn_rprt_url)
-        self.wait_for_presence('table')
-        table_el = self.driver.find_element_by_css_selector('table')
-        keys = [td_el.text.strip().lower().replace(' ', '_')
-                for td_el in table_el
-                .find_element_by_css_selector('thead tr')
-                .find_elements_by_css_selector('th')]
-        for tr_el in table_el.find_elements_by_css_selector('tbody tr'):
+        self.wait_for_presence("table")
+        table_el = self.driver.find_element_by_css_selector("table")
+        keys = [
+            td_el.text.strip().lower().replace(" ", "_")
+            for td_el in table_el.find_element_by_css_selector(
+                "thead tr"
+            ).find_elements_by_css_selector("th")
+        ]
+        for tr_el in table_el.find_elements_by_css_selector("tbody tr"):
             row = {}
-            for index, td_el in enumerate(
-                    tr_el.find_elements_by_css_selector('td')):
+            for index, td_el in enumerate(tr_el.find_elements_by_css_selector("td")):
                 row[keys[index]] = td_el.text
             report.append(row)
         return report

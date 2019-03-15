@@ -11,14 +11,14 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import (
     StaleElementReferenceException,
     TimeoutException,
-    WebDriverException
+    WebDriverException,
 )
 from selenium.webdriver.common.action_chains import ActionChains
 
 from . import base
 
 
-logger = logging.getLogger('amuser.selenium')
+logger = logging.getLogger("amuser.selenium")
 
 
 class ArchivematicaSeleniumError(base.ArchivematicaUserError):
@@ -37,27 +37,29 @@ class ArchivematicaSeleniumAbility(base.Base):
 
     def get_driver(self):
         try:
-            headless = os.environ['HEADLESS'] == '1'
+            headless = os.environ["HEADLESS"] == "1"
         except KeyError:
             headless = False
-        if self.driver_name == 'Chrome':
+        if self.driver_name == "Chrome":
             options = webdriver.ChromeOptions()
             if headless:
-                options.add_argument('headless')
+                options.add_argument("headless")
             driver = webdriver.Chrome(chrome_options=options)
             driver.set_window_size(1700, 900)
-        elif self.driver_name == 'Firefox':
+        elif self.driver_name == "Firefox":
             fp = webdriver.FirefoxProfile()
             fp.set_preference("dom.max_chrome_script_run_time", 0)
             fp.set_preference("dom.max_script_run_time", 0)
             options = webdriver.FirefoxOptions()
             if headless:
-                options.add_argument('-headless')
+                options.add_argument("-headless")
             capabilities = DesiredCapabilities.FIREFOX.copy()
             capabilities["moz:webdriverClick"] = False
-            driver = webdriver.Firefox(firefox_profile=fp,
-                                       firefox_options=options,
-                                       desired_capabilities=capabilities)
+            driver = webdriver.Firefox(
+                firefox_profile=fp,
+                firefox_options=options,
+                desired_capabilities=capabilities,
+            )
         else:
             driver = getattr(webdriver, self.driver_name)()
         driver.set_script_timeout(self.apathetic_wait)
@@ -68,7 +70,7 @@ class ArchivematicaSeleniumAbility(base.Base):
         self.driver = self.get_driver()
         # Do not maximize window in Chrome to workaround:
         # https://bugs.chromium.org/p/chromedriver/issues/detail?id=1901
-        if self.driver_name not in ('Chrome-Hub', 'Chrome'):
+        if self.driver_name not in ("Chrome-Hub", "Chrome"):
             self.driver.maximize_window()
 
     def tear_down(self):
@@ -78,7 +80,7 @@ class ArchivematicaSeleniumAbility(base.Base):
         the following call to ``self.driver.window_handles`` causes Selenium to
         hang indefinitely.
         """
-        if self.driver_name != 'Firefox':
+        if self.driver_name != "Firefox":
             for window_handle in self.driver.window_handles:
                 self.driver.switch_to.window(window_handle)
                 self.driver.quit()
@@ -97,7 +99,7 @@ class ArchivematicaSeleniumAbility(base.Base):
         if self.driver.current_url == url:
             return
         if self.driver.current_url != url:
-            if self.driver.current_url.endswith('/installer/welcome/'):
+            if self.driver.current_url.endswith("/installer/welcome/"):
                 self.setup_new_install()
             else:
                 if url.startswith(self.ss_url):
@@ -108,12 +110,16 @@ class ArchivematicaSeleniumAbility(base.Base):
 
     def wait_for_new_window(self, handles_before, timeout=None):
         timeout = timeout or self.apathetic_wait
+
         def window_handles_count_has_changed(driver):
-            logger.info('Previously we had %s window handles, now we have'
-                        ' %s', len(handles_before), len(driver.window_handles))
+            logger.info(
+                "Previously we had %s window handles, now we have" " %s",
+                len(handles_before),
+                len(driver.window_handles),
+            )
             return len(handles_before) != len(driver.window_handles)
-        WebDriverWait(self.driver, timeout).until(
-            window_handles_count_has_changed)
+
+        WebDriverWait(self.driver, timeout).until(window_handles_count_has_changed)
 
     def hover(self, elem):
         hover = ActionChains(self.driver).move_to_element(elem)
@@ -123,26 +129,35 @@ class ArchivematicaSeleniumAbility(base.Base):
         """Wait until the element matching ``crucial_element_css_selector``
         is present.
         """
-        self.wait_for_existence(EC.presence_of_element_located,
-                                crucial_element_css_selector, timeout=timeout)
+        self.wait_for_existence(
+            EC.presence_of_element_located,
+            crucial_element_css_selector,
+            timeout=timeout,
+        )
 
-    def wait_for_invisibility(self, crucial_element_css_selector,
-                              timeout=None):
+    def wait_for_invisibility(self, crucial_element_css_selector, timeout=None):
         """Wait until the element matching ``crucial_element_css_selector``
         is *not* visible.
         """
-        self.wait_for_existence(EC.invisibility_of_element_located,
-                                crucial_element_css_selector, timeout=timeout)
+        self.wait_for_existence(
+            EC.invisibility_of_element_located,
+            crucial_element_css_selector,
+            timeout=timeout,
+        )
 
     def wait_for_visibility(self, crucial_element_css_selector, timeout=None):
         """Wait until the element matching ``crucial_element_css_selector``
         is visible.
         """
-        self.wait_for_existence(EC.visibility_of_element_located,
-                                crucial_element_css_selector, timeout=timeout)
+        self.wait_for_existence(
+            EC.visibility_of_element_located,
+            crucial_element_css_selector,
+            timeout=timeout,
+        )
 
-    def wait_for_existence(self, existence_detector,
-                           crucial_element_css_selector, timeout=None):
+    def wait_for_existence(
+        self, existence_detector, crucial_element_css_selector, timeout=None
+    ):
         """Wait until the element matching ``crucial_element_css_selector``
         exists, as defined by existence_detector.
         """
@@ -152,13 +167,15 @@ class ArchivematicaSeleniumAbility(base.Base):
             timeout = self.nihilistic_wait
         try:
             element_exists = existence_detector(
-                (By.CSS_SELECTOR, crucial_element_css_selector))
+                (By.CSS_SELECTOR, crucial_element_css_selector)
+            )
             WebDriverWait(self.driver, timeout).until(element_exists)
         except TimeoutException:
             logger.warning(
                 "Waiting for existence ('presence' or 'visibility') of element"
                 " matching selector %s took too much time!",
-                crucial_element_css_selector)
+                crucial_element_css_selector,
+            )
 
 
 def recurse_on_stale(func):
@@ -166,9 +183,11 @@ def recurse_on_stale(func):
     ``StaleElementReferenceException``. This error occurs when AM's JS repaints
     the DOM and we're holding on to now-destroyed elements.
     """
+
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except StaleElementReferenceException:
             return wrapper(*args, **kwargs)
+
     return wrapper

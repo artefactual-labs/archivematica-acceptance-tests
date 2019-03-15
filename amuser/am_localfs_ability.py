@@ -9,7 +9,7 @@ import logging
 from . import base
 
 
-logger = logging.getLogger('amuser.localfs')
+logger = logging.getLogger("amuser.localfs")
 
 
 class ArchivematicaLocalFSAbility(base.Base):
