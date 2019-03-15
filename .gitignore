@@ -18,3 +18,4 @@ behave-tutorial/
 reports/
 data/
 *.log
+*~

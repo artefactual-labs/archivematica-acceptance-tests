@@ -4,8 +4,12 @@ import datetime
 import logging
 import os
 import re
+import subprocess
+import tempfile
 import zipfile
 
+from amclient.amclient import AMClient
+import environment
 
 logger = logging.getLogger('amauat.steps.utils')
 
@@ -252,3 +256,232 @@ def unzip(zip_path):
     if os.path.isdir(directory_to_extract_to):
         return directory_to_extract_to
     return None
+
+
+def configure_ss_client(context):
+    am = AMClient()
+    am.ss_url = context.am_user.ss_url.rstrip('/')
+    am.ss_user_name = context.am_user.ss_username
+    am.ss_api_key = context.am_user.browser.ss_api_key
+    return am
+
+
+def configure_am_client(context):
+    am = AMClient()
+    am.am_url = context.am_user.am_url.rstrip('/')
+    am.am_user_name = context.am_user.am_username
+    am.am_api_key = context.am_user.am_api_key
+    return am
+
+
+def browse_default_ts_location(context, browse_path=None):
+    """
+    Return transferable directories and entities from a path
+    of the default transfer source of the storage service.
+    """
+    am = configure_ss_client(context)
+    am.transfer_source = return_default_ts_location(context)
+    if browse_path is None:
+        browse_path = context.demo_transfer_path
+    am.transfer_path = browse_path
+    try:
+        resp = am.transferables()
+        if resp.get("directories") or resp.get("entries"):
+            return {
+                'directories': resp.get('directories'),
+                'entries': resp.get('entries'),
+            }
+        return {}
+    except (KeyError, TypeError):
+        raise environment.EnvironmentError("Error making API call")
+
+
+def return_default_ts_location(context):
+    """"
+    Return the UUID of the default transfer source location.
+    """
+    am = configure_ss_client(context)
+    try:
+        resp = am.list_storage_locations()['objects']
+        for location_object in resp:
+            if location_object.get("description") == "" \
+                and location_object.get("enabled") is True \
+                and location_object.get("relative_path").endswith("home") \
+                    and location_object.get("purpose") == "TS":
+                return location_object.get("uuid")
+    except (KeyError, TypeError) as err:
+        raise environment.EnvironmentError("Error making API call: {}".format(err))
+
+
+def start_transfer(
+    context, transfer_name="amauat-transfer", processing_config="automated"):
+    """Start a transfer using the create_package endpoint and return its uuid"""
+    am = configure_am_client(context)
+    am.transfer_source = return_default_ts_location(context)
+    am.transfer_directory = context.demo_transfer_path
+    am.transfer_name = transfer_name
+    am.processing_config = processing_config
+    try:
+        context.transfer_name = transfer_name
+        return am.create_package().get("id")
+    except (KeyError, TypeError) as err:
+        raise environment.EnvironmentError(
+            "Error making API call: {}".format(err))
+
+
+def check_unit_status(context, unit="transfer"):
+    """
+    Get the status of a transfer or an ingest.
+    """
+    am = configure_am_client(context)
+    am.transfer_uuid = context.transfer_uuid
+    am.sip_uuid = context.sip_uuid
+    if unit == "transfer":
+        resp = am.get_transfer_status()
+        if isinstance(resp, dict):
+            return resp
+        raise environment.EnvironmentError(
+            "Error making API call: {}".format(resp)
+        )
+    resp = am.get_ingest_status()
+    if isinstance(resp, dict):
+        return resp
+    raise environment.EnvironmentError(
+        "Error making API call: {}".format(resp)
+    )
+
+
+def download_aip(context):
+    """
+    Download an AIP from the storage service.
+    """
+    tmp = tempfile.gettempdir()
+    # Can be a 7z or a Tar file, we need to differentiate eventually.
+    aip_location = os.path.join(tmp, "amauat-aip-file")
+    am = configure_ss_client(context)
+    am.directory = aip_location
+    aip = am.download_package(context.sip_uuid)
+    if isinstance(aip, int):
+        raise environment.EnvironmentError("Error making API call")
+    return aip
+
+
+def download_file(context, relative_path):
+    """
+    Download a file relative to an AIP's path.
+    """
+    tmp = tempfile.gettempdir()
+    fname = os.path.basename(relative_path)
+    tmp_file_location = os.path.join(tmp, fname)
+    am = configure_ss_client(context)
+    am.package_uuid = context.sip_uuid
+    am.relative_path = relative_path
+    am.saveas_filename = fname
+    am.directory = tmp
+    am.extract_file()
+    return tmp_file_location
+
+
+def download_mets(context):
+    """
+    Download the METS.xml file of an AIP.
+    """
+    mets_file = "{}-{}/data/METS.{}.xml"\
+        .format(context.transfer_name, context.sip_uuid, context.sip_uuid)
+    return download_file(context, mets_file)
+
+
+def _automation_tools_extract_aip(aip_file, aip_uuid, tmp_dir):
+    """
+    Extracts an AIP to a folder.
+    :param str aip_file: absolute path to an AIP
+    :param str aip_uuid: UUID from the AIP
+    :param str tmp_dir: absolute path to a directory to place the extracted AIP
+    :returns: absolute path to the extracted AIP folder
+    """
+    command = ['7z', 'x', '-bd', '-y', '-o{0}'.format(tmp_dir), aip_file]
+    try:
+        subprocess.check_output(command, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        logger.error('Could not extract AIP, error: %s', e.output)
+        return
+
+    # Remove extracted file to avoid multiple entries with the same UUID
+    try:
+        os.remove(aip_file)
+    except OSError:
+        pass
+
+    # Find extracted entry. Assuming it contains the AIP UUID
+    extracted_entry = None
+    for entry in os.listdir(tmp_dir):
+        if aip_uuid in entry:
+            extracted_entry = os.path.join(tmp_dir, entry)
+
+    if not extracted_entry:
+        logger.error('Can not find extracted AIP by UUID')
+        return
+
+    # Return folder path if it's a directory
+    if os.path.isdir(extracted_entry):
+        return extracted_entry
+
+    # Re-try extraction if it's not a directory
+    return extract_aip(extracted_entry, aip_uuid, tmp_dir)
+
+
+# TODO: Make a decision about keeping this. Probably not if not used.
+def extract_aip(context):
+    tmp = tempfile.mkdtemp()
+    return _automation_tools_extract_aip(
+        context.aip_location, context.sip_uuid, tmp)
+
+
+def get_path_before_sanitization(entry, transfer_contains_objects_dir=False):
+    clean_name_premis_events = [
+        ev for ev in entry.get_premis_events() if ev.type == 'name cleanup']
+    if not clean_name_premis_events:
+        result = entry.path
+    else:
+        event = clean_name_premis_events[0]
+        note = event.event_outcome_detail_note
+        # this parsing is based on
+        # metsrw.plugins.premisrw.premis.PREMISEvent.parsed_event_detail
+        parsed_note = dict(
+            [tuple([x.strip(' "') for x in kv.strip().split('=', 1)])
+             for kv in note.split(';')])
+        # remove the '%transferDirectory%' part from the path
+        result = parsed_note['Original name'][19:]
+    if not transfer_contains_objects_dir:
+        # remove the 'objects/' part from the path
+        return result[8:]
+    else:
+        return result
+
+
+def assert_structmap_item_path_exists(item, root_path, parent_path=''):
+    label = item.attrib.get('LABEL')
+    if label:
+        # the relative path of the item is represented by its LABEL attribute
+        path = os.path.join(root_path, parent_path, label)
+        if item.attrib['TYPE'] == 'Item':
+            assert os.path.isfile(path)
+        elif item.attrib['TYPE'] == 'Directory':
+            assert os.path.isdir(path)
+        else:
+            msg = ('Cannot handle structMap items with attribute '
+                   'TYPE "{}"'.format(item.attrib['TYPE']))
+            raise ValueError(msg)
+        for child in item:
+            assert_structmap_item_path_exists(child, root_path, path)
+
+
+def is_valid_download(path):
+    errors = {
+        'path': 'Path returned is None',
+        'validate': 'Cannot validate {} as file'.format(path),
+        'size': 'File {} has not downloaded correctly'.format(path),
+    }
+    assert path, errors['path']
+    assert os.path.isfile(path), errors['validate']
+    assert os.stat(path).st_size >= 1, errors['size']
