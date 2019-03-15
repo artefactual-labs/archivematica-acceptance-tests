@@ -80,8 +80,8 @@ class ArchivematicaBrowserIngestAbility(
         aip_preview_url = self.get_aip_preview_url(sip_uuid).format(
             self.am_url, sip_uuid)
         self.navigate(aip_preview_url)
-        mets_path = 'storeAIP/{}-{}/METS.{}.xml'.format(
-            transfer_name, sip_uuid, sip_uuid)
+        mets_path = 'storeAIP/{0}-{1}/METS.{1}.xml'.format(
+            transfer_name, sip_uuid)
         handles_before = self.driver.window_handles
         self.navigate_to_aip_directory_and_click(mets_path)
         self.wait_for_new_window(handles_before)

@@ -236,10 +236,10 @@ def get_xpath_matches_folder_text(folder_text):
     """
     return (
         "div[contains(@class, 'tree-label') and"
-        " descendant::span[starts-with(normalize-space(text()), '{}') and"
+        " descendant::span[starts-with(normalize-space(text()), '{0}') and"
         " starts-with(normalize-space(substring-after("
         "normalize-space(text()),"
-        " '{}')), '(')]]".format(folder_text, folder_text))
+        " '{0}')), '(')]]".format(folder_text))
 
 
 def folder_label2icon_xpath(folder_label_xpath):

@@ -96,7 +96,7 @@ class ArchivematicaAPIAbility(base.Base):
             counter += 1
             if counter > max_polls:
                 raise ArchivematicaAPIAbilityError(
-                    'Polled too many times waiting for AIP %s to be stored',
+                    'Polled too many times waiting for AIP %s to be stored' %
                     sip_uuid)
             r = requests.get(url, params=payload)
             if r.ok:

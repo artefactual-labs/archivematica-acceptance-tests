@@ -50,7 +50,7 @@ def step_impl(context):
     status = None
     resp = None
     try:
-        while status != "COMPLETE" and status != "FAILED":
+        while status not in ("COMPLETE", "FAILED"):
             time.sleep(environment.MEDIUM_WAIT)
             resp = utils.check_unit_status(context)
             if isinstance(resp, int) or resp is None:
@@ -70,7 +70,7 @@ def step_impl(context):
     status = None
     resp = None
     try:
-        while status != "COMPLETE" and status != "FAILED":
+        while status not in ("COMPLETE", "FAILED"):
             time.sleep(environment.MEDIUM_WAIT)
             resp = utils.check_unit_status(context, unit="ingest")
             if isinstance(resp, int) or resp is None:
@@ -144,7 +144,7 @@ def step_impl(context):
 @then(u'the AIP contains a file called README.html')
 def step_impl(context):
     readme_file = "{}-{}/data/README.html"\
-        .format(context.transfer_name, context.sip_uuid, context.sip_uuid)
+        .format(context.transfer_name, context.sip_uuid)
     extracted_file = utils.download_file(context, readme_file)
     utils.is_valid_download(extracted_file)
 
