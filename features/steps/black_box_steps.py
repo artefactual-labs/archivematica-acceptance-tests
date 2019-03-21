@@ -11,7 +11,7 @@ from __future__ import print_function, unicode_literals
 import os
 import time
 
-from behave import given, when, then
+from behave import given, when, then, use_step_matcher
 from lxml import etree
 import metsrw
 
@@ -298,10 +298,20 @@ def step_impl(context):
     )
 
 
-@then("there is a PREMIS reingestion event for each original object in the AIP METS")
-def step_impl(context):
-    event_type = "reingestion"
-    types = {"reingestion": "reingestion"}
+use_step_matcher("re")
+
+
+@then("there is a.? (?P<event_type>.*) event for each original object in the AIP METS")
+def step_impl(context, event_type):
+    # map the event types as written in the feature file
+    # to what AM outputs in the METS
+    types = {
+        "file format identification": "format identification",
+        "ingestion": "ingestion",
+        "message digest calculation": "message digest calculation",
+        "reingestion": "reingestion",
+        "virus scanning": "virus check",
+    }
     mets = metsrw.METSDocument.fromfile(context.aip_mets_location)
     original_files = [
         fsentry for fsentry in mets.all_files() if fsentry.use == "original"
@@ -312,6 +322,9 @@ def step_impl(context):
             event_type, fsentry.path
         )
         assert len(events) == 1, error
+
+
+use_step_matcher("parse")
 
 
 @then("there is a current and a superseded techMD for each original object")

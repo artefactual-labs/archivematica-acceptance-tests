@@ -515,9 +515,7 @@ def get_premis_events_by_type(entry, event_type):
 
 
 def get_path_before_sanitization(entry, transfer_contains_objects_dir=False):
-    clean_name_premis_events = [
-        ev for ev in entry.get_premis_events() if ev.type == "name cleanup"
-    ]
+    clean_name_premis_events = get_premis_events_by_type(entry, "name cleanup")
     if not clean_name_premis_events:
         result = entry.path
     else:

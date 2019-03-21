@@ -9,7 +9,7 @@ Feature: Alma wants to be able to re-ingest an AIP and have the reingest recorde
   Scenario: METS contains reingestion events
     Given an AIP has been reingested
     When the reingest processing is complete
-    Then there is a PREMIS reingestion event for each original object in the AIP METS
+    Then there is a reingestion event for each original object in the AIP METS
 
   Scenario: METS contains deleted files
     Given an AIP has been reingested
