@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import tempfile
+import time
 import zipfile
 
 from amclient.amclient import AMClient
@@ -339,6 +340,14 @@ def return_default_ts_location(context):
         raise environment.EnvironmentError("Error making API call: {}".format(err))
 
 
+def get_default_ss_pipeline(context):
+    am = configure_ss_client(context)
+    try:
+        return am.get_pipelines()["objects"][0].get("uuid")
+    except (KeyError, IndexError) as err:
+        raise environment.EnvironmentError("Error making API call: {}".format(err))
+
+
 def start_transfer(
     context, transfer_name="amauat-transfer", processing_config="automated"
 ):
@@ -352,6 +361,48 @@ def start_transfer(
         context.transfer_name = transfer_name
         return am.create_package().get("id")
     except (KeyError, TypeError) as err:
+        raise environment.EnvironmentError("Error making API call: {}".format(err))
+
+
+def check_unapproved_transfers_with_same_directory_name(context):
+    am = configure_am_client(context)
+    for transfer in am.unapproved_transfers()["results"]:
+        if transfer["directory"] == context.transfer_name:
+            return True
+
+
+def approve_transfer(context, transfer_uuid):
+    context.transfer_uuid = transfer_uuid
+    response = check_unit_status(context, "transfer")
+    if response.get("status") == "USER_INPUT":
+        am = configure_am_client(context)
+        am.transfer_directory = response["directory"]
+        message = am.approve_transfer()
+        if not message.get("error"):
+            return message["uuid"]
+        raise environment.EnvironmentError(message["error"])
+
+
+def start_reingest(context, reingest_type="FULL", processing_config="automated"):
+    # necessary in case a previous test failed leaving unapproved transfers
+    if check_unapproved_transfers_with_same_directory_name(context):
+        raise environment.EnvironmentError(
+            "Cannot start reingest of AIP {} because there is a "
+            "unapproved transfer with the same directory name in "
+            "watchedDirectories/activeTransfers/standardTransfer".format(
+                context.sip_uuid
+            )
+        )
+    am = configure_ss_client(context)
+    am.reingest_type = reingest_type
+    am.processing_config = processing_config
+    am.pipeline_uuid = get_default_ss_pipeline(context)
+    am.aip_uuid = context.sip_uuid
+    try:
+        reingest_uuid = am.reingest_aip().get("reingest_uuid")
+        time.sleep(environment.MEDIUM_WAIT)
+        return approve_transfer(context, reingest_uuid)
+    except (KeyError, TypeError, AttributeError) as err:
         raise environment.EnvironmentError("Error making API call: {}".format(err))
 
 
@@ -459,6 +510,10 @@ def extract_aip(context):
     return _automation_tools_extract_aip(context.aip_location, context.sip_uuid, tmp)
 
 
+def get_premis_events_by_type(entry, event_type):
+    return [ev for ev in entry.get_premis_events() if ev.type == event_type]
+
+
 def get_path_before_sanitization(entry, transfer_contains_objects_dir=False):
     clean_name_premis_events = [
         ev for ev in entry.get_premis_events() if ev.type == "name cleanup"
@@ -512,3 +567,14 @@ def is_valid_download(path):
     assert path, errors["path"]
     assert os.path.isfile(path), errors["validate"]
     assert os.stat(path).st_size >= 1, errors["size"]
+
+
+def get_filesec_files(tree, use=None, nsmap={}):
+    use_query = ""
+    # an empty use parameter will retrieve all the files in the fileSec
+    if use:
+        use_query = '="{}"'.format(use)
+    return tree.findall(
+        "mets:fileSec/mets:fileGrp[@USE{}]/mets:file".format(use_query),
+        namespaces=nsmap,
+    )

@@ -43,6 +43,24 @@ def step_impl(context):
     )
 
 
+@given("an AIP has been reingested")
+def step_impl(context):
+    context.execute_steps(
+        'Given the transfer "DemoTransferCSV" is started with the'
+        " automatedProcessingMCP processing configuration.\n"
+        "When the Transfer is COMPLETE\n"
+        "And the Ingest is COMPLETE\n"
+        "Then an AIP can be downloaded\n"
+    )
+    # Save the METS of the initial transfer
+    context.initial_aip_mets_location = context.aip_mets_location
+    try:
+        context.transfer_uuid = utils.start_reingest(context)
+    except environment.EnvironmentError as err:
+        assert False, "Error starting reingest: {}".format(err)
+    context.execute_steps("When the Transfer is COMPLETE\nAnd the Ingest is COMPLETE\n")
+
+
 @when("the Transfer is COMPLETE")
 def step_impl(context):
     """Step 2"""
@@ -61,7 +79,9 @@ def step_impl(context):
         else:
             assert False, "Error in transfer"
     except environment.EnvironmentError as err:
-        assert False, "Error checking transfer status: {}".format(err)
+        assert False, "Error checking transfer (uuid: {}) status: {}".format(
+            context.transfer_uuid, err
+        )
 
 
 @when("the Ingest is COMPLETE")
@@ -81,12 +101,19 @@ def step_impl(context):
         else:
             assert False, "Error in ingest"
     except environment.EnvironmentError as err:
-        assert False, "Error checking ingest status: {}".format(err)
+        assert False, "Error checking ingest (uuid: {}) status: {}".format(
+            context.sip_uuid, err
+        )
 
 
 @when("the AIP is downloaded")
 def step_impl(context):
     context.execute_steps("Then an AIP can be downloaded")
+
+
+@when("the reingest processing is complete")
+def step_impl(context):
+    context.execute_steps("Then an AIP can be downloaded\n")
 
 
 @then("an AIP can be downloaded")
@@ -174,9 +201,7 @@ def step_impl(context):
     context.aip_location = utils.download_aip(context)
     extracted_aip_dir = utils.extract_aip(context)
     tree = etree.parse(context.aip_mets_location)
-    filesec_files = tree.findall(
-        "mets:fileSec//mets:file", namespaces=context.mets_nsmap
-    )
+    filesec_files = utils.get_filesec_files(tree, nsmap=context.mets_nsmap)
     for filesec_file in filesec_files:
         flocat = filesec_file.find("mets:FLocat", namespaces=context.mets_nsmap)
         href = flocat.attrib["{http://www.w3.org/1999/xlink}href"]
@@ -209,9 +234,7 @@ def step_impl(context):
 @then("every object in the AIP has been assigned a UUID in the AIP METS")
 def step_impl(context):
     tree = etree.parse(context.aip_mets_location)
-    filesec_files = tree.findall(
-        "mets:fileSec//mets:file", namespaces=context.mets_nsmap
-    )
+    filesec_files = utils.get_filesec_files(tree, nsmap=context.mets_nsmap)
     for filesec_file in filesec_files:
         # remove the 'file-' prefix from the UUID of the file
         file_uuid = filesec_file.attrib["ID"].split("file-")[-1]
@@ -230,9 +253,7 @@ def step_impl(context):
 @then("every object in the objects and metadata directories has an amdSec")
 def step_impl(context):
     tree = etree.parse(context.aip_mets_location)
-    filesec_files = tree.findall(
-        "mets:fileSec//mets:file", namespaces=context.mets_nsmap
-    )
+    filesec_files = utils.get_filesec_files(tree, nsmap=context.mets_nsmap)
     for filesec_file in filesec_files:
         amdsec_id = filesec_file.attrib["ADMID"]
         amdsec = tree.find(
@@ -268,3 +289,71 @@ def step_impl(context):
             ]
         )
         assert event_agent_types == expected_agent_types
+
+
+@then("the AIP can be successfully stored")
+def step_impl(context):
+    context.execute_steps(
+        "Then the AIP METS can be accessed and parsed by mets-reader-writer\n"
+    )
+
+
+@then("there is a PREMIS reingestion event for each original object in the AIP METS")
+def step_impl(context):
+    event_type = "reingestion"
+    types = {"reingestion": "reingestion"}
+    mets = metsrw.METSDocument.fromfile(context.aip_mets_location)
+    original_files = [
+        fsentry for fsentry in mets.all_files() if fsentry.use == "original"
+    ]
+    for fsentry in original_files:
+        events = utils.get_premis_events_by_type(fsentry, types[event_type])
+        error = "Expected one {} event in the METS for file {}".format(
+            event_type, fsentry.path
+        )
+        assert len(events) == 1, error
+
+
+@then("there is a current and a superseded techMD for each original object")
+def step_impl(context):
+    mets = metsrw.METSDocument.fromfile(context.aip_mets_location)
+    original_files = [
+        fsentry for fsentry in mets.all_files() if fsentry.use == "original"
+    ]
+    for fsentry in original_files:
+        techmds = mets.tree.findall(
+            'mets:amdSec[@ID="{}"]/mets:techMD'.format(fsentry.admids[0]),
+            namespaces=context.mets_nsmap,
+        )
+        techmds_status = sorted([techmd.attrib["STATUS"] for techmd in techmds])
+        error = (
+            "Expected two techMD elements (current and superseded) for"
+            " file {}. Got {} instead".format(fsentry.path, techmds_status)
+        )
+        assert techmds_status == ["current", "superseded"], error
+
+
+@then("there is a fileSec for deleted files for objects that were re-normalized")
+def step_impl(context):
+    # get files that were deleted after reingest
+    reingest_mets = metsrw.METSDocument.fromfile(context.aip_mets_location)
+    deleted_files = utils.get_filesec_files(
+        reingest_mets.tree, use="deleted", nsmap=context.mets_nsmap
+    )
+    # the GROUPID represents the UUID of the deleted file before being reingested
+    # remove the "Group-" prefix to get its initial UUID
+    deleted_file_uuids = [
+        deleted_file.attrib["GROUPID"][6:] for deleted_file in deleted_files
+    ]
+    # go through each normalized file in the original METS (before reingest)
+    # and verify that its file_uuid is included in the deleted file uuids
+    initial_mets = metsrw.METSDocument.fromfile(context.initial_aip_mets_location)
+    original_files = [
+        fsentry for fsentry in initial_mets.all_files() if fsentry.use == "original"
+    ]
+    for fsentry in original_files:
+        if utils.get_premis_events_by_type(fsentry, "normalization"):
+            error = "Expected normalized file {} to be deleted after reingest".format(
+                fsentry.path
+            )
+            assert fsentry.file_uuid in deleted_file_uuids, error
