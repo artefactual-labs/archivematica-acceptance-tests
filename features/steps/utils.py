@@ -11,6 +11,8 @@ import zipfile
 
 from amclient.amclient import AMClient
 import environment
+from environment import AM_API_CONFIG_KEY
+from environment import SS_API_CONFIG_KEY
 
 logger = logging.getLogger("amauat.steps.utils")
 
@@ -283,186 +285,214 @@ def unzip(zip_path):
     return None
 
 
-def configure_ss_client(context):
+def configure_ss_client(api_client_config):
     am = AMClient()
-    am.ss_url = context.am_user.ss_url.rstrip("/")
-    am.ss_user_name = context.am_user.ss_username
-    am.ss_api_key = context.am_user.browser.ss_api_key
+    am.ss_url = api_client_config["url"]
+    am.ss_user_name = api_client_config["username"]
+    am.ss_api_key = api_client_config["api_key"]
     return am
 
 
-def configure_am_client(context):
+def configure_am_client(api_client_config):
     am = AMClient()
-    am.am_url = context.am_user.am_url.rstrip("/")
-    am.am_user_name = context.am_user.am_username
-    am.am_api_key = context.am_user.am_api_key
+    am.am_url = api_client_config["url"]
+    am.am_user_name = api_client_config["username"]
+    am.am_api_key = api_client_config["api_key"]
     return am
 
 
-def browse_default_ts_location(context, browse_path=None):
+def is_invalid_api_response(response):
+    return response is None or isinstance(response, int)
+
+
+def call_api_endpoint(
+    endpoint, endpoint_args=[], warning_message=None, error_message=None, max_attempts=3
+):
+    if warning_message is None:
+        warning_message = "Got invalid response from {}. Retrying".format(endpoint)
+    if error_message is None:
+        error_message = (
+            "Could not get a valid response from {}"
+            " after {} attempts".format(endpoint, max_attempts)
+        )
+    response = None
+    attempts = 0
+    while is_invalid_api_response(response):
+        response = endpoint(*endpoint_args)
+        attempts += 1
+        if is_invalid_api_response(response):
+            if attempts == max_attempts:
+                raise environment.EnvironmentError(error_message)
+            logger.warning(warning_message)
+            time.sleep(environment.OPTIMISTIC_WAIT * attempts)
+    return response
+
+
+def browse_default_ts_location(api_clients_config, browse_path):
     """
     Return transferable directories and entities from a path
     of the default transfer source of the storage service.
     """
-    am = configure_ss_client(context)
-    am.transfer_source = return_default_ts_location(context)
-    if browse_path is None:
-        browse_path = context.demo_transfer_path
+    am = configure_ss_client(api_clients_config[SS_API_CONFIG_KEY])
+    am.transfer_source = return_default_ts_location(api_clients_config)
     am.transfer_path = browse_path
-    try:
-        resp = am.transferables()
-        if resp.get("directories") or resp.get("entries"):
-            return {
-                "directories": resp.get("directories"),
-                "entries": resp.get("entries"),
-            }
-        return {}
-    except (KeyError, TypeError):
-        raise environment.EnvironmentError("Error making API call")
+    response = call_api_endpoint(
+        endpoint=am.transferables,
+        warning_message="Error browser default TS location",
+        error_message="Error browser default TS location",
+    )
+    if response.get("directories") or response.get("entries"):
+        return {
+            "directories": response.get("directories"),
+            "entries": response.get("entries"),
+        }
+    return {}
 
 
-def return_default_ts_location(context):
+def return_default_ts_location(api_clients_config):
     """"
     Return the UUID of the default transfer source location.
     """
-    am = configure_ss_client(context)
-    try:
-        resp = am.list_storage_locations()["objects"]
-        for location_object in resp:
-            if (
-                location_object.get("description") == ""
-                and location_object.get("enabled") is True
-                and location_object.get("relative_path").endswith("home")
-                and location_object.get("purpose") == "TS"
-            ):
-                return location_object.get("uuid")
-    except (KeyError, TypeError) as err:
-        raise environment.EnvironmentError("Error making API call: {}".format(err))
+    am = configure_ss_client(api_clients_config[SS_API_CONFIG_KEY])
+    response = call_api_endpoint(
+        endpoint=am.list_storage_locations,
+        warning_message="Cannot list storage locations",
+        error_message="Cannot list storage locations",
+    )
+    for location_object in response.get("objects", []):
+        if (
+            location_object.get("description") == ""
+            and location_object.get("enabled") is True
+            and location_object.get("relative_path").endswith("home")
+            and location_object.get("purpose") == "TS"
+        ):
+            return location_object.get("uuid")
 
 
-def get_default_ss_pipeline(context):
-    am = configure_ss_client(context)
-    try:
-        return am.get_pipelines()["objects"][0].get("uuid")
-    except (KeyError, IndexError) as err:
-        raise environment.EnvironmentError("Error making API call: {}".format(err))
+def get_default_ss_pipeline(api_clients_config):
+    am = configure_ss_client(api_clients_config[SS_API_CONFIG_KEY])
+    response = call_api_endpoint(
+        endpoint=am.get_pipelines,
+        warning_message="Cannot get default SS pipeline",
+        error_message="Cannot get default SS pipeline",
+    )
+    objects = response.get("objects", [])
+    if objects:
+        return objects[0].get("uuid")
 
 
 def start_transfer(
-    context, transfer_name="amauat-transfer", processing_config="automated"
+    api_clients_config, transfer_path, transfer_name=None, processing_config="automated"
 ):
     """Start a transfer using the create_package endpoint and return its uuid"""
-    am = configure_am_client(context)
-    am.transfer_source = return_default_ts_location(context)
-    am.transfer_directory = context.demo_transfer_path
+    if transfer_name is None:
+        transfer_name = "amauat-transfer_{}".format(int(time.time()))
+    am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
+    am.transfer_source = return_default_ts_location(api_clients_config)
+    am.transfer_directory = transfer_path
     am.transfer_name = transfer_name
     am.processing_config = processing_config
-    try:
-        context.transfer_name = transfer_name
-        return am.create_package().get("id")
-    except (KeyError, TypeError) as err:
-        raise environment.EnvironmentError("Error making API call: {}".format(err))
+    response = call_api_endpoint(
+        endpoint=am.create_package,
+        warning_message="Cannot start transfer",
+        error_message="Cannot stat transfer",
+    )
+    return {"transfer_name": transfer_name, "transfer_uuid": response.get("id")}
 
 
-def check_unapproved_transfers_with_same_directory_name(context):
-    am = configure_am_client(context)
-    for transfer in am.unapproved_transfers()["results"]:
-        if transfer["directory"] == context.transfer_name:
+def check_unapproved_transfers_with_same_directory_name(
+    api_clients_config, directory_name
+):
+    am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
+    response = call_api_endpoint(
+        endpoint=am.unapproved_transfers,
+        warning_message="Cannot get unapproved tansfers",
+        error_message="Cannot get unapproved tansfers",
+    )
+    for transfer in response.get("results", []):
+        if transfer.get("directory") == directory_name:
             return True
 
 
-def approve_transfer(context, transfer_uuid):
-    context.transfer_uuid = transfer_uuid
-    response = check_unit_status(context, "transfer")
+def approve_transfer(api_clients_config, transfer_uuid):
+    response = check_unit_status(api_clients_config, transfer_uuid, "transfer")
     if response.get("status") == "USER_INPUT":
-        am = configure_am_client(context)
+        am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
         am.transfer_directory = response["directory"]
-        message = am.approve_transfer()
-        if not message.get("error"):
-            return message["uuid"]
-        raise environment.EnvironmentError(message["error"])
+        response = call_api_endpoint(
+            endpoint=am.approve_transfer, warning_message="", error_message=""
+        )
+        if not response.get("error"):
+            return response["uuid"]
+        raise environment.EnvironmentError(response["error"])
 
 
-def start_reingest(context, reingest_type="FULL", processing_config="automated"):
+def start_reingest(
+    api_clients_config,
+    transfer_name,
+    sip_uuid,
+    reingest_type="FULL",
+    processing_config="automated",
+):
     # necessary in case a previous test failed leaving unapproved transfers
-    if check_unapproved_transfers_with_same_directory_name(context):
+    if check_unapproved_transfers_with_same_directory_name(
+        api_clients_config, transfer_name
+    ):
         raise environment.EnvironmentError(
             "Cannot start reingest of AIP {} because there is a "
             "unapproved transfer with the same directory name in "
-            "watchedDirectories/activeTransfers/standardTransfer".format(
-                context.sip_uuid
-            )
+            "watchedDirectories/activeTransfers/standardTransfer".format(sip_uuid)
         )
-    am = configure_ss_client(context)
+    am = configure_ss_client(api_clients_config[SS_API_CONFIG_KEY])
     am.reingest_type = reingest_type
     am.processing_config = processing_config
-    am.pipeline_uuid = get_default_ss_pipeline(context)
-    am.aip_uuid = context.sip_uuid
-    try:
-        reingest_uuid = am.reingest_aip().get("reingest_uuid")
-        time.sleep(environment.MEDIUM_WAIT)
-        return approve_transfer(context, reingest_uuid)
-    except (KeyError, TypeError, AttributeError) as err:
-        raise environment.EnvironmentError("Error making API call: {}".format(err))
+    am.pipeline_uuid = get_default_ss_pipeline(api_clients_config)
+    am.aip_uuid = sip_uuid
+    response = call_api_endpoint(
+        endpoint=am.reingest_aip,
+        warning_message="Cannot reingest AIP",
+        error_message="Cannot reingest AIP",
+    )
+    reingest_uuid = response.get("reingest_uuid")
+    time.sleep(environment.MEDIUM_WAIT)
+    return approve_transfer(api_clients_config, reingest_uuid)
 
 
-def check_unit_status(context, unit="transfer"):
+def check_unit_status(api_clients_config, unit_uuid, unit="transfer"):
     """
     Get the status of a transfer or an ingest.
     """
-    am = configure_am_client(context)
-    am.transfer_uuid = context.transfer_uuid
-    am.sip_uuid = context.sip_uuid
-    if unit == "transfer":
-        resp = am.get_transfer_status()
-        if isinstance(resp, dict):
-            return resp
-        raise environment.EnvironmentError("Error making API call: {}".format(resp))
-    resp = am.get_ingest_status()
-    if isinstance(resp, dict):
-        return resp
-    raise environment.EnvironmentError("Error making API call: {}".format(resp))
+    am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
+    am.transfer_uuid = unit_uuid
+    am.sip_uuid = unit_uuid
+    return call_api_endpoint(
+        endpoint=getattr(am, "get_{}_status".format(unit)),
+        warning_message="Cannot check unit status",
+        error_message="Cannot check unit status",
+    )
 
 
-def download_aip(context):
+def download_aip(api_clients_config, sip_uuid):
     """
     Download an AIP from the storage service.
     """
-    tmp = tempfile.gettempdir()
-    # Can be a 7z or a Tar file, we need to differentiate eventually.
-    aip_location = os.path.join(tmp, "amauat-aip-file")
-    am = configure_ss_client(context)
-    am.directory = aip_location
-    aip = am.download_package(context.sip_uuid)
-    if isinstance(aip, int):
-        raise environment.EnvironmentError("Error making API call")
-    return aip
-
-
-def download_file(context, relative_path):
-    """
-    Download a file relative to an AIP's path.
-    """
-    tmp = tempfile.gettempdir()
-    fname = os.path.basename(relative_path)
-    tmp_file_location = os.path.join(tmp, fname)
-    am = configure_ss_client(context)
-    am.package_uuid = context.sip_uuid
-    am.relative_path = relative_path
-    am.saveas_filename = fname
-    am.directory = tmp
-    am.extract_file()
-    return tmp_file_location
-
-
-def download_mets(context):
-    """
-    Download the METS.xml file of an AIP.
-    """
-    mets_file = "{}-{}/data/METS.{}.xml".format(
-        context.transfer_name, context.sip_uuid, context.sip_uuid
+    am = configure_ss_client(api_clients_config[SS_API_CONFIG_KEY])
+    am.directory = tempfile.mkdtemp()
+    return call_api_endpoint(
+        endpoint=am.download_package,
+        endpoint_args=[sip_uuid],
+        warning_message="Error downloading AIP",
+        error_message="Error donwloading AIP",
     )
-    return download_file(context, mets_file)
+
+
+def get_aip_file_location(extracted_aip_dir, relative_path):
+    return os.path.join(extracted_aip_dir, relative_path)
+
+
+def get_aip_mets_location(extracted_aip_dir, sip_uuid):
+    path = os.path.join("data", "METS.{}.xml".format(sip_uuid))
+    return get_aip_file_location(extracted_aip_dir, path)
 
 
 def _automation_tools_extract_aip(aip_file, aip_uuid, tmp_dir):
@@ -504,10 +534,10 @@ def _automation_tools_extract_aip(aip_file, aip_uuid, tmp_dir):
     return _automation_tools_extract_aip(extracted_entry, aip_uuid, tmp_dir)
 
 
-# TODO: Make a decision about keeping this. Probably not if not used.
-def extract_aip(context):
+def extract_aip(api_clients_config, sip_uuid):
     tmp = tempfile.mkdtemp()
-    return _automation_tools_extract_aip(context.aip_location, context.sip_uuid, tmp)
+    aip_ss_filename = download_aip(api_clients_config, sip_uuid)
+    return _automation_tools_extract_aip(aip_ss_filename, sip_uuid, tmp)
 
 
 def get_premis_events_by_type(entry, event_type):
@@ -576,3 +606,110 @@ def get_filesec_files(tree, use=None, nsmap={}):
         "mets:fileSec/mets:fileGrp[@USE{}]/mets:file".format(use_query),
         namespaces=nsmap,
     )
+
+
+def start_sample_transfer(api_clients_config, sample_transfer_path):
+    result = {}
+    transfer_path = os.path.join(environment.sample_data_path, sample_transfer_path)
+    if not browse_default_ts_location(api_clients_config, transfer_path):
+        raise environment.EnvironmentError("Location cannot be verified")
+    try:
+        start_result = start_transfer(api_clients_config, transfer_path)
+        result["transfer_uuid"] = start_result["transfer_uuid"]
+        result["transfer_name"] = start_result["transfer_name"]
+        result["transfer_path"] = transfer_path
+        return result
+    except environment.EnvironmentError as err:
+        assert False, "Error starting transfer: {}".format(err)
+
+
+def wait_for_transfer(api_clients_config, transfer_uuid):
+    status = None
+    resp = None
+    try:
+        while status not in ("COMPLETE", "FAILED") or (
+            status == "COMPLETE" and resp.get("sip_uuid") is None
+        ):
+            time.sleep(environment.MEDIUM_WAIT)
+            resp = check_unit_status(api_clients_config, transfer_uuid, "transfer")
+            if isinstance(resp, int) or resp is None:
+                continue
+            status = resp.get("status")
+        if status == "COMPLETE":
+            return resp.get("sip_uuid")
+        else:
+            assert False, "Error in transfer"
+    except environment.EnvironmentError as err:
+        assert False, "Error checking transfer (uuid: {}) status: {}".format(
+            transfer_uuid, err
+        )
+
+
+def wait_for_ingest(api_clients_config, sip_uuid):
+    status = None
+    resp = None
+    try:
+        while status not in ("COMPLETE", "FAILED"):
+            time.sleep(environment.MEDIUM_WAIT)
+            resp = check_unit_status(api_clients_config, sip_uuid, unit="ingest")
+            if isinstance(resp, int) or resp is None:
+                continue
+            status = resp.get("status")
+        if status == "COMPLETE":
+            return
+        else:
+            assert False, "Error in ingest"
+    except environment.EnvironmentError as err:
+        assert False, "Error checking ingest (uuid: {}) status: {}".format(
+            sip_uuid, err
+        )
+
+
+def get_transfer_result(api_clients_config, transfer_uuid):
+    """
+    Wait for a started transfer to finish and return:
+      - the SIP UUID
+      - the local directory where the AIP has been extracted to
+      - the METS path
+    """
+    sip_uuid = wait_for_transfer(api_clients_config, transfer_uuid)
+    wait_for_ingest(api_clients_config, sip_uuid)
+    extracted_aip_dir = extract_aip(api_clients_config, sip_uuid)
+    aip_mets_location = get_aip_mets_location(extracted_aip_dir, sip_uuid)
+    return {
+        "sip_uuid": sip_uuid,
+        "extracted_aip_dir": extracted_aip_dir,
+        "aip_mets_location": aip_mets_location,
+    }
+
+
+def create_sample_transfer(api_clients_config, sample_transfer_path):
+    cached_transfer = environment.transfers_cache.setdefault(sample_transfer_path, {})
+    if "aip_mets_location" in cached_transfer:
+        return cached_transfer
+    transfer = start_sample_transfer(api_clients_config, sample_transfer_path)
+    transfer_result = get_transfer_result(api_clients_config, transfer["transfer_uuid"])
+    transfer["sip_uuid"] = transfer_result["sip_uuid"]
+    transfer["extracted_aip_dir"] = transfer_result["extracted_aip_dir"]
+    transfer["aip_mets_location"] = transfer_result["aip_mets_location"]
+    cached_transfer.update(transfer)
+    return transfer
+
+
+def create_reingest(api_clients_config, transfer):
+    if "reingest_aip_mets_location" in transfer:
+        return transfer
+    result = {}
+    try:
+        result["reingest_transfer_uuid"] = start_reingest(
+            api_clients_config, transfer["transfer_name"], transfer["sip_uuid"]
+        )
+    except environment.EnvironmentError as err:
+        assert False, "Error starting reingest: {}".format(err)
+    reingest_transfer_result = get_transfer_result(
+        api_clients_config, result["reingest_transfer_uuid"]
+    )
+    result["reingest_sip_uuid"] = reingest_transfer_result["sip_uuid"]
+    result["reingest_extracted_aip_dir"] = reingest_transfer_result["extracted_aip_dir"]
+    result["reingest_aip_mets_location"] = reingest_transfer_result["aip_mets_location"]
+    return result

@@ -21,9 +21,8 @@ class EnvironmentError(Exception):
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Archivematica sample-data paths.
-demo_transfer_path = os.path.join(
-    "archivematica", "archivematica-sampledata", "SampleTransfers", "DemoTransferCSV"
-)
+sample_data_path = os.path.join("archivematica", "archivematica-sampledata")
+transfers_cache = {}
 
 # Change these to match your test environment
 # These may also be overridden as Behave userdata options
@@ -34,10 +33,12 @@ AM_PASSWORD = "testtest"
 AM_URL = "http://192.168.168.192/"
 AM_VERSION = "1.6"
 AM_API_KEY = None
+AM_API_CONFIG_KEY = "archivematica"
 SS_USERNAME = "test"
 SS_PASSWORD = "test"
 SS_URL = "http://192.168.168.192:8000/"
 SS_API_KEY = None
+SS_API_CONFIG_KEY = "storage_service"
 # Path relative to /home where transfer sources live.
 TRANSFER_SOURCE_PATH = "vagrant/archivematica-sampledata/TestTransfers/acceptance-tests"
 HOME = ""
@@ -160,9 +161,10 @@ def before_scenario(context, scenario):
     why we are using ``before_scenario`` here and not ``before_all``.
     """
     userdata = context.config.userdata
-    context.am_user = get_am_user(userdata)
     context.utils = utils
-    context.am_user.browser.set_up()
+    if "driver_name" in userdata:
+        context.am_user = get_am_user(userdata)
+        context.am_user.browser.set_up()
     context.TRANSFER_SOURCE_PATH = userdata.get(
         "transfer_source_path", TRANSFER_SOURCE_PATH
     )
@@ -171,7 +173,18 @@ def before_scenario(context, scenario):
         "automation_tools_path", AUTOMATION_TOOLS_PATH
     )
     context.mets_nsmap = METS_NSMAP
-    context.demo_transfer_path = demo_transfer_path
+    context.api_clients_config = {
+        SS_API_CONFIG_KEY: {
+            "url": userdata.get("ss_url", SS_URL).rstrip("/"),
+            "username": userdata.get("ss_username", SS_USERNAME),
+            "api_key": userdata.get("ss_api_key", SS_API_KEY),
+        },
+        AM_API_CONFIG_KEY: {
+            "url": userdata.get("am_url", AM_URL).rstrip("/"),
+            "username": userdata.get("am_username", AM_USERNAME),
+            "api_key": userdata.get("am_api_key", AM_API_KEY),
+        },
+    }
 
 
 def after_scenario(context, scenario):
@@ -191,7 +204,8 @@ def after_scenario(context, scenario):
         " than that of the AIP on the second one."
     ):
         context.am_user.docker.recreate_archivematica(capture_output=True)
-    context.am_user.browser.tear_down()
+    if getattr(context, "am_user", None) is not None:
+        context.am_user.browser.tear_down()
 
 
 def _bool(value):
