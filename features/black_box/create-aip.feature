@@ -40,7 +40,7 @@ Background: The storage service is configured with a transfer source that can se
     When the AIP is downloaded
     Then the physical structMap of the AIP METS accurately reflects the physical layout of the AIP
 
-  Scenario: Every object contains has a UUID
+  Scenario: Every object has a UUID
     Given an AIP has been created and stored
     When the AIP is downloaded
     Then every object in the AIP has been assigned a UUID in the AIP METS
