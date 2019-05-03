@@ -108,7 +108,7 @@ def step_impl(context):
         assert file_name in cached_directories[file_dir]["entries"]
 
 
-@then("the AIP contains a file called README.html")
+@then("the AIP contains a file called README.html in the data directory")
 def step_impl(context):
     readme_file = utils.get_aip_file_location(
         context.current_transfer["extracted_aip_dir"],
@@ -117,7 +117,7 @@ def step_impl(context):
     utils.is_valid_download(readme_file)
 
 
-@then("the AIP contains a METS.xml file in the data directory")
+@then("the AIP contains a file called METS.xml in the data directory")
 def step_impl(context):
     mets_file = utils.get_aip_mets_location(
         context.current_transfer["extracted_aip_dir"],
