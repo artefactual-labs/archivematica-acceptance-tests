@@ -17,6 +17,18 @@ import metsrw
 from features.steps import utils
 
 
+# map the event types as written in the feature file
+# to what AM outputs in the METS
+PREMIS_EVENT_TYPES = {
+    "file format identification": "format identification",
+    "ingestion": "ingestion",
+    "message digest calculation": "message digest calculation",
+    "reingestion": "reingestion",
+    "validation": "validation",
+    "virus scanning": "virus check",
+}
+
+
 def format_original_files_error(transfer):
     return 'The {} file does not contain any "original" files in its fileSec'.format(
         transfer["aip_mets_location"]
@@ -29,18 +41,19 @@ def format_no_files_error(transfer):
     )
 
 
-@given("an AIP has been created and stored")
-def step_impl(context):
-    sample_transfer_path = os.path.join("SampleTransfers", "DemoTransferCSV")
+@given('a "{sample_transfer_path}" AIP has been created and stored')
+def step_impl(context, sample_transfer_path):
     transfer = utils.create_sample_transfer(
         context.api_clients_config, sample_transfer_path
     )
     context.current_transfer = transfer
 
 
-@given("an AIP has been reingested")
-def step_impl(context):
-    context.execute_steps("Given an AIP has been created and stored\n")
+@given("a {sample_transfer_path} AIP has been reingested")
+def step_impl(context, sample_transfer_path):
+    context.execute_steps(
+        "Given a {} AIP has been created and stored\n".format(sample_transfer_path)
+    )
     reingest = utils.create_reingest(
         context.api_clients_config, context.current_transfer
     )
@@ -52,7 +65,7 @@ def step_impl(context):
     utils.is_valid_download(context.current_transfer["aip_mets_location"])
 
 
-@when("the reingest processing is complete")
+@when("the reingest has been processed")
 def step_impl(context):
     utils.is_valid_download(context.current_transfer["aip_mets_location"])
     utils.is_valid_download(context.current_transfer["reingest_aip_mets_location"])
@@ -262,15 +275,6 @@ use_step_matcher("re")
 
 @then("there is a.? (?P<event_type>.*) event for each original object in the AIP METS")
 def step_impl(context, event_type):
-    # map the event types as written in the feature file
-    # to what AM outputs in the METS
-    types = {
-        "file format identification": "format identification",
-        "ingestion": "ingestion",
-        "message digest calculation": "message digest calculation",
-        "reingestion": "reingestion",
-        "virus scanning": "virus check",
-    }
     mets_path = context.current_transfer["aip_mets_location"]
     if event_type == "reingestion":
         mets_path = context.current_transfer["reingest_aip_mets_location"]
@@ -280,7 +284,9 @@ def step_impl(context, event_type):
     ]
     assert original_files, format_original_files_error(context.current_transfer)
     for fsentry in original_files:
-        events = utils.get_premis_events_by_type(fsentry, types[event_type])
+        events = utils.get_premis_events_by_type(
+            fsentry, PREMIS_EVENT_TYPES[event_type]
+        )
         error = "Expected one {} event in the METS for file {}".format(
             event_type, fsentry.path
         )
@@ -288,6 +294,35 @@ def step_impl(context, event_type):
 
 
 use_step_matcher("parse")
+
+
+@then(
+    "there are {expected_files_count:d} original objects in the AIP METS with"
+    " a {event_type} event"
+)
+def step_impl(context, expected_files_count, event_type):
+    if not expected_files_count:
+        return
+    mets_path = context.current_transfer["aip_mets_location"]
+    mets = metsrw.METSDocument.fromfile(mets_path)
+    original_files = [
+        fsentry for fsentry in mets.all_files() if fsentry.use == "original"
+    ]
+    assert original_files, format_original_files_error(context.current_transfer)
+    files_with_event_type = []
+    for fsentry in original_files:
+        if utils.get_premis_events_by_type(fsentry, PREMIS_EVENT_TYPES[event_type]):
+            files_with_event_type.append(fsentry)
+    error = (
+        "In the {mets} file only the following files had {event_type} events"
+        " when {expected} were expected to have: {files}".format(
+            mets=context.current_transfer["aip_mets_location"],
+            event_type=event_type,
+            expected=expected_files_count,
+            files=", ".join([entry.path for entry in files_with_event_type]),
+        )
+    )
+    assert len(files_with_event_type) == expected_files_count, error
 
 
 @then("there is a current and a superseded techMD for each original object")

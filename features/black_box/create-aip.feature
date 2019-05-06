@@ -6,7 +6,7 @@ Alma wants to be able to create AIPs from all of Archivematica's different trans
 Background: The storage service is configured with a transfer source that can see the archivematica-sampledata repository.
 
   Scenario: Generate an AIP using a standard transfer workflow
-    Given an AIP has been created and stored
+    Given a "SampleTransfers/DemoTransferCSV" AIP has been created and stored
     When the AIP is downloaded
     Then the AIP METS can be accessed and parsed by mets-reader-writer
     And the AIP conforms to expected content and structure

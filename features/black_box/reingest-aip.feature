@@ -2,8 +2,8 @@
 Feature: Alma wants to be able to re-ingest an AIP and have the reingest recorded accurately in the AIP METS file.
 
   Scenario: Reingest without error
-    Given an AIP has been reingested
-    When the reingest processing is complete
+    Given a "SampleTransfers/DemoTransferCSV" AIP has been reingested
+    When the reingest has been processed
     Then the AIP can be successfully stored
     And there is a reingestion event for each original object in the AIP METS
     And there is a fileSec for deleted files for objects that were re-normalized
