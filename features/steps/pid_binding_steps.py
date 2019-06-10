@@ -97,8 +97,7 @@ def step_impl(context):
 
 
 @given(
-    "a Handle server client configured to use the accession number as the"
-    " PID for the AIP"
+    "a Handle server client configured to use the accession number as the PID for the AIP"
 )
 def step_impl(context):
     context.am_user.browser.configure_handle(
@@ -115,18 +114,16 @@ def step_impl(context):
 
 
 @then(
-    "the AIP METS file documents PIDs, PURLs, and UUIDs for all files,"
-    " directories and the package itself"
+    "the AIP METS file documents PIDs, PURLs, and UUIDs for all files, directories and the package itself"
 )
 def step_impl(context):
     accession_no = getattr(context.scenario, "accession_no", None)
-    mets = context.scenario.mets = utils.get_mets_from_scenario(context)
+    mets = context.scenario.mets = utils.get_mets_from_scenario(context, api=True)
     context.am_user.mets.validate_mets_for_pids(mets, accession_no=accession_no)
 
 
 @then(
-    "the empty directory in {empty_dir_rel_path} is in the normative"
-    " structMap and has identifiers"
+    "the empty directory in {empty_dir_rel_path} is in the normative structMap and has identifiers"
 )
 def step_impl(context, empty_dir_rel_path):
     mets = context.scenario.mets

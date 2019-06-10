@@ -1,6 +1,10 @@
+# -*- coding: utf-8 -*-
+
 """Archivematica Ingest Tab Ability"""
 
+import os
 import logging
+import tempfile
 import time
 
 from lxml import etree
@@ -12,6 +16,8 @@ from selenium.common.exceptions import (
     NoSuchElementException,
     TimeoutException,
 )
+
+from amclient import AMClient
 
 from . import base
 from . import constants as c
@@ -60,6 +66,31 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
         logger.info("Got SIP UUID %s", sip_uuid)
         return sip_uuid
 
+    def get_mets_via_api(self, transfer_name, sip_uuid=None, parse_xml=True):
+        """Return METS once stored in an AIP."""
+        if not sip_uuid:
+            sip_uuid = self.get_sip_uuid(transfer_name)
+        absolute_transfer_name = "{}-{}".format(transfer_name, sip_uuid)
+        mets_name = "METS.{}.xml".format(sip_uuid)
+        mets_path = "{}/data/{}".format(absolute_transfer_name, mets_name)
+        mets_tmp_dir = tempfile.mkdtemp()
+        mets_tmp_file = os.path.join(mets_tmp_dir, mets_name)
+        AMClient(
+            ss_api_key=self._ss_api_key,
+            ss_user_name=self.ss_username,
+            ss_url=self.ss_url.rstrip("/"),
+            package_uuid=sip_uuid,
+            relative_path=mets_path,
+            saveas_filename=mets_tmp_file,
+        ).extract_file()
+        mets = ""
+        with open(mets_tmp_file, "r") as mets_file:
+            mets = mets_file.read()
+        os.unlink(mets_tmp_file)
+        if parse_xml:
+            return etree.fromstring(mets.encode("utf8"))
+        return mets
+
     def get_mets(self, transfer_name, sip_uuid=None, parse_xml=True):
         """Return the METS file XML as an lxml instance or as a string if
         ``parse_xml`` is set to ``False``.
@@ -89,7 +120,7 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
         while self.driver.current_url.strip() == "about:blank":
             if attempts > self.max_check_mets_loaded_attempts:
                 msg = (
-                    "Exceeded maxumim allowable attempts ({}) for checking"
+                    "Exceeded maximum allowable attempts ({}) for checking"
                     " if the METS file has loaded.".format(
                         self.max_check_mets_loaded_attempts
                     )

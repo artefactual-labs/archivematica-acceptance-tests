@@ -45,7 +45,7 @@ Feature: Archivematica's entities can be assigned PIDs with specified resolution
     And a Handle server client configured to create qualified PURLs
     And a Handle server client configured to use the accession number as the PID for the AIP
     When a transfer is initiated on directory <directory_path> with accession number <accession_no>
-    And the user waits for the "Store AIP (review)" decision point to appear during ingest
+    And the user waits for the AIP to appear in archival storage
     Then the AIP METS file documents PIDs, PURLs, and UUIDs for all files, directories and the package itself
     And the empty directory in <empty_dir_rel_path> is in the normative structMap and has identifiers
 

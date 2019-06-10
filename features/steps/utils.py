@@ -85,7 +85,20 @@ def get_event_attr(event_type):
     return "{}_event_uuid".format(event_type)
 
 
-def get_mets_from_scenario(context):
+def get_mets_from_scenario(context, api=False):
+    """Retrieve the AIP METS file from the test scenario
+
+    Given a parameter of True for the api parameter, then we will seek to
+    retrieve the AIP METS from the AIP package itself. When that parameter is
+    False, we will seek to download it via the web-driver from the Store AIP
+    decision point on the ingest tab of Archivematica where the user has the
+    opportunity to review the METS file from the browser window.
+    """
+    if api:
+        return context.am_user.browser.get_mets_via_api(
+            context.scenario.transfer_name,
+            context.am_user.browser.get_sip_uuid(context.scenario.transfer_name),
+        )
     return context.am_user.browser.get_mets(
         context.scenario.transfer_name,
         context.am_user.browser.get_sip_uuid(context.scenario.transfer_name),

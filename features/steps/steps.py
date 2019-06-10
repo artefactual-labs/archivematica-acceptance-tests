@@ -109,18 +109,18 @@ def step_impl(context):
         "Given that the user has ensured that the default processing config is"
         " in its default state\n"
         'And the processing config decision "Select file format identification'
-        ' command (Transfer)" is set to "Identify using Fido"\n'
+        ' command (Transfer)" is set to "Yes"\n'
         'And the processing config decision "Create SIP(s)" is set to "Create'
         ' single SIP and continue processing"\n'
         'And the processing config decision "Select file format identification'
-        ' command (Ingest)" is set to "Identify using Fido"\n'
+        ' command (Ingest)" is set to "Yes"\n'
         'And the processing config decision "Normalize" is set to "Normalize'
         ' for preservation and access"\n'
         'And the processing config decision "Approve normalization" is set to'
         ' "Yes"\n'
         'And the processing config decision "Select file format identification'
         ' command (Submission documentation & metadata)" is set to'
-        ' "Identify using Fido"\n'
+        ' "Yes"\n'
         'And the processing config decision "Perform policy checks on'
         ' preservation derivatives" is set to "No"\n'
         'And the processing config decision "Perform policy checks on access'
@@ -135,7 +135,8 @@ def step_impl(context):
         ' "Do not upload DIP"\n'
         'And the processing config decision "Store DIP" is set to'
         ' "Do not store"\n'
-        'And the processing config decision "Store AIP" is set to "None"\n'
+        'And the processing config decision "Store AIP" is set to "Yes"\n'
+        'And the processing config decision "Store AIP location" is set to "Default location"\n'
     )
 
 

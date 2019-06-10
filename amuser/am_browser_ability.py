@@ -451,7 +451,7 @@ class ArchivematicaBrowserAbility(
         )
         self.set_processing_config_decision(
             decision_label="Select file format identification command (Ingest)",
-            choice_value="Use existing data",
+            choice_value="No, use existing data",
         )
         self.set_processing_config_decision(
             decision_label="Normalize", choice_value="None"

@@ -152,15 +152,15 @@ def _add_entity_identifiers(entity, doc, ns):
         obj_idfr_els = amd_sec_el.findall(
             ".//mets:mdWrap/"
             "mets:xmlData/"
-            "premis:object/"
-            "premis:objectIdentifier",
+            "premis3:object/"
+            "premis3:objectIdentifier",
             ns,
         )
         for obj_idfr_el in obj_idfr_els:
             identifiers.append(
                 (
-                    obj_idfr_el.find("premis:objectIdentifierType", ns).text,
-                    obj_idfr_el.find("premis:objectIdentifierValue", ns).text,
+                    obj_idfr_el.find("premis3:objectIdentifierType", ns).text,
+                    obj_idfr_el.find("premis3:objectIdentifierValue", ns).text,
                 )
             )
     else:
