@@ -16,8 +16,7 @@ logger = logging.getLogger("amauat.steps")
 
 
 @given(
-    'the user waits for the "{microservice_name}" micro-service to complete'
-    " during {unit_type}"
+    'the user waits for the "{microservice_name}" micro-service to complete during {unit_type}'
 )
 def step_impl(context, microservice_name, unit_type):
     utils.wait_for_micro_service_to_complete(context, microservice_name, unit_type)
@@ -42,8 +41,7 @@ def step_impl(context, choice, decision_point, unit_type):
 @given("the default processing config is in its default state")
 def step_impl(context):
     context.execute_steps(
-        "Given that the user has ensured that the default processing config is"
-        " in its default state"
+        "Given that the user has ensured that the default processing config is in its default state"
     )
 
 
@@ -106,36 +104,22 @@ def step_impl(context):
     feature.
     """
     context.execute_steps(
-        "Given that the user has ensured that the default processing config is"
-        " in its default state\n"
-        'And the processing config decision "Select file format identification'
-        ' command (Transfer)" is set to "Identify using Fido"\n'
-        'And the processing config decision "Create SIP(s)" is set to "Create'
-        ' single SIP and continue processing"\n'
-        'And the processing config decision "Select file format identification'
-        ' command (Ingest)" is set to "Identify using Fido"\n'
-        'And the processing config decision "Normalize" is set to "Normalize'
-        ' for preservation and access"\n'
-        'And the processing config decision "Approve normalization" is set to'
-        ' "Yes"\n'
-        'And the processing config decision "Select file format identification'
-        ' command (Submission documentation & metadata)" is set to'
-        ' "Identify using Fido"\n'
-        'And the processing config decision "Perform policy checks on'
-        ' preservation derivatives" is set to "No"\n'
-        'And the processing config decision "Perform policy checks on access'
-        ' derivatives" is set to "No"\n'
-        'And the processing config decision "Perform policy checks on'
-        ' originals" is set to "No"\n'
-        'And the processing config decision "Document empty directories"'
-        ' is set to "No"\n'
-        'And the processing config decision "Generate thumbnails" is set to'
-        ' "No"\n'
-        'And the processing config decision "Upload DIP" is set to'
-        ' "Do not upload DIP"\n'
-        'And the processing config decision "Store DIP" is set to'
-        ' "Do not store"\n'
-        'And the processing config decision "Store AIP" is set to "None"\n'
+        "Given that the user has ensured that the default processing config is in its default state\n"
+        'And the processing config decision "Select file format identification command (Transfer)" is set to "Yes"\n'
+        'And the processing config decision "Create SIP(s)" is set to "Create single SIP and continue processing"\n'
+        'And the processing config decision "Select file format identification command (Ingest)" is set to "Yes"\n'
+        'And the processing config decision "Normalize" is set to "Normalize for preservation and access"\n'
+        'And the processing config decision "Approve normalization" is set to "Yes"\n'
+        'And the processing config decision "Select file format identification command (Submission documentation & metadata)" is set to "Yes"\n'
+        'And the processing config decision "Perform policy checks on preservation derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on access derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on originals" is set to "No"\n'
+        'And the processing config decision "Document empty directories" is set to "No"\n'
+        'And the processing config decision "Generate thumbnails" is set to "No"\n'
+        'And the processing config decision "Upload DIP" is set to "Do not upload DIP"\n'
+        'And the processing config decision "Store DIP" is set to "Do not store"\n'
+        'And the processing config decision "Store AIP" is set to "Yes"\n'
+        'And the processing config decision "Store AIP location" is set to "Default location"\n'
     )
 
 
@@ -146,27 +130,16 @@ def step_impl(context):
 def step_impl(context):
     context.execute_steps(
         "Given the default processing config is in its default state\n"
-        'And the processing config decision "Assign UUIDs to directories" is'
-        ' set to "No"\n'
-        'And the processing config decision "Document empty directories" is'
-        ' set to "No"\n'
-        'And the processing config decision "Select file format identification'
-        ' command (Transfer)" is set to "Identify using Siegfried"\n'
-        'And the processing config decision "Perform policy checks on'
-        ' originals" is set to "No"\n'
-        'And the processing config decision "Create SIP(s)" is set to "Create'
-        ' single SIP and continue processing"\n'
-        'And the processing config decision "Normalize" is set to "Normalize'
-        ' for preservation"\n'
-        'And the processing config decision "Approve normalization" is set to'
-        ' "Yes"\n'
-        'And the processing config decision "Perform policy checks on'
-        ' preservation derivatives" is set to "No"\n'
-        'And the processing config decision "Perform policy checks on access'
-        ' derivatives" is set to "No"\n'
-        'And the processing config decision "Select file format identification'
-        ' command (Submission documentation & metadata)" is set to'
-        ' "Identify using Siegfried"\n'
+        'And the processing config decision "Assign UUIDs to directories" is set to "No"\n'
+        'And the processing config decision "Document empty directories" is set to "No"\n'
+        'And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Siegfried"\n'
+        'And the processing config decision "Perform policy checks on originals" is set to "No"\n'
+        'And the processing config decision "Create SIP(s)" is set to "Create single SIP and continue processing"\n'
+        'And the processing config decision "Normalize" is set to "Normalize for preservation"\n'
+        'And the processing config decision "Approve normalization" is set to "Yes"\n'
+        'And the processing config decision "Perform policy checks on preservation derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on access derivatives" is set to "No"\n'
+        'And the processing config decision "Select file format identification command (Submission documentation & metadata)" is set to "Identify using Siegfried"\n'
         'And the processing config decision "Bind PIDs" is set to "No"'
     )
 
@@ -175,31 +148,19 @@ def step_impl(context):
 def step_impl(context):
     context.execute_steps(
         "Given the default processing config is in its default state\n"
-        'And the processing config decision "Document empty directories" is'
-        ' set to "No"\n'
-        'And the processing config decision "Assign UUIDs to directories" is'
-        ' set to "No"\n'
-        'And the processing config decision "Select file format identification'
-        ' command (Transfer)" is set to "Identify using Siegfried"\n'
-        'And the processing config decision "Perform policy checks on'
-        ' originals" is set to "No"\n'
-        'And the processing config decision "Create SIP(s)" is set to "Create'
-        ' single SIP and continue processing"\n'
-        'And the processing config decision "Normalize" is set to "Normalize'
-        ' for preservation"\n'
-        'And the processing config decision "Approve normalization" is set to'
-        ' "Yes"\n'
-        'And the processing config decision "Perform policy checks on'
-        ' preservation derivatives" is set to "No"\n'
-        'And the processing config decision "Perform policy checks on access'
-        ' derivatives" is set to "No"\n'
-        'And the processing config decision "Select file format identification'
-        ' command (Submission documentation & metadata)" is set to'
-        ' "Identify using Siegfried"\n'
+        'And the processing config decision "Document empty directories" is set to "No"\n'
+        'And the processing config decision "Assign UUIDs to directories" is set to "No"\n'
+        'And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Siegfried"\n'
+        'And the processing config decision "Perform policy checks on originals" is set to "No"\n'
+        'And the processing config decision "Create SIP(s)" is set to "Create single SIP and continue processing"\n'
+        'And the processing config decision "Normalize" is set to "Normalize for preservation"\n'
+        'And the processing config decision "Approve normalization" is set to "Yes"\n'
+        'And the processing config decision "Perform policy checks on preservation derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on access derivatives" is set to "No"\n'
+        'And the processing config decision "Select file format identification command (Submission documentation & metadata)" is set to "Identify using Siegfried"\n'
         'And the processing config decision "Bind PIDs" is set to "No"\n'
         'And the processing config decision "Store AIP" is set to "Yes"\n'
-        'And the processing config decision "Store AIP location" is set to'
-        ' "Default location"\n'
+        'And the processing config decision "Store AIP location" is set to "Default location"\n'
     )
 
 
@@ -210,12 +171,9 @@ def step_impl(context):
 def step_impl(context):
     context.execute_steps(
         "Given the default processing config is in its default state\n"
-        'And the processing config decision "Assign UUIDs to directories" is'
-        ' set to "No"\n'
-        'And the processing config decision "Select file format identification'
-        ' command (Transfer)" is set to "Identify using Siegfried"\n'
-        'And the processing config decision "Perform policy checks on'
-        ' originals" is set to "No"\n'
+        'And the processing config decision "Assign UUIDs to directories" is set to "No"\n'
+        'And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Siegfried"\n'
+        'And the processing config decision "Perform policy checks on originals" is set to "No"\n'
     )
 
 
@@ -367,35 +325,18 @@ def step_impl(context):
     - store AIP
     """
     context.execute_steps(
-        'When the user waits for the "Assign UUIDs to directories?" decision'
-        ' point to appear and chooses "No" during transfer\n'
-        'And the user waits for the "Select file format identification command"'
-        ' decision point to appear and chooses "Identify using Siegfried" during'
-        " transfer\n"
-        'And the user waits for the "Perform policy checks on originals?"'
-        ' decision point to appear and chooses "No" during transfer\n'
-        'And the user waits for the "Create SIP(s)" decision point to appear'
-        ' and chooses "Create single SIP and continue processing" during'
-        " transfer\n"
-        'And the user waits for the "Normalize" decision point to appear and'
-        ' chooses "Normalize for preservation" during ingest\n'
-        'And the user waits for the "Approve normalization (review)" decision'
-        ' point to appear and chooses "Approve" during ingest\n'
-        'And the user waits for the "Perform policy checks on preservation'
-        ' derivatives?" decision point to appear and chooses "No" during'
-        " ingest\n"
-        'And the user waits for the "Perform policy checks on access'
-        ' derivatives?" decision point to appear and chooses "No" during'
-        " ingest\n"
-        'And the user waits for the "Select file format identification'
-        ' command|Process submission documentation" decision point to'
-        ' appear and chooses "Identify using Siegfried" during ingest\n'
-        'And the user waits for the "Bind PIDs?" decision point to appear and'
-        ' chooses "No" during ingest\n'
-        'And the user waits for the "Document empty directories?" decision'
-        ' point to appear and chooses "No" during ingest\n'
-        'And the user waits for the "Store AIP (review)" decision point to'
-        ' appear and chooses "Store AIP" during ingest'
+        'When the user waits for the "Assign UUIDs to directories?" decision point to appear and chooses "No" during transfer\n'
+        'And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Siegfried" during transfer\n'
+        'And the user waits for the "Perform policy checks on originals?" decision point to appear and chooses "No" during transfer\n'
+        'And the user waits for the "Create SIP(s)" decision point to appear and chooses "Create single SIP and continue processing" during transfer\n'
+        'And the user waits for the "Normalize" decision point to appear and chooses "Normalize for preservation" during ingest\n'
+        'And the user waits for the "Approve normalization (review)" decision point to appear and chooses "Approve" during ingest\n'
+        'And the user waits for the "Perform policy checks on preservation derivatives?" decision point to appear and chooses "No" during ingest\n'
+        'And the user waits for the "Perform policy checks on access derivatives?" decision point to appear and chooses "No" during ingest\n'
+        'And the user waits for the "Select file format identification command|Process submission documentation" decision point to appear and chooses "Identify using Siegfried" during ingest\n'
+        'And the user waits for the "Bind PIDs?" decision point to appear and chooses "No" during ingest\n'
+        'And the user waits for the "Document empty directories?" decision point to appear and chooses "No" during ingest\n'
+        'And the user waits for the "Store AIP (review)" decision point to appear and chooses "Store AIP" during ingest'
     )
 
 
@@ -438,33 +379,18 @@ def step_impl(context):
     """
     context.execute_steps(
         "When the user initiates a metadata-only re-ingest on the AIP\n"
-        'And the user waits for the "Approve AIP reingest" decision point to'
-        ' appear and chooses "Approve AIP reingest" during ingest\n'
-        'And the user waits for the "Normalize" decision point to appear and'
-        ' chooses "Do not normalize" during ingest\n'
-        'And the user waits for the "Perform policy checks on preservation'
-        ' derivatives?" decision point to appear and chooses "No" during'
-        " ingest\n"
-        'And the user waits for the "Perform policy checks on access'
-        ' derivatives?" decision point to appear and chooses "No" during'
-        " ingest\n"
-        'And the user waits for the "Reminder: add metadata if desired"'
-        " decision point to appear during ingest\n"
+        'And the user waits for the "Approve AIP reingest" decision point to appear and chooses "Approve AIP reingest" during ingest\n'
+        'And the user waits for the "Normalize" decision point to appear and chooses "Do not normalize" during ingest\n'
+        'And the user waits for the "Perform policy checks on preservation derivatives?" decision point to appear and chooses "No" during ingest\n'
+        'And the user waits for the "Perform policy checks on access derivatives?" decision point to appear and chooses "No" during ingest\n'
+        'And the user waits for the "Reminder: add metadata if desired" decision point to appear during ingest\n'
         "And the user adds metadata\n"
-        'And the user chooses "Continue" at decision point "Reminder: add'
-        ' metadata if desired" during ingest\n'
-        'And the user waits for the "Select file format identification'
-        ' command|Process submission documentation" decision point to appear'
-        ' and chooses "Identify using Fido" during ingest\n'
-        'And the user waits for the "Bind PIDs?" decision point to appear'
-        ' and chooses "No" during ingest\n'
-        'And the user waits for the "Document empty directories?" decision'
-        ' point to appear and chooses "No" during ingest\n'
-        'And the user waits for the "Store AIP (review)" decision point to'
-        ' appear and chooses "Store AIP" during ingest\n'
-        'And the user waits for the "Store AIP location" decision point to'
-        ' appear and chooses "Store AIP Encrypted in standard Archivematica'
-        ' Directory" during ingest\n'
+        'And the user chooses "Continue" at decision point "Reminder: add metadata if desired" during ingest\n'
+        'And the user waits for the "Select file format identification command|Process submission documentation" decision point to appear and chooses "Identify using Fido" during ingest\n'
+        'And the user waits for the "Bind PIDs?" decision point to appear and chooses "No" during ingest\n'
+        'And the user waits for the "Document empty directories?" decision point to appear and chooses "No" during ingest\n'
+        'And the user waits for the "Store AIP (review)" decision point to appear and chooses "Store AIP" during ingest\n'
+        'And the user waits for the "Store AIP location" decision point to appear and chooses "Store AIP Encrypted in standard Archivematica Directory" during ingest\n'
         "And the user waits for the AIP to appear in archival storage"
     )
 
