@@ -55,7 +55,7 @@ Feature: UUIDs for Directories
     Given a processing configuration that assigns UUIDs to directories
     And remote directory <directory_path> contains a hierarchy of subfolders containing digital objects
     When a <type> transfer is initiated on directory <directory_path>
-    And the user waits for the "Store AIP (review)" decision point to appear during ingest
+    And the user waits for the AIP to appear in archival storage
     Then the METS file includes the original directory structure
     And the UUIDs for the subfolders and digital objects are written to the METS file
 
