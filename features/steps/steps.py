@@ -1,6 +1,7 @@
 """General-purpose Steps."""
 
 import logging
+import os
 import time
 
 from behave import when, then, given, use_step_matcher
@@ -23,16 +24,14 @@ def step_impl(context, microservice_name, unit_type):
 
 
 @given(
-    'the user waits for the "{microservice_name}" decision point to appear'
-    " during {unit_type}"
+    'the user waits for the "{microservice_name}" decision point to appear during {unit_type}'
 )
 def step_impl(context, microservice_name, unit_type):
     utils.wait_for_decision_point_to_appear(context, microservice_name, unit_type)
 
 
 @given(
-    'the user chooses "{choice}" at decision point "{decision_point}" during'
-    " {unit_type}"
+    'the user chooses "{choice}" at decision point "{decision_point}" during {unit_type}'
 )
 def step_impl(context, choice, decision_point, unit_type):
     utils.make_choice(context, choice, decision_point, unit_type)
@@ -46,8 +45,7 @@ def step_impl(context):
 
 
 @given(
-    "that the user has ensured that the default processing config is in its"
-    " default state"
+    "that the user has ensured that the default processing config is in its default state"
 )
 def step_impl(context):
     context.am_user.browser.ensure_default_processing_config_in_default_state()
@@ -61,14 +59,50 @@ def step_impl(context):
     context.am_user.browser.save_default_processing_config()
 
 
-@given(
-    'the processing config decision "{decision_label}" is set to' ' "{choice_value}"'
-)
-def step_impl(context, decision_label, choice_value):
+def _set_config(context, decision_label, choice_value):
+    """Helper to allow us to conveniently set processing configuration choices.
+    """
     context.am_user.browser.set_processing_config_decision(
         decision_label=decision_label, choice_value=choice_value
     )
     context.am_user.browser.save_default_processing_config()
+
+
+@given('the processing config decision "{decision_label}" is set to "{choice_value}"')
+def step_impl(context, decision_label, choice_value):
+    _set_config(context, decision_label, choice_value)
+
+
+@then('the processing config decision "{decision_label}" is set to "{choice_value}"')
+def step_impl(context, decision_label, choice_value):
+    _set_config(context, decision_label, choice_value)
+
+
+def _resolve_all_steps(context):
+    """Helper function to allow us to resolve all decision points in a
+    configuration.
+    """
+    context.execute_steps(
+        "Given a fully automated default processing config\n"
+        'And the processing config decision "Assign UUIDs to directories" is set to "No"\n'
+        'And the processing config decision "Bind PIDs" is set to "No"\n'
+    )
+
+
+@then("automated processing with all decision points resolved")
+def step_impl(context):
+    """Utilizes the Bind PIDs automated processing, but plugs the gaps where
+    decisions haven't been resolved.
+    """
+    _resolve_all_steps(context)
+
+
+@given("automated processing with all decision points resolved")
+def step_impl(context):
+    """Utilizes the Bind PIDs automated processing, but plugs the gaps where
+    decisions haven't been resolved.
+    """
+    _resolve_all_steps(context)
 
 
 @given("a transfer is initiated on directory {transfer_path}")
@@ -79,8 +113,7 @@ def step_impl(context, transfer_path):
 
 
 @given(
-    "the user has ensured that there is a storage service space with"
-    " attributes {attributes}"
+    "the user has ensured that there is a storage service space with attributes {attributes}"
 )
 def step_impl(context, attributes):
     """Ensure that there is a storage space with the attributes in
@@ -105,12 +138,12 @@ def step_impl(context):
     """
     context.execute_steps(
         "Given that the user has ensured that the default processing config is in its default state\n"
-        'And the processing config decision "Select file format identification command (Transfer)" is set to "Yes"\n'
+        'And the processing config decision "Perform file format identification (Transfer)" is set to "Yes"\n'
         'And the processing config decision "Create SIP(s)" is set to "Create single SIP and continue processing"\n'
-        'And the processing config decision "Select file format identification command (Ingest)" is set to "Yes"\n'
+        'And the processing config decision "Perform file format identification (Ingest)" is set to "Yes"\n'
         'And the processing config decision "Normalize" is set to "Normalize for preservation and access"\n'
         'And the processing config decision "Approve normalization" is set to "Yes"\n'
-        'And the processing config decision "Select file format identification command (Submission documentation & metadata)" is set to "Yes"\n'
+        'And the processing config decision "Perform file format identification (Submission documentation & metadata)" is set to "Yes"\n'
         'And the processing config decision "Perform policy checks on preservation derivatives" is set to "No"\n'
         'And the processing config decision "Perform policy checks on access derivatives" is set to "No"\n'
         'And the processing config decision "Perform policy checks on originals" is set to "No"\n'
@@ -124,14 +157,14 @@ def step_impl(context):
 
 
 @given(
-    "the default processing config is set to automate a transfer through to"
-    ' "Store AIP"'
+    'the default processing config is set to automate a transfer through to "Store AIP"'
 )
 def step_impl(context):
     context.execute_steps(
         "Given the default processing config is in its default state\n"
         'And the processing config decision "Assign UUIDs to directories" is set to "No"\n'
         'And the processing config decision "Document empty directories" is set to "No"\n'
+        # TODO: change the below step to 'Perform file format identification ...' post 1.8 if fixing-up this test.
         'And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Siegfried"\n'
         'And the processing config decision "Perform policy checks on originals" is set to "No"\n'
         'And the processing config decision "Create SIP(s)" is set to "Create single SIP and continue processing"\n'
@@ -139,6 +172,7 @@ def step_impl(context):
         'And the processing config decision "Approve normalization" is set to "Yes"\n'
         'And the processing config decision "Perform policy checks on preservation derivatives" is set to "No"\n'
         'And the processing config decision "Perform policy checks on access derivatives" is set to "No"\n'
+        # TODO: change the below step to 'Perform file format identification ...' post 1.8 if fixing-up this test.
         'And the processing config decision "Select file format identification command (Submission documentation & metadata)" is set to "Identify using Siegfried"\n'
         'And the processing config decision "Bind PIDs" is set to "No"'
     )
@@ -150,14 +184,15 @@ def step_impl(context):
         "Given the default processing config is in its default state\n"
         'And the processing config decision "Document empty directories" is set to "No"\n'
         'And the processing config decision "Assign UUIDs to directories" is set to "No"\n'
-        'And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Siegfried"\n'
+        'And the processing config decision "Perform file format identification (Transfer)" is set to "Yes"\n'
         'And the processing config decision "Perform policy checks on originals" is set to "No"\n'
         'And the processing config decision "Create SIP(s)" is set to "Create single SIP and continue processing"\n'
+        'And the processing config decision "Perform file format identification (Ingest)" is set to "Yes"\n'
         'And the processing config decision "Normalize" is set to "Normalize for preservation"\n'
         'And the processing config decision "Approve normalization" is set to "Yes"\n'
         'And the processing config decision "Perform policy checks on preservation derivatives" is set to "No"\n'
         'And the processing config decision "Perform policy checks on access derivatives" is set to "No"\n'
-        'And the processing config decision "Select file format identification command (Submission documentation & metadata)" is set to "Identify using Siegfried"\n'
+        'And the processing config decision "Perform file format identification (Submission documentation & metadata)" is set to "Yes"\n'
         'And the processing config decision "Bind PIDs" is set to "No"\n'
         'And the processing config decision "Store AIP" is set to "Yes"\n'
         'And the processing config decision "Store AIP location" is set to "Default location"\n'
@@ -165,13 +200,13 @@ def step_impl(context):
 
 
 @given(
-    'a default processing config that gets a transfer to the "Create SIP(s)"'
-    " decision point"
+    'a default processing config that gets a transfer to the "Create SIP(s)" decision point'
 )
 def step_impl(context):
     context.execute_steps(
         "Given the default processing config is in its default state\n"
         'And the processing config decision "Assign UUIDs to directories" is set to "No"\n'
+        # TODO: change the below step to 'Perform file format identification ...' post 1.8 if fixing-up this test.
         'And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Siegfried"\n'
         'And the processing config decision "Perform policy checks on originals" is set to "No"\n'
     )
@@ -182,24 +217,21 @@ def step_impl(context):
 
 
 @when(
-    'the user waits for the "{microservice_name}" micro-service to complete'
-    " during {unit_type}"
+    'the user waits for the "{microservice_name}" micro-service to complete during {unit_type}'
 )
 def step_impl(context, microservice_name, unit_type):
     utils.wait_for_micro_service_to_complete(context, microservice_name, unit_type)
 
 
 @when(
-    'the user waits for the "{microservice_name}" decision point to appear'
-    " during {unit_type}"
+    'the user waits for the "{microservice_name}" decision point to appear during {unit_type}'
 )
 def step_impl(context, microservice_name, unit_type):
     utils.wait_for_decision_point_to_appear(context, microservice_name, unit_type)
 
 
 @when(
-    'the user waits for the "{microservice_name}" decision point to appear'
-    ' and chooses "{choice}" during {unit_type}'
+    'the user waits for the "{microservice_name}" decision point to appear and chooses "{choice}" during {unit_type}'
 )
 def step_impl(context, microservice_name, choice, unit_type):
     utils.wait_for_decision_point_to_appear(context, microservice_name, unit_type)
@@ -207,18 +239,28 @@ def step_impl(context, microservice_name, choice, unit_type):
 
 
 @when(
-    'the user chooses "{choice}" at decision point "{decision_point}" during'
-    " {unit_type}"
+    'the user chooses "{choice}" at decision point "{decision_point}" during {unit_type}'
 )
 def step_impl(context, choice, decision_point, unit_type):
     utils.make_choice(context, choice, decision_point, unit_type)
 
 
-@when("the user waits for the AIP to appear in archival storage")
-def step_impl(context):
+def _appear_in_storage(context):
+    """Helper to wrap the functionality to test for an AIP in archival storage.
+    """
     uuid_val = utils.get_uuid_val(context, "sip")
     context.am_user.browser.wait_for_aip_in_archival_storage(uuid_val)
-    time.sleep(context.am_user.medium_wait)
+    time.sleep(context.am_user.pessimistic_wait)
+
+
+@when("the user waits for the AIP to appear in archival storage")
+def step_impl(context):
+    _appear_in_storage(context)
+
+
+@then("the user waits for the AIP to appear in archival storage")
+def step_impl(context):
+    _appear_in_storage(context)
 
 
 @when("the user searches for the AIP UUID in the Storage Service")
@@ -233,8 +275,7 @@ def step_impl(context):
 use_step_matcher("re")
 
 
-@when("the user downloads the (?P<aip_description>.*)AIP")
-def step_impl(context, aip_description):
+def _download_the_aip(context, aip_description):
     aip_description = aip_description.strip()
     if aip_description:
         aip_description = aip_description + "_aip"
@@ -249,6 +290,32 @@ def step_impl(context, aip_description):
     attr_name = aip_description.replace(" ", "")
     logger.info("setting attribute %s to %s", attr_name, context.scenario.aip_path)
     setattr(context.scenario, attr_name, context.scenario.aip_path)
+
+
+@then("the user downloads the (?P<aip_description>.*)AIP")
+def step_impl(context, aip_description):
+    _download_the_aip(context, aip_description)
+
+
+@when("the user downloads the (?P<aip_description>.*)AIP")
+def step_impl(context, aip_description):
+    _download_the_aip(context, aip_description)
+
+
+def _decompress_the_aip(context):
+    context.scenario.aip_path = context.am_user.decompress_aip(
+        context.scenario.aip_path
+    )
+
+
+@then("the user decompresses the AIP")
+def step_impl(context):
+    _decompress_the_aip(context)
+
+
+@when("the user decompresses the AIP")
+def step_impl(context):
+    _decompress_the_aip(context)
 
 
 use_step_matcher("parse")
@@ -290,17 +357,10 @@ def step_impl(context, aip_description):
     )
 
 
-@when("the user waits for the DIP to appear in transfer backlog")
+@when("the user waits for the SIP to appear in transfer backlog")
 def step_impl(context):
     uuid_val = utils.get_uuid_val(context, "transfer")
     context.am_user.browser.wait_for_dip_in_transfer_backlog(uuid_val)
-
-
-@when("the user decompresses the AIP")
-def step_impl(context):
-    context.scenario.aip_path = context.am_user.decompress_aip(
-        context.scenario.aip_path
-    )
 
 
 @when("the user adds metadata")
@@ -308,8 +368,17 @@ def step_impl(context):
     context.am_user.browser.add_dummy_metadata(utils.get_uuid_val(context, "sip"))
 
 
+@given("the user initiates a {reingest_type} re-ingest on the AIP")
+def step_impl(context, reingest_type):
+    _perform_reingest(context, reingest_type)
+
+
 @when("the user initiates a {reingest_type} re-ingest on the AIP")
 def step_impl(context, reingest_type):
+    _perform_reingest(context, reingest_type)
+
+
+def _perform_reingest(context, reingest_type):
     uuid_val = utils.get_uuid_val(context, "sip")
     context.am_user.browser.initiate_reingest(uuid_val, reingest_type=reingest_type)
 
@@ -326,14 +395,14 @@ def step_impl(context):
     """
     context.execute_steps(
         'When the user waits for the "Assign UUIDs to directories?" decision point to appear and chooses "No" during transfer\n'
-        'And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Siegfried" during transfer\n'
+        'And the user waits for the "Do you want to perform file format identification?" decision point to appear and chooses "Yes" during transfer\n'
         'And the user waits for the "Perform policy checks on originals?" decision point to appear and chooses "No" during transfer\n'
         'And the user waits for the "Create SIP(s)" decision point to appear and chooses "Create single SIP and continue processing" during transfer\n'
         'And the user waits for the "Normalize" decision point to appear and chooses "Normalize for preservation" during ingest\n'
         'And the user waits for the "Approve normalization (review)" decision point to appear and chooses "Approve" during ingest\n'
         'And the user waits for the "Perform policy checks on preservation derivatives?" decision point to appear and chooses "No" during ingest\n'
         'And the user waits for the "Perform policy checks on access derivatives?" decision point to appear and chooses "No" during ingest\n'
-        'And the user waits for the "Select file format identification command|Process submission documentation" decision point to appear and chooses "Identify using Siegfried" during ingest\n'
+        'And the user waits for the "Do you want to perform file format identification?|Process submission documentation" decision point to appear and chooses "Yes" during ingest\n'
         'And the user waits for the "Bind PIDs?" decision point to appear and chooses "No" during ingest\n'
         'And the user waits for the "Document empty directories?" decision point to appear and chooses "No" during ingest\n'
         'And the user waits for the "Store AIP (review)" decision point to appear and chooses "Store AIP" during ingest'
@@ -341,8 +410,7 @@ def step_impl(context):
 
 
 @when(
-    "a transfer is initiated on directory {transfer_path} with accession"
-    " number {accession_no}"
+    "a transfer is initiated on directory {transfer_path} with accession number {accession_no}"
 )
 def step_impl(context, transfer_path, accession_no):
     context.scenario.accession_no = accession_no
@@ -351,12 +419,24 @@ def step_impl(context, transfer_path, accession_no):
 
 @when("a {transfer_type} transfer is initiated on directory {transfer_path}")
 def step_impl(context, transfer_type, transfer_path):
-    utils.initiate_transfer(context, transfer_path, transfer_type=transfer_type)
+    res = utils.start_sample_transfer(
+        context.api_clients_config,
+        transfer_path,
+        transfer_type=transfer_type,
+        processing_config="default",
+    )
+    context.scenario.transfer_name = res["transfer_name"]
+    if transfer_type == "zipped bag":
+        context.scenario.transfer_name = os.path.basename(transfer_path)
 
 
 @when("a transfer is initiated on directory {transfer_path}")
 def step_impl(context, transfer_path):
-    utils.initiate_transfer(context, transfer_path)
+    res = utils.start_sample_transfer(
+        context.api_clients_config, transfer_path, processing_config="default"
+    )
+    context.scenario.transfer_name = res["transfer_name"]
+    context.scenario.transfer_uuid = res["transfer_uuid"]
 
 
 @when("the user closes all {unit_type}")
@@ -386,6 +466,7 @@ def step_impl(context):
         'And the user waits for the "Reminder: add metadata if desired" decision point to appear during ingest\n'
         "And the user adds metadata\n"
         'And the user chooses "Continue" at decision point "Reminder: add metadata if desired" during ingest\n'
+        # TODO: change the below step to 'Perform file format identification ...' post 1.8 if fixing-up this test.
         'And the user waits for the "Select file format identification command|Process submission documentation" decision point to appear and chooses "Identify using Fido" during ingest\n'
         'And the user waits for the "Bind PIDs?" decision point to appear and chooses "No" during ingest\n'
         'And the user waits for the "Document empty directories?" decision point to appear and chooses "No" during ingest\n'
@@ -400,8 +481,7 @@ def step_impl(context):
 
 
 @then(
-    'the "{microservice_name}" micro-service output is'
-    ' "{microservice_output}" during {unit_type}'
+    'the "{microservice_name}" micro-service output is "{microservice_output}" during {unit_type}'
 )
 def step_impl(context, microservice_name, microservice_output, unit_type):
     unit_type = utils.get_normalized_unit_type(unit_type)

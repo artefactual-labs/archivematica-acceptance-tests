@@ -1,6 +1,7 @@
 """Archivematica Browser Jobs & Tasks Ability"""
 
 import logging
+import sys
 import time
 
 from selenium.common.exceptions import NoSuchElementException
@@ -107,48 +108,8 @@ class ArchivematicaBrowserJobsTasksAbility(
 
     def parse_tasks_table(self, tasks_url, table_dict):
         old_driver = self.driver
-        table_dict = self._parse_tasks_table(tasks_url, table_dict, self.vn)
+        table_dict = self._parse_tasks_table_am_gte_1_7(tasks_url, table_dict)
         self.driver = old_driver
-        return table_dict
-
-    def _parse_tasks_table(self, tasks_url, table_dict, vn):
-        return {
-            "1.6": self._parse_tasks_table_am_1_6,
-            "1.7": self._parse_tasks_table_am_gte_1_7,
-            "1.8": self._parse_tasks_table_am_gte_1_7,
-        }.get(vn, self._parse_tasks_table_am_1_6)(tasks_url, table_dict)
-
-    def _parse_tasks_table_am_1_6(self, tasks_url, table_dict):
-        self.driver = self.get_driver()
-        if self.driver.current_url != tasks_url:
-            self.login()
-        self.driver.get(tasks_url)
-        self.wait_for_presence("table")
-        # Parse the <table> to a dict and return it.
-        table_elem = self.driver.find_element_by_tag_name("table")
-        row_dict = {}
-        for row_elem in table_elem.find_elements_by_tag_name("tr"):
-            row_type = get_tasks_row_type(row_elem)
-            if row_type == "header":
-                if row_dict:
-                    table_dict["tasks"][row_dict["task_uuid"]] = row_dict
-                row_dict = process_task_header_row(row_elem, {})
-            elif row_type == "command":
-                row_dict = process_task_command_row(row_elem, row_dict)
-            elif row_type == "stdout":
-                row_dict = process_task_stdout_row(row_elem, row_dict)
-            else:
-                row_dict = process_task_stderr_row(row_elem, row_dict)
-        table_dict["tasks"][row_dict["task_uuid"]] = row_dict
-        next_tasks_url = None
-        for link_button in self.driver.find_elements_by_css_selector("a.btn"):
-            if link_button.text.strip() == "Next Page":
-                next_tasks_url = "{}{}".format(
-                    self.am_url, link_button.get_attribute("href")
-                )
-        self.driver.quit()
-        if next_tasks_url:
-            table_dict = self._parse_tasks_table_am_1_6(next_tasks_url, table_dict)
         return table_dict
 
     def _parse_tasks_table_am_gte_1_7(self, tasks_url, table_dict):
@@ -166,7 +127,7 @@ class ArchivematicaBrowserJobsTasksAbility(
             row_dict = {}
             try:
                 row_dict["stdout"] = task_art_elem.find_element_by_css_selector(
-                    ".panel-default pre"
+                    ".panel-info pre"
                 ).text.strip()
             except NoSuchElementException:
                 row_dict["stdout"] = ""
@@ -209,7 +170,12 @@ class ArchivematicaBrowserJobsTasksAbility(
 
     @selenium_ability.recurse_on_stale
     def get_job_uuid(
-        self, ms_name, group_name, transfer_uuid, job_outputs=c.JOB_OUTPUTS_COMPLETE
+        self,
+        ms_name,
+        group_name,
+        transfer_uuid,
+        job_outputs=c.JOB_OUTPUTS_COMPLETE,
+        level=0,
     ):
         """Get the UUID of the Job model representing the execution of
         micro-service ``ms_name`` in transfer ``transfer_uuid``.
@@ -227,8 +193,26 @@ class ArchivematicaBrowserJobsTasksAbility(
                     ).text.strip()
                     if job_output in job_outputs:
                         return (span_elem.get_attribute("title").strip(), job_output)
-                    time.sleep(self.quick_wait)
-                    return self.get_job_uuid(ms_name, group_name, transfer_uuid)
+                    if level < (sys.getrecursionlimit() / 2):
+                        # The job is taking a long time to complete. Half the
+                        # amount of checking to avoid stack-overflow.
+                        logger.warning(
+                            "Recursion limit close to being reached: level: {} <= {}".format(
+                                level, sys.getrecursionlimit()
+                            )
+                        )
+                        time.sleep(self.quick_wait)
+                    else:
+                        time.sleep(self.optimistic_wait)
+                    level += 1
+                    try:
+                        return self.get_job_uuid(
+                            ms_name, group_name, transfer_uuid, level=level
+                        )
+                    except RecursionError:
+                        logger.error(
+                            "Recursion depth exceeded attempting to get job UUID, consider re-running the test"
+                        )
         return None, None
 
 

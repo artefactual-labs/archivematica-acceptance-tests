@@ -9,11 +9,11 @@ import logging
 import os
 import shlex
 import subprocess
+import time
 
 import pexpect
 
 from . import base
-
 
 logger = logging.getLogger("amuser.ssh")
 
@@ -23,10 +23,10 @@ class ArchivematicaSSHAbility(base.Base):
     SSH and scp to interact with Archivematica.
     """
 
-    def scp_server_file_to_local(self, server_file_path):
+    def scp_server_file_to_local(self, server_file_path, retries=5):
         """Use scp to copy a file from the server to our local tmp directory."""
         if not self.ssh_accessible:
-            logger.info("You do not have SSH access to the Archivematica" " server")
+            logger.info("You do not have SSH access to the Archivematica server")
             return None
         filename = os.path.basename(server_file_path)
         local_path = os.path.join(self.tmp_path, filename)
@@ -43,7 +43,17 @@ class ArchivematicaSSHAbility(base.Base):
                     local_path,
                 )
             )
-            subprocess.check_output(shlex.split(cmd))
+            try:
+                subprocess.check_output(shlex.split(cmd))
+            except subprocess.CalledProcessError:
+                if not retries:
+                    return False
+                retries -= 1
+                time.sleep(self.pessimistic_wait)
+                self.scp_server_file_to_local(
+                    server_file_path=server_file_path, retries=retries
+                )
+
         elif self.server_user and self.server_password:
             cmd = (
                 "scp"

@@ -417,7 +417,7 @@ def start_transfer(
     response = call_api_endpoint(
         endpoint=am.create_package,
         warning_message="Cannot start transfer",
-        error_message="Cannot stat transfer",
+        error_message="Cannot start transfer",
     )
     return {"transfer_name": transfer_name, "transfer_uuid": response.get("id")}
 
@@ -631,7 +631,10 @@ def get_filesec_files(tree, use=None, nsmap={}):
 
 
 def start_sample_transfer(
-    api_clients_config, sample_transfer_path, transfer_type="standard"
+    api_clients_config,
+    sample_transfer_path,
+    transfer_type="standard",
+    processing_config="automated",
 ):
     result = {}
     transfer_path = os.path.join(environment.sample_data_path, sample_transfer_path)
@@ -641,7 +644,10 @@ def start_sample_transfer(
         )
     try:
         start_result = start_transfer(
-            api_clients_config, transfer_path, transfer_type=transfer_type
+            api_clients_config,
+            transfer_path,
+            transfer_type=transfer_type,
+            processing_config=processing_config,
         )
         result["transfer_uuid"] = start_result["transfer_uuid"]
         result["transfer_name"] = start_result["transfer_name"]

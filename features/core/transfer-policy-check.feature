@@ -23,5 +23,5 @@ Feature: Transfer policy check
 
   Examples: Policy Check Outcomes
     | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                          | policy_file                       | purpose                     |
-    | conform          | Completed successfully | pass           | successful          | preforma/all-conform-policy-originals  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
-    | not conform      | Failed                 | fail           | failed              | preforma/none-conform-policy-originals | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
+    | conform          | Completed successfully | pass           | successful          | TestTransfers/acceptance-tests/preforma/all-conform-policy-originals  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
+    | not conform      | Failed                 | fail           | failed              | TestTransfers/acceptance-tests/preforma/none-conform-policy-originals | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |

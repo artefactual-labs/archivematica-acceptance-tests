@@ -34,16 +34,14 @@ def step_impl(context, transfer_path, file_validity):
 
 
 @given(
-    "directory {transfer_path} contains files that will all be normalized"
-    " to {file_validity} .mkv"
+    "directory {transfer_path} contains files that will all be normalized to {file_validity} .mkv"
 )
 def step_impl(context, transfer_path, file_validity):
     pass
 
 
 @given(
-    "directory {transfer_path} contains a processing config that does"
-    " normalization for preservation, etc."
+    "directory {transfer_path} contains a processing config that does normalization for preservation, etc."
 )
 def step_impl(context, transfer_path):
     """Details: transfer must contain a processing config that creates a SIP,
@@ -53,8 +51,7 @@ def step_impl(context, transfer_path):
 
 
 @given(
-    "directory {transfer_path} contains a processing config that does"
-    " normalization for access, etc."
+    "directory {transfer_path} contains a processing config that does normalization for access, etc."
 )
 def step_impl(context, transfer_path):
     """Details: transfer must contain a processing config that creates a SIP,
@@ -69,58 +66,41 @@ def step_impl(context):
     check-targetted workflows.
     """
     context.execute_steps(
-        "Given that the user has ensured that the default processing config is"
-        " in its default state\n"
-        'And the processing config decision "Assign UUIDs to directories" is'
-        ' set to "No"\n'
-        'And the processing config decision "Perform policy checks on'
-        ' preservation derivatives" is set to "No"\n'
-        'And the processing config decision "Perform policy checks on access'
-        ' derivatives" is set to "No"\n'
-        'And the processing config decision "Perform policy checks on'
-        ' originals" is set to "No"\n'
-        'And the processing config decision "Select file format identification'
-        ' command (Transfer)" is set to "Identify using Fido"\n'
-        'And the processing config decision "Create SIP(s)" is set to "Create'
-        ' single SIP and continue processing"\n'
-        'And the processing config decision "Approve normalization" is set to'
-        ' "Yes"\n'
-        'And the processing config decision "Select file format identification'
-        ' command (Submission documentation & metadata)" is set to'
-        ' "Identify using Fido"\n'
+        "Given that the user has ensured that the default processing config is in its default state\n"
+        'And the processing config decision "Assign UUIDs to directories" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on preservation derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on access derivatives" is set to "No"\n'
+        'And the processing config decision "Perform policy checks on originals" is set to "No"\n'
+        'And the processing config decision "Perform file format identification (Transfer)" is set to "Yes"\n'
+        'And the processing config decision "Create SIP(s)" is set to "Create single SIP and continue processing"\n'
+        'And the processing config decision "Approve normalization" is set to "Yes"\n'
+        'And the processing config decision "Perform file format identification (Submission documentation & metadata)" is set to "Yes"\n'
         'And the processing config decision "Bind PIDs" is set to "No"\n'
-        'And the processing config decision "Store AIP location" is set to'
-        ' "Store AIP in standard Archivematica Directory"\n'
-        'And the processing config decision "Document empty directories" is set'
-        ' to "No"\n'
-        'And the processing config decision "Generate thumbnails" is set to'
-        ' "No"\n'
-        'And the processing config decision "Upload DIP" is set to'
-        ' "Do not upload DIP"'
+        'And the processing config decision "Store AIP" is set to "Yes"\n'
+        'And the processing config decision "Store AIP location" is set to "Store AIP in standard Archivematica Directory"\n'
+        'And the processing config decision "Store DIP" is set to "Do not store"\n'
+        'And the processing config decision "Document empty directories" is set to "No"\n'
+        'And the processing config decision "Generate thumbnails" is set to "No"\n'
+        'And the processing config decision "Upload DIP" is set to "Do not upload DIP"\n'
     )
 
 
-@given("a processing configuration for policy checks on preservation" " derivatives")
+@given("a processing configuration for policy checks on preservation derivatives")
 def step_impl(context):
     context.execute_steps(
         "Given a base processing configuration for MediaConch tests\n"
-        'And the processing config decision "Perform policy checks on'
-        ' preservation derivatives" is set to "Yes"\n'
-        'And the processing config decision "Normalize" is set to "Normalize'
-        ' for preservation"'
+        'And the processing config decision "Perform policy checks on preservation derivatives" is set to "Yes"\n'
+        'And the processing config decision "Normalize" is set to "Normalize for preservation"\n'
+        'And the processing config decision "Store AIP" is set to "Yes"'
     )
 
 
-@given(
-    "a processing configuration for conformance checks on preservation" " derivatives"
-)
+@given("a processing configuration for conformance checks on preservation derivatives")
 def step_impl(context):
     context.execute_steps(
         "Given a base processing configuration for MediaConch tests\n"
-        'And the processing config decision "Approve normalization" is set to'
-        ' "None"\n'
-        'And the processing config decision "Normalize" is set to "Normalize'
-        ' for preservation"'
+        'And the processing config decision "Approve normalization" is set to "None"\n'
+        'And the processing config decision "Normalize" is set to "Normalize for preservation"'
     )
 
 
@@ -128,17 +108,13 @@ def step_impl(context):
 def step_impl(context):
     context.execute_steps(
         "Given a base processing configuration for MediaConch tests\n"
-        'And the processing config decision "Select file format identification'
-        ' command (Transfer)" is set to "Identify using Siegfried"\n'
-        'And the processing config decision "Normalize" is set to "Normalize'
-        ' for preservation"'
+        'And the processing config decision "Perform file format identification (Transfer)" is set to "Yes"\n'
+        'And the processing config decision "Normalize" is set to "Normalize for preservation"'
     )
 
 
 @given(
-    "transfer path {transfer_path} which contains files that, when"
-    " normalized to MKV, are known to have broken MediaConch v. 16.12"
-    " validation checks"
+    "transfer path {transfer_path} which contains files that, when normalized to MKV, are known to have broken MediaConch v. 16.12 validation checks"
 )
 def step_impl(context, transfer_path):
     """We won't confirm it here, but if you attempt to run an implementation
@@ -152,10 +128,8 @@ def step_impl(context, transfer_path):
 def step_impl(context):
     context.execute_steps(
         "Given a base processing configuration for MediaConch tests\n"
-        'And the processing config decision "Approve normalization" is set to'
-        ' "None"\n'
-        'And the processing config decision "Normalize" is set to "Normalize'
-        ' for access"'
+        'And the processing config decision "Approve normalization" is set to "None"\n'
+        'And the processing config decision "Normalize" is set to "Normalize for access"'
     )
 
 
@@ -163,11 +137,8 @@ def step_impl(context):
 def step_impl(context):
     context.execute_steps(
         "Given a base processing configuration for MediaConch tests\n"
-        'And the processing config decision "Perform policy checks on'
-        ' access derivatives" is set to "Yes"\n'
-        'And the processing config decision "Normalize" is set to "Normalize'
-        ' for access"\n'
-        'And the processing config decision "Store AIP" is set to "Yes"'
+        'And the processing config decision "Perform policy checks on access derivatives" is set to "Yes"\n'
+        'And the processing config decision "Normalize" is set to "Normalize for access"\n'
     )
 
 
@@ -175,10 +146,8 @@ def step_impl(context):
 def step_impl(context):
     context.execute_steps(
         "Given a base processing configuration for MediaConch tests\n"
-        'And the processing config decision "Perform policy checks on'
-        ' originals" is set to "Yes"\n'
-        'And the processing config decision "Normalize" is set to "Do not'
-        ' normalize"\n'
+        'And the processing config decision "Perform policy checks on originals" is set to "Yes"\n'
+        'And the processing config decision "Normalize" is set to "Do not normalize"\n'
         'And the processing config decision "Store AIP" is set to "Yes"'
     )
 
@@ -187,56 +156,47 @@ def step_impl(context):
 def step_impl(context):
     context.execute_steps(
         "Given a base processing configuration for MediaConch tests\n"
-        'And the processing config decision "Normalize" is set to "Do not'
-        ' normalize"\n'
+        'And the processing config decision "Normalize" is set to "Do not normalize"\n'
     )
 
 
 @given(
-    "MediaConch policy file {policy_file} is present in the local"
-    " etc/mediaconch-policies/ directory"
+    "MediaConch policy file {policy_file} is present in the local etc/mediaconch-policies/ directory"
 )
 def step_impl(context, policy_file):
     assert policy_file in os.listdir(POLICIES_DIR)
 
 
 @given(
-    "directory {transfer_path} contains files that, when normalized, will"
-    " all {do_files_conform} to {policy_file}"
+    "directory {transfer_path} contains files that, when normalized, will all {do_files_conform} to {policy_file}"
 )
 def step_impl(context, transfer_path, do_files_conform, policy_file):
     pass
 
 
 @given(
-    "directory {transfer_path}/manualNormalization/preservation/ contains a"
-    " file manually normalized for preservation that will"
-    "{do_files_conform} to {policy_file}"
+    "directory {transfer_path}/manualNormalization/preservation/ contains a file manually normalized for preservation that will {do_files_conform} to {policy_file}"
 )
 def step_impl(context, transfer_path, do_files_conform, policy_file):
     pass
 
 
 @given(
-    "directory {transfer_path}/manualNormalization/access/ contains a"
-    " file manually normalized for access that will {do_files_conform}"
-    " to {policy_file}"
+    "directory {transfer_path}/manualNormalization/access/ contains a file manually normalized for access that will {do_files_conform} to {policy_file}"
 )
 def step_impl(context, transfer_path, do_files_conform, policy_file):
     pass
 
 
 @given(
-    "directory {transfer_path} contains files that all do {do_files_conform}"
-    " to {policy_file}"
+    "directory {transfer_path} contains files that all do {do_files_conform} to {policy_file}"
 )
 def step_impl(context, transfer_path, do_files_conform, policy_file):
     pass
 
 
 @given(
-    'an FPR rule with purpose "{purpose}", format "{format_}", and command'
-    ' "{command}"'
+    'an FPR rule with purpose "{purpose}", format "{format_}", and command "{command}"'
 )
 def step_impl(context, purpose, format_, command):
     context.am_user.browser.ensure_fpr_rule(purpose, format_, command)
@@ -275,8 +235,7 @@ def step_impl(context, policy_file):
 # TODO: this step could be generalized to support any purpose/format/command
 # triple.
 @when(
-    "the user ensures there is an FPR rule with purpose {purpose} that"
-    " validates Generic MKV files against policy file {policy_file}"
+    "the user ensures there is an FPR rule with purpose {purpose} that validates Generic MKV files against policy file {policy_file}"
 )
 def step_impl(context, purpose, policy_file):
     context.am_user.browser.ensure_fpr_rule(
@@ -299,8 +258,7 @@ def step_impl(context, microservice_output):
 
 
 @then(
-    "the submissionDocumentation directory of the AIP {contains} a copy of"
-    " the MediaConch policy file {policy_file}"
+    "the submissionDocumentation directory of the AIP {contains} a copy of the MediaConch policy file {policy_file}"
 )
 def step_impl(context, contains, policy_file):
     aip_path = context.scenario.aip_path
@@ -330,8 +288,7 @@ def step_impl(context, contains, policy_file):
 
 
 @then(
-    "the transfer logs directory of the AIP {contains} a copy of the"
-    " MediaConch policy file {policy_file}"
+    "the transfer logs directory of the AIP {contains} a copy of the MediaConch policy file {policy_file}"
 )
 def step_impl(context, contains, policy_file):
     aip_path = context.scenario.aip_path
@@ -373,8 +330,7 @@ def step_impl(context, contains, policy_file):
 
 
 @then(
-    "the transfer logs directory of the AIP contains a MediaConch policy"
-    " check output file for each policy file tested against {policy_file}"
+    "the transfer logs directory of the AIP contains a MediaConch policy check output file for each policy file tested against {policy_file}"
 )
 def step_impl(context, policy_file):
     policy_file_no_ext, _ = os.path.splitext(policy_file)
@@ -417,8 +373,7 @@ def step_impl(context, policy_file):
 
 
 @then(
-    "the logs directory of the AIP contains a MediaConch policy check output"
-    " file for each policy file tested against {policy_file}"
+    "the logs directory of the AIP contains a MediaConch policy check output file for each policy file tested against {policy_file}"
 )
 def step_impl(context, policy_file):
     policy_file_no_ext, _ = os.path.splitext(policy_file)
@@ -459,8 +414,7 @@ def step_impl(context, microservice_output):
 
 
 @then(
-    "all preservation conformance checks in the normalization report have"
-    " value {validation_result}"
+    "all preservation conformance checks in the normalization report have value {validation_result}"
 )
 def step_impl(context, validation_result):
     utils.all_normalization_report_columns_are(
@@ -469,8 +423,7 @@ def step_impl(context, validation_result):
 
 
 @then(
-    "all access conformance checks in the normalization report have value"
-    " {validation_result}"
+    "all access conformance checks in the normalization report have value {validation_result}"
 )
 def step_impl(context, validation_result):
     utils.all_normalization_report_columns_are(
@@ -479,13 +432,12 @@ def step_impl(context, validation_result):
 
 
 @then(
-    "all PREMIS implementation-check-type validation events have"
-    " eventOutcome = {event_outcome}"
+    "all PREMIS implementation-check-type validation events have eventOutcome = {event_outcome}"
 )
 def step_impl(context, event_outcome):
     events = []
     for e in context.am_user.mets.get_premis_events(
-        context.am_user.browser.get_mets(
+        context.am_user.browser.get_mets_via_api(
             context.scenario.transfer_name,
             context.am_user.browser.get_sip_uuid(context.scenario.transfer_name),
         )
@@ -504,8 +456,7 @@ def step_impl(context, event_outcome):
 
 
 @then(
-    "policy checks for preservation derivatives micro-service output is"
-    " {microservice_output}"
+    "policy checks for preservation derivatives micro-service output is {microservice_output}"
 )
 def step_impl(context, microservice_output):
     name = "Policy checks for preservation derivatives"
@@ -513,8 +464,7 @@ def step_impl(context, microservice_output):
 
 
 @then(
-    "policy checks for access derivatives micro-service output is"
-    " {microservice_output}"
+    "policy checks for access derivatives micro-service output is {microservice_output}"
 )
 def step_impl(context, microservice_output):
     name = "Policy checks for access derivatives"
@@ -556,13 +506,12 @@ def step_impl(context, event_outcome):
 
 
 @then(
-    "all PREMIS policy-check-type validation events have eventOutcome ="
-    " {event_outcome}"
+    "all PREMIS policy-check-type validation events have eventOutcome = {event_outcome}"
 )
 def step_impl(context, event_outcome):
     events = []
     for e in context.am_user.mets.get_premis_events(
-        context.am_user.browser.get_mets(
+        context.am_user.browser.get_mets_via_api(
             context.scenario.transfer_name,
             context.am_user.browser.get_sip_uuid(context.scenario.transfer_name),
         )
@@ -581,8 +530,7 @@ def step_impl(context, event_outcome):
 
 
 @then(
-    "all original files in the transfer are identified as PRONOM fmt/199"
-    " (MPEG-4 Media File)"
+    "all original files in the transfer are identified as PRONOM fmt/199 (MPEG-4 Media File)"
 )
 def step_impl(context):
     for task in context.scenario.job["tasks"].values():

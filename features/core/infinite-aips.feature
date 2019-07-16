@@ -7,7 +7,7 @@
 #           --tags=infinite-aips \
 #           --no-skipped \
 #           --no-logcapture \
-#           -D runtime_supplied_transfer_path='~/archivematica-sampledata/TestTransfers/small' \
+#           -D runtime_supplied_transfer_path='TestTransfers/small' \
 #           -D driver_name=Firefox \
 #           -D am_url=http://127.0.0.1:62080/ \
 #           -D am_password=test \

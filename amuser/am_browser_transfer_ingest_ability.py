@@ -1,6 +1,7 @@
 """Archivematica Transfer & Ingest Tabs Ability"""
 
 import logging
+import sys
 import time
 
 from selenium.webdriver.support.ui import Select
@@ -122,7 +123,9 @@ class ArchivematicaBrowserTransferIngestAbility(
             )
 
     @selenium_ability.recurse_on_stale
-    def wait_for_microservice_visibility(self, ms_name, group_name, transfer_uuid):
+    def wait_for_microservice_visibility(
+        self, ms_name, group_name, transfer_uuid, level=0
+    ):
         """Wait until micro-service ``ms_name`` of transfer ``transfer_uuid``
         is visible.
         """
@@ -135,8 +138,24 @@ class ArchivematicaBrowserTransferIngestAbility(
             ):
                 if utils.squash(span_elem.text) == utils.squash(ms_name):
                     return
-        time.sleep(self.micro_wait)
-        self.wait_for_microservice_visibility(ms_name, group_name, transfer_uuid)
+        if level < (sys.getrecursionlimit() / 2):
+            # The job is taking a long time to complete. Half the
+            # amount of checking to avoid stack-overflow.
+            logger.warning(
+                "Recursion limit close to being reached: level: {} <= {}".format(
+                    level, sys.getrecursionlimit()
+                )
+            )
+            time.sleep(self.micro_wait)
+        else:
+            time.sleep(self.quick_wait)
+        level += 1
+        try:
+            self.wait_for_microservice_visibility(ms_name, group_name, transfer_uuid)
+        except RecursionError:
+            logger.error(
+                "Recursion depth exceeded waiting for microservice visibility, consider re-running the test"
+            )
 
     @selenium_ability.recurse_on_stale
     def click_show_tasks_button(self, ms_name, group_name, transfer_uuid):

@@ -2,6 +2,7 @@
 
 import logging
 import pprint
+import time
 
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
@@ -52,21 +53,40 @@ class ArchivematicaBrowserStorageServiceAbility(
         ).text.strip() == ("Request approved: Package deleted successfully.")
 
     def search_for_aip_in_storage_service(self, aip_uuid):
+        result = []
+        # XXX: make this max_attempts a constant and an amuser attribute
+        # like max_search_aip_archival_storage_attempts is
+        max_attempts = 3
+        attempts = 0
         self.navigate(self.get_packages_url())
         self.driver.find_element_by_css_selector("input[type=text]").send_keys(aip_uuid)
-        # DataTables_Table_0
-        row_els = self.driver.find_elements_by_css_selector("#DataTables_Table_0 tr")
-        result = []
-        header = row_els[0]
-        keys = [
-            th_el.text.strip().lower().replace(" ", "_")
-            for th_el in header.find_elements_by_tag_name("th")
-        ]
-        for row_el in row_els[1:]:
-            row_dict = {}
-            for index, td_el in enumerate(row_el.find_elements_by_tag_name("td")):
-                row_dict[keys[index]] = td_el.text.strip()
-            result.append(row_dict)
+        while True:
+            # DataTables_Table_0
+            row_els = self.driver.find_elements_by_css_selector(
+                "#DataTables_Table_0 tr"
+            )
+            result = []
+            header = row_els[0]
+            keys = [
+                th_el.text.strip().lower().replace(" ", "_")
+                for th_el in header.find_elements_by_tag_name("th")
+            ]
+            for row_el in row_els[1:]:
+                row_dict = {}
+                for index, td_el in enumerate(row_el.find_elements_by_tag_name("td")):
+                    row_dict[keys[index]] = td_el.text.strip()
+                result.append(row_dict)
+            # check if rows have been retrieved from the server yet
+            if result and result[0].get("uuid") == "Loading data from server":
+                attempts += 1
+                if attempts > max_attempts:
+                    break
+                time.sleep(self.optimistic_wait)
+            else:
+                time.sleep(
+                    self.optimistic_wait
+                )  # Sleep a little longer, for good measure
+                break
         return result
 
     def ensure_ss_space_exists(self, attributes):
@@ -403,7 +423,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         self.driver.find_element_by_id("id_name_real").send_keys(new_key_name)
         self.driver.find_element_by_id("id_name_email").send_keys(new_key_email)
         self.driver.find_element_by_css_selector("input[type=submit]").click()
-        self.wait_for_presence("div.alert-success")
+        self.wait_for_presence("div.alert-success", self.nihilistic_wait)
         alert_text = self.driver.find_element_by_css_selector("div.alert-success").text
         new_key_fingerprint = alert_text.split()[2]
         return new_key_name, new_key_email, new_key_fingerprint
@@ -424,4 +444,6 @@ class ArchivematicaBrowserStorageServiceAbility(
                     select.select_by_visible_text(option.text)
                     break
         self.driver.find_element_by_css_selector("input[type=submit]").click()
-        self.wait_for_presence("div.alert-success")
+        # Nihilistic wait is the only value working on Docker at present... and
+        # may still need to be longer. Wait needed to accumulate GPG entropy.
+        self.wait_for_presence("div.alert-success", self.nihilistic_wait)

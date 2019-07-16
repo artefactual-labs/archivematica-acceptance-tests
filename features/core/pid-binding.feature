@@ -44,11 +44,11 @@ Feature: Archivematica's entities can be assigned PIDs with specified resolution
     And default processing configured to bind PIDs
     And a Handle server client configured to create qualified PURLs
     And a Handle server client configured to use the accession number as the PID for the AIP
-    When a transfer is initiated on directory <directory_path> with accession number <accession_no>
+    When a transfer is initiated on directory <directory_path>
     And the user waits for the AIP to appear in archival storage
     Then the AIP METS file documents PIDs, PURLs, and UUIDs for all files, directories and the package itself
     And the empty directory in <empty_dir_rel_path> is in the normative structMap and has identifiers
 
     Examples: transfer sources
-    | directory_path                                                                                 | accession_no | empty_dir_rel_path  |
-    | ~/archivematica-sampledata/TestTransfers/acceptance-tests/pid-binding/hierarchy-with-empty-dir | 42           | dir2/dir2a/dir2aiii |
+    | directory_path                                                      | empty_dir_rel_path  |
+    | TestTransfers/acceptance-tests/pid-binding/hierarchy-with-empty-dir | dir2/dir2a/dir2aiii |

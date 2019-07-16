@@ -24,23 +24,24 @@ class ArchivematicaMETSAbility(base.Base):
         dicts.
         """
         result = []
-        for premis_event_el in mets.findall(".//premis:event", c.METS_NSMAP):
+        for premis_event_el in mets.findall(".//premis3:event", c.METS_NSMAP):
             result.append(
                 {
                     "event_type": premis_event_el.find(
-                        "premis:eventType", c.METS_NSMAP
+                        "premis3:eventType", c.METS_NSMAP
                     ).text,
                     "event_detail": premis_event_el.find(
-                        "premis:eventDetail", c.METS_NSMAP
+                        "premis3:eventDetailInformation/premis3:eventDetail",
+                        c.METS_NSMAP,
                     ).text,
                     "event_outcome": premis_event_el.find(
-                        "premis:eventOutcomeInformation/premis:eventOutcome",
+                        "premis3:eventOutcomeInformation/premis3:eventOutcome",
                         c.METS_NSMAP,
                     ).text,
                     "event_outcome_detail_note": premis_event_el.find(
-                        "premis:eventOutcomeInformation"
-                        "/premis:eventOutcomeDetail"
-                        "/premis:eventOutcomeDetailNote",
+                        "premis3:eventOutcomeInformation"
+                        "/premis3:eventOutcomeDetail"
+                        "/premis3:eventOutcomeDetailNote",
                         c.METS_NSMAP,
                     ).text,
                 }

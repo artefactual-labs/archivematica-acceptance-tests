@@ -235,7 +235,7 @@ class ArchivematicaBrowserAbility(
                         max_seconds,
                     )
                     break
-                time.sleep(self.optimistic_wait)
+                time.sleep(self.medium_wait)
             else:
                 logger.info(
                     "Found DIP %s in the transfer backlog after waiting"
@@ -434,7 +434,7 @@ class ArchivematicaBrowserAbility(
             decision_label="Generate transfer structure report", choice_value="No"
         )
         self.set_processing_config_decision(
-            decision_label=("Select file format identification command" " (Transfer)"),
+            decision_label=("Perform file format identification (Transfer)"),
             choice_value="None",
         )
         self.set_processing_config_decision(
@@ -450,7 +450,7 @@ class ArchivematicaBrowserAbility(
             decision_label="Create SIP(s)", choice_value="None"
         )
         self.set_processing_config_decision(
-            decision_label="Select file format identification command (Ingest)",
+            decision_label="Perform file format identification (Ingest)",
             choice_value="No, use existing data",
         )
         self.set_processing_config_decision(
@@ -467,8 +467,7 @@ class ArchivematicaBrowserAbility(
         )
         self.set_processing_config_decision(
             decision_label=(
-                "Select file format identification command"
-                " (Submission documentation & metadata)"
+                "Perform file format identification (Submission documentation & metadata)"
             ),
             choice_value="None",
         )
