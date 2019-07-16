@@ -68,7 +68,7 @@ def step_impl(context, conj_quant):
     """``conj_quant`` is 'but no' or 'and a', a conjunction followed by a
     quantifier, of course.
     """
-    mets = utils.get_mets_from_scenario(context)
+    mets = utils.get_mets_from_scenario(context, api=True)
     mets_hdr_els = mets.findall(".//mets:metsHdr", context.am_user.mets.mets_nsmap)
     assert len(mets_hdr_els) == 1
     mets_hdr_el = mets_hdr_els[0]
@@ -91,7 +91,7 @@ def step_impl(context, conj_quant):
     "in the METS file the metsHdr element has {quant} dmdSec next sibling" " element(s)"
 )
 def step_impl(context, quant):
-    mets = utils.get_mets_from_scenario(context)
+    mets = utils.get_mets_from_scenario(context, api=True)
     mets_dmd_sec_els = mets.findall(".//mets:dmdSec", context.am_user.mets.mets_nsmap)
     try:
         quant = {
@@ -118,7 +118,7 @@ def step_impl(context, quant):
 
 @then("in the METS file the dmdSec element contains the metadata added")
 def step_impl(context):
-    mets = utils.get_mets_from_scenario(context)
+    mets = utils.get_mets_from_scenario(context, api=True)
     dublincore_el = mets.find(
         ".//mets:dmdSec/mets:mdWrap/mets:xmlData/dcterms:dublincore",
         context.am_user.mets.mets_nsmap,

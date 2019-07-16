@@ -121,6 +121,10 @@ MICRO_SERVICES2GROUPS = {
     "Designate to process as a standard transfer": ("Quarantine",),
     "Determine if transfer contains packages": ("Extract packages",),
     "Determine which files to identify": ("Identify file format",),
+    "Do you want to perform file format identification?": (
+        "Identify file format",
+        "Process submission documentation",
+    ),
     "Document empty directories?": ("Generate AIP METS",),
     "Examine contents?": ("Examine contents",),
     "Find type to process as": ("Quarantine",),
@@ -213,10 +217,6 @@ MICRO_SERVICES2GROUPS = {
     ),
     "Select compression algorithm": ("Prepare AIP",),
     "Select compression level": ("Prepare AIP",),
-    "Select file format identification command": (
-        "Identify file format",
-        "Process submission documentation",
-    ),
     "Select pre-normalize file format identification command": ("Normalize",),
     "Serialize Dublin Core metadata to disk": ("Create SIP from Transfer",),
     "Set bag file permissions": ("Prepare AIP",),

@@ -26,7 +26,7 @@ Feature: Metadata-only AIP re-ingest
     And the reminder to add metadata is enabled
     When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/Images/pictures
     And the user waits for the "Assign UUIDs to directories?" decision point to appear and chooses "No" during transfer
-    And the user waits for the "Select file format identification command" decision point to appear and chooses "Identify using Fido" during transfer
+    And the user waits for the "Do you want to perform file format identification?" decision point to appear and chooses "Yes" during transfer
     And the user waits for the "Perform policy checks on originals?" decision point to appear and chooses "No" during transfer
     And the user waits for the "Create SIP(s)" decision point to appear and chooses "Create single SIP and continue processing" during transfer
     And the user waits for the "Normalize" decision point to appear and chooses "Normalize for preservation" during ingest
@@ -34,27 +34,28 @@ Feature: Metadata-only AIP re-ingest
     And the user waits for the "Perform policy checks on preservation derivatives?" decision point to appear and chooses "No" during ingest
     And the user waits for the "Perform policy checks on access derivatives?" decision point to appear and chooses "No" during ingest
     And the user waits for the "Reminder: add metadata if desired" decision point to appear and chooses "Continue" during ingest
-    And the user waits for the "Select file format identification command|Process submission documentation" decision point to appear and chooses "Identify using Fido" during ingest
+    And the user waits for the "Do you want to perform file format identification?|Process submission documentation" decision point to appear and chooses "Yes" during ingest
     And the user waits for the "Bind PIDs?" decision point to appear and chooses "No" during ingest
     And the user waits for the "Document empty directories?" decision point to appear and chooses "No" during ingest
-    And the user waits for the "Store AIP (review)" decision point to appear during ingest
+    And the user waits for the "Store AIP (review)" decision point to appear and chooses "Store AIP" during ingest
+    And the user waits for the "Store AIP location" decision point to appear and chooses "Default Location" during ingest
+    And the user waits for the AIP to appear in archival storage
     Then in the METS file the metsHdr element has a CREATEDATE attribute but no LASTMODDATE attribute
     And in the METS file the metsHdr element has one dmdSec next sibling element(s)
-    When the user chooses "Store AIP" at decision point "Store AIP (review)" during ingest
-    And the user waits for the "Store AIP location" decision point to appear and chooses "Store AIP in standard Archivematica Directory" during ingest
-    And the user waits for the AIP to appear in archival storage
-    And the user initiates a metadata-only re-ingest on the AIP
-    And the user waits for the "Approve AIP reingest" decision point to appear and chooses "Approve AIP reingest" during ingest
+    When the user initiates a metadata-only re-ingest on the AIP
+    When the user waits for the "Approve AIP reingest" decision point to appear and chooses "Approve AIP reingest" during ingest
     And the user waits for the "Normalize" decision point to appear and chooses "Do not normalize" during ingest
     And the user waits for the "Perform policy checks on preservation derivatives?" decision point to appear and chooses "No" during ingest
     And the user waits for the "Perform policy checks on access derivatives?" decision point to appear and chooses "No" during ingest
     And the user waits for the "Reminder: add metadata if desired" decision point to appear during ingest
     And the user adds metadata
     And the user chooses "Continue" at decision point "Reminder: add metadata if desired" during ingest
-    And the user waits for the "Select file format identification command|Process submission documentation" decision point to appear and chooses "Identify using Fido" during ingest
+    And the user waits for the "Do you want to perform file format identification?|Process submission documentation" decision point to appear and chooses "Yes" during ingest
     And the user waits for the "Bind PIDs?" decision point to appear and chooses "No" during ingest
     And the user waits for the "Document empty directories?" decision point to appear and chooses "No" during ingest
-    And the user waits for the "Store AIP (review)" decision point to appear during ingest
+    And the user waits for the "Store AIP (review)" decision point to appear and chooses "Store AIP" during ingest
+    And the user waits for the "Store AIP location" decision point to appear and chooses "Default Location" during ingest
+    And the user waits for the AIP to appear in archival storage
     Then in the METS file the metsHdr element has a CREATEDATE attribute and a LASTMODDATE attribute
     And in the METS file the metsHdr element has two dmdSec next sibling element(s)
     And in the METS file the dmdSec element contains the metadata added
