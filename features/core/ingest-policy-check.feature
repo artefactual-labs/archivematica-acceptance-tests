@@ -41,10 +41,9 @@ Feature: Ingest policy check
     And a transfer is initiated on directory <transfer_path>
     And the user waits for the "Policy checks for preservation derivatives" micro-service to complete during ingest
     Then the "Policy checks for preservation derivatives" micro-service output is "<microservice_output>" during ingest
-    When the user waits for the "Store AIP (review)" decision point to appear during ingest
-    Then all PREMIS policy-check-type validation events have eventOutcome = <event_outcome>
     When the user chooses "Store AIP" at decision point "Store AIP (review)" during ingest
     And the user waits for the AIP to appear in archival storage
+    Then all PREMIS policy-check-type validation events have eventOutcome = <event_outcome>
     And the user downloads the AIP
     And the user decompresses the AIP
     Then the submissionDocumentation directory of the AIP contains a copy of the MediaConch policy file <policy_file>
@@ -68,10 +67,9 @@ Feature: Ingest policy check
     And a transfer is initiated on directory <transfer_path>
     And the user waits for the "Policy checks for preservation derivatives" micro-service to complete during ingest
     Then the "Policy checks for preservation derivatives" micro-service output is "<microservice_output>" during ingest
-    When the user waits for the "Store AIP (review)" decision point to appear during ingest
-    Then all PREMIS policy-check-type validation events have eventOutcome = <event_outcome>
     When the user chooses "Store AIP" at decision point "Store AIP (review)" during ingest
     And the user waits for the AIP to appear in archival storage
+    Then all PREMIS policy-check-type validation events have eventOutcome = <event_outcome>
     And the user downloads the AIP
     And the user decompresses the AIP
     Then the submissionDocumentation directory of the AIP contains a copy of the MediaConch policy file <policy_file>
@@ -106,3 +104,4 @@ Feature: Ingest policy check
     | not conform      | Failed                 | fail           | failed              | preforma/manually-normalized-access-none-conform-policy  | NYULib_MKVFFV1_MODIFIED.xml       | Validation against a policy |
     #| conform          | Completed successfully | pass           | successful          | preforma/manually-normalized-access-all-conform-policy   | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
     #| not conform      | Failed                 | fail           | failed              | preforma/manually-normalized-access-none-conform-policy  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
+

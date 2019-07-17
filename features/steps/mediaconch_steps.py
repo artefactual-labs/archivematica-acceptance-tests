@@ -80,14 +80,14 @@ def step_impl(context):
         'And the processing config decision "Perform policy checks on'
         ' originals" is set to "No"\n'
         'And the processing config decision "Select file format identification'
-        ' command (Transfer)" is set to "Identify using Fido"\n'
+        ' command (Transfer)" is set to "Yes"\n'
         'And the processing config decision "Create SIP(s)" is set to "Create'
         ' single SIP and continue processing"\n'
         'And the processing config decision "Approve normalization" is set to'
         ' "Yes"\n'
         'And the processing config decision "Select file format identification'
         ' command (Submission documentation & metadata)" is set to'
-        ' "Identify using Fido"\n'
+        ' "Yes"\n'
         'And the processing config decision "Bind PIDs" is set to "No"\n'
         'And the processing config decision "Store AIP location" is set to'
         ' "Store AIP in standard Archivematica Directory"\n'
@@ -562,7 +562,7 @@ def step_impl(context, event_outcome):
 def step_impl(context, event_outcome):
     events = []
     for e in context.am_user.mets.get_premis_events(
-        context.am_user.browser.get_mets(
+        context.am_user.browser.get_mets_via_api(
             context.scenario.transfer_name,
             context.am_user.browser.get_sip_uuid(context.scenario.transfer_name),
         )

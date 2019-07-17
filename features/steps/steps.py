@@ -276,8 +276,7 @@ def step_impl(context):
 use_step_matcher("re")
 
 
-@when("the user downloads the (?P<aip_description>.*)AIP")
-def step_impl(context, aip_description):
+def _download_the_aip(context, aip_description):
     aip_description = aip_description.strip()
     if aip_description:
         aip_description = aip_description + "_aip"
@@ -292,6 +291,32 @@ def step_impl(context, aip_description):
     attr_name = aip_description.replace(" ", "")
     logger.info("setting attribute %s to %s", attr_name, context.scenario.aip_path)
     setattr(context.scenario, attr_name, context.scenario.aip_path)
+
+
+@then("the user downloads the (?P<aip_description>.*)AIP")
+def step_impl(context, aip_description):
+    _download_the_aip(context, aip_description)
+
+
+@when("the user downloads the (?P<aip_description>.*)AIP")
+def step_impl(context, aip_description):
+    _download_the_aip(context, aip_description)
+
+
+def _decompress_the_aip(context):
+    context.scenario.aip_path = context.am_user.decompress_aip(
+        context.scenario.aip_path
+    )
+
+
+@then("the user decompresses the AIP")
+def step_impl(context):
+    _decompress_the_aip(context)
+
+
+@when("the user decompresses the AIP")
+def step_impl(context):
+    _decompress_the_aip(context)
 
 
 use_step_matcher("parse")
@@ -337,13 +362,6 @@ def step_impl(context, aip_description):
 def step_impl(context):
     uuid_val = utils.get_uuid_val(context, "transfer")
     context.am_user.browser.wait_for_dip_in_transfer_backlog(uuid_val)
-
-
-@when("the user decompresses the AIP")
-def step_impl(context):
-    context.scenario.aip_path = context.am_user.decompress_aip(
-        context.scenario.aip_path
-    )
 
 
 @when("the user adds metadata")

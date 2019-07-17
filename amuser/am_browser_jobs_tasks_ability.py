@@ -166,7 +166,7 @@ class ArchivematicaBrowserJobsTasksAbility(
             row_dict = {}
             try:
                 row_dict["stdout"] = task_art_elem.find_element_by_css_selector(
-                    ".panel-default pre"
+                    ".panel-info pre"
                 ).text.strip()
             except NoSuchElementException:
                 row_dict["stdout"] = ""
