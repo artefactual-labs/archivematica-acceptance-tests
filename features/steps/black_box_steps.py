@@ -41,18 +41,22 @@ def format_no_files_error(transfer):
     )
 
 
-@given('a "{sample_transfer_path}" AIP has been created and stored')
-def step_impl(context, sample_transfer_path):
+@given('a "{transfer_type}" transfer type located in "{sample_transfer_path}"')
+def step_impl(context, transfer_type, sample_transfer_path):
     transfer = utils.create_sample_transfer(
-        context.api_clients_config, sample_transfer_path
+        context.api_clients_config, sample_transfer_path, transfer_type=transfer_type
     )
     context.current_transfer = transfer
 
 
-@given("a {sample_transfer_path} AIP has been reingested")
-def step_impl(context, sample_transfer_path):
+@given(
+    'a "{transfer_type}" transfer type located in "{sample_transfer_path}" has been reingested'
+)
+def step_impl(context, transfer_type, sample_transfer_path):
     context.execute_steps(
-        "Given a {} AIP has been created and stored\n".format(sample_transfer_path)
+        'Given a "{}" transfer type located in "{}"\n'.format(
+            transfer_type, sample_transfer_path
+        )
     )
     reingest = utils.create_reingest(
         context.api_clients_config, context.current_transfer
@@ -63,6 +67,24 @@ def step_impl(context, sample_transfer_path):
 @when("the AIP is downloaded")
 def step_impl(context):
     utils.is_valid_download(context.current_transfer["aip_mets_location"])
+
+
+@when("the transfer is approved")
+def step_impl(context):
+    utils.assert_jobs_completed_successfully(
+        context.api_clients_config,
+        context.current_transfer["transfer_uuid"],
+        job_microservice="Approve transfer",
+    )
+
+
+@when("the transfer compliance is verified")
+def step_impl(context):
+    utils.assert_jobs_completed_successfully(
+        context.api_clients_config,
+        context.current_transfer["transfer_uuid"],
+        job_microservice="Verify transfer compliance",
+    )
 
 
 @when("the reingest has been processed")
@@ -376,3 +398,86 @@ def step_impl(context):
                 fsentry.path
             )
             assert fsentry.file_uuid in deleted_file_uuids, error
+
+
+@then('the "{job_name}" job completes successfully')
+def step_impl(context, job_name):
+    default_valid_exit_codes = (0,)
+    valid_exit_codes_by_job_name = {
+        "Determine if transfer still contains packages": (0, 1)
+    }
+    valid_exit_codes = valid_exit_codes_by_job_name.get(
+        job_name, default_valid_exit_codes
+    )
+    utils.assert_jobs_completed_successfully(
+        context.api_clients_config,
+        context.current_transfer["transfer_uuid"],
+        job_name=job_name,
+        valid_exit_codes=valid_exit_codes,
+    )
+
+
+@then('the "{job_name}" job fails')
+def step_impl(context, job_name):
+    utils.assert_jobs_fail(
+        context.api_clients_config,
+        context.current_transfer["transfer_uuid"],
+        job_name=job_name,
+    )
+
+
+@then('the "{microservice_name}" microservice is executed')
+def step_impl(context, microservice_name):
+    utils.assert_microservice_executes(
+        context.api_clients_config,
+        context.current_transfer["transfer_uuid"],
+        microservice_name,
+    )
+
+
+@then("the METS file contains a dmdSec with DDI metadata")
+def step_impl(context):
+    tree = etree.parse(context.current_transfer["aip_mets_location"])
+    structmap = tree.find(
+        'mets:structMap[@TYPE="physical"]', namespaces=context.mets_nsmap
+    )
+    transfer_dir = structmap.find(
+        'mets:div[@LABEL="{}-{}"][@TYPE="Directory"]'.format(
+            context.current_transfer["transfer_name"],
+            context.current_transfer["sip_uuid"],
+        ),
+        namespaces=context.mets_nsmap,
+    )
+    error = (
+        'The {} file does not contain any "Directory" entries in its physical '
+        "structMap".format(context.current_transfer["aip_mets_location"])
+    )
+    assert len(transfer_dir), error
+    objects_dir = transfer_dir.find(
+        'mets:div[@LABEL="objects"]', namespaces=context.mets_nsmap
+    )
+    error = (
+        'The {} file does not contain an "objects" directory entry in its physical '
+        "structMap".format(context.current_transfer["aip_mets_location"])
+    )
+    assert len(objects_dir), error
+    dmdsec_ids = objects_dir.attrib["DMDID"].strip().split(" ")
+    dmdsecs_contain_ddi_metadata = False
+    namespaces = context.mets_nsmap.copy()
+    namespaces["ddi"] = "http://www.icpsr.umich.edu/DDI"
+    for dmdsec_id in dmdsec_ids:
+        ddi_codebook = tree.find(
+            'mets:dmdSec[@ID="{}"]/mets:mdWrap/mets:xmlData/ddi:codebook'.format(
+                dmdsec_id
+            ),
+            namespaces=namespaces,
+        )
+        if ddi_codebook is not None:
+            dmdsecs_contain_ddi_metadata = True
+    error = (
+        "The {} file does not contain any ddi metadata in any of the dmdSec of "
+        "the objects directory ({}) of the physical structMap".format(
+            context.current_transfer["aip_mets_location"], dmdsec_ids
+        )
+    )
+    assert dmdsecs_contain_ddi_metadata, error
