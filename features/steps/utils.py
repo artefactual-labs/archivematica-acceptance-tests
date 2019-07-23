@@ -346,6 +346,10 @@ def browse_default_ts_location(api_clients_config, browse_path):
     Return transferable directories and entities from a path
     of the default transfer source of the storage service.
     """
+    if os.path.splitext(browse_path)[1]:
+        # browse_path points to a file (e.g. a zipped bag)
+        # but the browse location endpoint of the SS expects a directory
+        browse_path = os.path.dirname(browse_path)
     am = configure_ss_client(api_clients_config[SS_API_CONFIG_KEY])
     am.transfer_source = return_default_ts_location(api_clients_config)
     am.transfer_path = browse_path
@@ -395,7 +399,11 @@ def get_default_ss_pipeline(api_clients_config):
 
 
 def start_transfer(
-    api_clients_config, transfer_path, transfer_name=None, processing_config="automated"
+    api_clients_config,
+    transfer_path,
+    transfer_name=None,
+    processing_config="automated",
+    transfer_type="standard",
 ):
     """Start a transfer using the create_package endpoint and return its uuid"""
     if transfer_name is None:
@@ -404,6 +412,7 @@ def start_transfer(
     am.transfer_source = return_default_ts_location(api_clients_config)
     am.transfer_directory = transfer_path
     am.transfer_name = transfer_name
+    am.transfer_type = transfer_type
     am.processing_config = processing_config
     response = call_api_endpoint(
         endpoint=am.create_package,
@@ -621,13 +630,19 @@ def get_filesec_files(tree, use=None, nsmap={}):
     )
 
 
-def start_sample_transfer(api_clients_config, sample_transfer_path):
+def start_sample_transfer(
+    api_clients_config, sample_transfer_path, transfer_type="standard"
+):
     result = {}
     transfer_path = os.path.join(environment.sample_data_path, sample_transfer_path)
     if not browse_default_ts_location(api_clients_config, transfer_path):
-        raise environment.EnvironmentError("Location cannot be verified")
+        raise environment.EnvironmentError(
+            "Location {} cannot be verified".format(transfer_path)
+        )
     try:
-        start_result = start_transfer(api_clients_config, transfer_path)
+        start_result = start_transfer(
+            api_clients_config, transfer_path, transfer_type=transfer_type
+        )
         result["transfer_uuid"] = start_result["transfer_uuid"]
         result["transfer_name"] = start_result["transfer_name"]
         result["transfer_path"] = transfer_path
@@ -648,10 +663,7 @@ def wait_for_transfer(api_clients_config, transfer_uuid):
             if isinstance(resp, int) or resp is None:
                 continue
             status = resp.get("status")
-        if status == "COMPLETE":
-            return resp.get("sip_uuid")
-        else:
-            assert False, "Error in transfer"
+        return resp
     except environment.EnvironmentError as err:
         assert False, "Error checking transfer (uuid: {}) status: {}".format(
             transfer_uuid, err
@@ -668,10 +680,7 @@ def wait_for_ingest(api_clients_config, sip_uuid):
             if isinstance(resp, int) or resp is None:
                 continue
             status = resp.get("status")
-        if status == "COMPLETE":
-            return
-        else:
-            assert False, "Error in ingest"
+        return resp
     except environment.EnvironmentError as err:
         assert False, "Error checking ingest (uuid: {}) status: {}".format(
             sip_uuid, err
@@ -685,8 +694,13 @@ def get_transfer_result(api_clients_config, transfer_uuid):
       - the local directory where the AIP has been extracted to
       - the METS path
     """
-    sip_uuid = wait_for_transfer(api_clients_config, transfer_uuid)
-    wait_for_ingest(api_clients_config, sip_uuid)
+    transfer_response = wait_for_transfer(api_clients_config, transfer_uuid)
+    if transfer_response["status"] == "FAILED":
+        return {}
+    sip_uuid = transfer_response["sip_uuid"]
+    ingest_response = wait_for_ingest(api_clients_config, sip_uuid)
+    if ingest_response["status"] == "FAILED":
+        return {}
     extracted_aip_dir = extract_aip(api_clients_config, sip_uuid)
     aip_mets_location = get_aip_mets_location(extracted_aip_dir, sip_uuid)
     return {
@@ -696,12 +710,18 @@ def get_transfer_result(api_clients_config, transfer_uuid):
     }
 
 
-def create_sample_transfer(api_clients_config, sample_transfer_path):
+def create_sample_transfer(
+    api_clients_config, sample_transfer_path, transfer_type="standard"
+):
     cached_transfer = environment.transfers_cache.setdefault(sample_transfer_path, {})
     if "aip_mets_location" in cached_transfer:
         return cached_transfer
-    transfer = start_sample_transfer(api_clients_config, sample_transfer_path)
+    transfer = start_sample_transfer(
+        api_clients_config, sample_transfer_path, transfer_type=transfer_type
+    )
     transfer_result = get_transfer_result(api_clients_config, transfer["transfer_uuid"])
+    if not transfer_result:
+        return transfer
     transfer["sip_uuid"] = transfer_result["sip_uuid"]
     transfer["extracted_aip_dir"] = transfer_result["extracted_aip_dir"]
     transfer["aip_mets_location"] = transfer_result["aip_mets_location"]
@@ -722,7 +742,99 @@ def create_reingest(api_clients_config, transfer):
     reingest_transfer_result = get_transfer_result(
         api_clients_config, result["reingest_transfer_uuid"]
     )
+    if not reingest_transfer_result:
+        return reingest_transfer_result
     result["reingest_sip_uuid"] = reingest_transfer_result["sip_uuid"]
     result["reingest_extracted_aip_dir"] = reingest_transfer_result["extracted_aip_dir"]
     result["reingest_aip_mets_location"] = reingest_transfer_result["aip_mets_location"]
     return result
+
+
+def get_jobs(
+    api_clients_config,
+    unit_uuid,
+    job_microservice=None,
+    job_link_uuid=None,
+    job_name=None,
+):
+    am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
+    am.unit_uuid = unit_uuid
+    if job_microservice is not None:
+        am.job_microservice = job_microservice
+    if job_link_uuid is not None:
+        am.job_link_uuid = job_link_uuid
+    if job_name is not None:
+        am.job_name = job_name
+    return call_api_endpoint(
+        endpoint=am.get_jobs,
+        warning_message="Cannot check job status",
+        error_message="Cannot check job status",
+    )
+
+
+def assert_jobs_completed_successfully(
+    api_clients_config,
+    unit_uuid,
+    job_name=None,
+    job_link_uuid=None,
+    job_microservice=None,
+    valid_exit_codes=(0,),
+):
+    jobs = get_jobs(
+        api_clients_config,
+        unit_uuid,
+        job_name=job_name,
+        job_link_uuid=job_link_uuid,
+        job_microservice=job_microservice,
+    )
+    assert len(jobs), "No jobs found for unit {}".format(unit_uuid)
+    for job in jobs:
+        job_error = "Job '{} ({})' of unit '{}' does not have a COMPLETE status".format(
+            job["name"], job["uuid"], unit_uuid
+        )
+        assert job["status"] == "COMPLETE", job_error
+        for task in job["tasks"]:
+            task_error = "Task '{}' of job '{} ({})' of unit '{}' does not have a valid exit_code ({})".format(
+                task["uuid"],
+                job["name"],
+                job["uuid"],
+                unit_uuid,
+                ", ".join(map(str, valid_exit_codes)),
+            )
+            assert task["exit_code"] in valid_exit_codes, task_error
+
+
+def assert_jobs_fail(
+    api_clients_config,
+    unit_uuid,
+    job_name=None,
+    job_link_uuid=None,
+    job_microservice=None,
+    valid_exit_codes=(0,),
+):
+    jobs = get_jobs(
+        api_clients_config,
+        unit_uuid,
+        job_name=job_name,
+        job_link_uuid=job_link_uuid,
+        job_microservice=job_microservice,
+    )
+    assert len(jobs), "No jobs found for unit {}".format(unit_uuid)
+    for job in jobs:
+        job_error = "Job '{} ()' of unit '{}' does not have a FAILED status or one of its tasks has an invalid exit code ({})".format(
+            job["name"], job["uuid"], unit_uuid, ", ".join(map(str, valid_exit_codes))
+        )
+        assert job["status"] == "FAILED" or job_tasks_failed(
+            job, valid_exit_codes
+        ), job_error
+
+
+def job_tasks_failed(job, valid_exit_codes):
+    return [task for task in job["tasks"] if task["exit_code"] not in valid_exit_codes]
+
+
+def assert_microservice_executes(api_clients_config, unit_uuid, microservice_name):
+    jobs = get_jobs(api_clients_config, unit_uuid, job_microservice=microservice_name)
+    assert len(jobs), "No jobs found with microservice {} for unit {}".format(
+        microservice_name, unit_uuid
+    )
