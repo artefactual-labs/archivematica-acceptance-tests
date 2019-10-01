@@ -844,3 +844,28 @@ def assert_microservice_executes(api_clients_config, unit_uuid, microservice_nam
     assert len(jobs), "No jobs found with microservice {} for unit {}".format(
         microservice_name, unit_uuid
     )
+
+
+def assert_source_md_in_bagit_mets(mets_root, mets_nsmap):
+    EXPECTED_SOURCE_MD_ELEMS = 1
+    BAGITMDTYPE = "BagIt"
+    source_md_elem = mets_root.xpath("mets:amdSec/mets:sourceMD", namespaces=mets_nsmap)
+    # Initial assertions about the sourceMD element.
+    assert source_md_elem, "sourceMD cannot be found, sourceMD is None"
+    assert (
+        len(source_md_elem) is EXPECTED_SOURCE_MD_ELEMS
+    ), "sourceMD count is incorrect: {}".format(len(source_md_elem))
+    md_wrap_elems = source_md_elem[0].xpath("mets:mdWrap", namespaces=mets_nsmap)
+    # Assert the metadata type is associated with BagIt.
+    assert md_wrap_elems
+    md_type = md_wrap_elems[0].attrib["OTHERMDTYPE"]
+    assert md_type == BAGITMDTYPE, "Metadata type is incorrect: {}".format(md_type)
+    # Assert there is a transfer metadata snippet, and it's not empty.
+    transfer_md = md_wrap_elems[0].xpath(
+        "mets:xmlData/transfer_metadata", namespaces=mets_nsmap
+    )
+    assert transfer_md, "Cannot find transfer_metadata element"
+    element_count = len(transfer_md[0])
+    assert element_count > 0, "No elements in BagIt transfer metadata: {}".format(
+        element_count
+    )
