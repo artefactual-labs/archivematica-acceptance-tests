@@ -19,10 +19,11 @@ Background: The storage service is configured with a transfer source that can se
     And every object in the objects and metadata directories has an amdSec
     And every PREMIS event recorded in the AIP METS records the logged-in user, the organization and the software as PREMIS agents
 
-  Scenario: Generate an AIP using an unzipped transfer workflow
+  Scenario: Generate an AIP using an unzipped bag transfer workflow
     Given a "unzipped bag" transfer type located in "SampleTransfers/BagTransfer"
     When the transfer is approved
     Then the "Verify bag, and restructure for compliance" job completes successfully
+    And there is a sourceMD containing a BagIt mdWrap in the AIP METS
 
   Scenario: Generate an AIP using a Dataverse workflow
     Given a "dataverse" transfer type located in "SampleTransfers/Dataverse/NDSAStaffingReport"

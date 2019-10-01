@@ -369,6 +369,21 @@ def step_impl(context):
         assert techmds_status == ["current", "superseded"], error
 
 
+@then("there is a sourceMD containing a BagIt mdWrap in the AIP METS")
+def step_impl(context):
+    utils.assert_source_md_in_bagit_mets(
+        etree.parse(context.current_transfer["aip_mets_location"]), context.mets_nsmap
+    )
+
+
+@then("there is a sourceMD containing a BagIt mdWrap in the reingested AIP METS")
+def step_impl(context):
+    utils.assert_source_md_in_bagit_mets(
+        etree.parse(context.current_transfer["reingest_aip_mets_location"]),
+        context.mets_nsmap,
+    )
+
+
 @then("there is a fileSec for deleted files for objects that were re-normalized")
 def step_impl(context):
     # get files that were deleted after reingest
