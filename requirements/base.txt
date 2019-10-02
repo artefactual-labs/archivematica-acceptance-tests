@@ -1,4 +1,4 @@
-git+git://github.com/artefactual-labs/amclient@e779e45a0d31e1c576cd9279d792fec59a62c20f#egg=amclient
+git+https://github.com/artefactual-labs/amclient@e779e45a0d31e1c576cd9279d792fec59a62c20f#egg=amclient
 behave>=1.0
 lxml
 metsrw
