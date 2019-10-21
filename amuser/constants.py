@@ -284,7 +284,7 @@ JS_SNIPPET_GET_MICRO_SERVICES2GROUPS = """
 PC_DECISION2ID = {
     "Assign UUIDs to directories": "id_bd899573-694e-4d33-8c9b-df0af802437d",
     "Document empty directories": "id_d0dfa5fc-e3c2-4638-9eda-f96eea1070e0",
-    "Bind PIDs": "id_05357876-a095-4c11-86b5-a7fff01af668",
+    "Bind PIDs": "id_a2ba5278-459a-4638-92d9-38eb1588717d",
     "Send transfer to quarantine": "id_755b4177-c587-41a7-8c52-015277568302",
     "Perform policy checks on access derivatives": "id_8ce07e94-6130-4987-96f0-2399ad45c5c2",
     "Perform policy checks on preservation derivatives": "id_153c5f41-3cfb-47ba-9150-2dd44ebc27df",
@@ -300,7 +300,7 @@ PC_DECISION2ID = {
     "Normalize": "id_cb8e5706-e73f-472f-ad9b-d1236af8095f",
     "Approve normalization": "id_de909a42-c5b5-46e1-9985-c031b50e9d30",
     "Reminder: add metadata if desired": "id_eeb23509-57e2-4529-8857-9d62525db048",
-    "Transcribe files (OCR)": "id_7079be6d-3a25-41e6-a481-cee5f352fe6e",
+    "Transcribe files (OCR)": "id_82ee9ad2-2c74-4c7c-853e-e4eaf68fc8b6",
     "Perform file format identification (Submission documentation & metadata)": "id_087d27be-c719-47d8-9bbb-9a7d8b609c44",
     "Select compression algorithm": "id_01d64f58-8295-4b7b-9cab-8f1b153a504f",
     "Select compression level": "id_01c651cb-c174-4ba4-b985-1d87a44d6754",
