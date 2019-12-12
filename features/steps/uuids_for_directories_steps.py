@@ -240,10 +240,10 @@ def step_impl(context):
             ), "Could not find a <mets:dmdSec> for directory at {}".format(dirpath)
             try:
                 id_type = dmdSec_el.find(
-                    ".//premis3:objectIdentifierType", ns
+                    ".//premis:objectIdentifierType", ns
                 ).text.strip()
                 id_val = dmdSec_el.find(
-                    ".//premis3:objectIdentifierValue", ns
+                    ".//premis:objectIdentifierValue", ns
                 ).text.strip()
             except AttributeError:
                 logger.info(ns)

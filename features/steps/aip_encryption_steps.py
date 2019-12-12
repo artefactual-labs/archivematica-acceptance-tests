@@ -51,7 +51,9 @@ def step_impl(context):
         " attributes"
         " Purpose: AIP Storage;"
         " Relative path: var/archivematica/sharedDirectory/www/AIPsStoreEncrypted;"
-        " Description: Store AIP Encrypted in standard Archivematica Directory;"
+        " Description: {};".format(
+            utils.get_gpg_space_location_description(context.scenario.space_uuid)
+        )
     )
 
 
@@ -149,15 +151,19 @@ def step_impl(context):
     )
     context.scenario.new_key_name = new_key_name
     context.scenario.new_key_fingerprint = new_key_fingerprint
-    # Edit the "standard GPG-encrypted space" to use the new GPG key
-    standard_encr_space_uuid = context.am_user.browser.search_for_ss_space(
-        {
-            "Access protocol": "GPG encryption on Local Filesystem",
-            "Path": "/",
-            "Staging path": "/var/archivematica/storage_service/storage_service_encrypted",
-            "GnuPG Private Key": "Archivematica Storage Service GPG Key",
-        }
-    )["uuid"]
+    if getattr(context.scenario, "space_uuid", None) is not None:
+        # Don't look for a space if previos steps saved it
+        standard_encr_space_uuid = context.scenario.space_uuid
+    else:
+        # Edit the "standard GPG-encrypted space" to use the new GPG key
+        standard_encr_space_uuid = context.am_user.browser.search_for_ss_space(
+            {
+                "Access protocol": "GPG encryption on Local Filesystem",
+                "Path": "/",
+                "Staging path": "/var/archivematica/storage_service/storage_service_encrypted",
+                "GnuPG Private Key": "Archivematica Storage Service GPG Key",
+            }
+        )["uuid"]
     new_key_repr = "{} <{}>".format(new_key_name, new_key_email)
     logger.info('Created a new GPG key "%s"', new_key_repr)
     context.am_user.browser.change_encrypted_space_key(
@@ -170,7 +176,9 @@ def step_impl(context):
 )
 def step_impl(context):
     context.execute_steps(
-        'Given the processing config decision "Store AIP location" is set to "Store AIP Encrypted in standard Archivematica Directory"\n'
+        'Given the processing config decision "Store AIP location" is set to "{}"\n'.format(
+            utils.get_gpg_space_location_description(context.scenario.space_uuid)
+        )
     )
 
 
@@ -207,15 +215,19 @@ def step_impl(context):
     """Edit the standard GPG-encrypted space so that it is using a GPG key
     other than the one stored in ``context.scenario.new_key_name``.
     """
-    # Edit the "standard GPG-encrypted space" to use the new GPG key
-    standard_encr_space_uuid = context.am_user.browser.search_for_ss_space(
-        {
-            "Access protocol": "GPG encryption on Local Filesystem",
-            "Path": "/",
-            "Staging path": "/var/archivematica/storage_service/storage_service_encrypted",
-            "GnuPG Private Key": context.scenario.new_key_name,
-        }
-    )["uuid"]
+    if getattr(context.scenario, "space_uuid", None) is not None:
+        # Don't look for a space if previos steps saved it
+        standard_encr_space_uuid = context.scenario.space_uuid
+    else:
+        # Edit the "standard GPG-encrypted space" to use the new GPG key
+        standard_encr_space_uuid = context.am_user.browser.search_for_ss_space(
+            {
+                "Access protocol": "GPG encryption on Local Filesystem",
+                "Path": "/",
+                "Staging path": "/var/archivematica/storage_service/storage_service_encrypted",
+                "GnuPG Private Key": context.scenario.new_key_name,
+            }
+        )["uuid"]
     context.am_user.browser.change_encrypted_space_key(standard_encr_space_uuid)
 
 
@@ -346,7 +358,7 @@ def step_impl(context):
             './/mets:mdWrap[@MDTYPE="PREMIS:EVENT"]', context.am_user.mets.mets_nsmap
         ):
             premis_event_type_el = premis_event_el.find(
-                "mets:xmlData/premis3:event/premis3:eventType",
+                "mets:xmlData/premis:event/premis:eventType",
                 context.am_user.mets.mets_nsmap,
             )
             if premis_event_type_el.text.strip() == "encryption":
@@ -356,13 +368,13 @@ def step_impl(context):
         # <premis:eventDetail>program=gpg (GPG); version=1.4.16; python-gnupg;
         # version=0.4.0</premis:eventDetail>
         premis_event_detail = premis_event.find(
-            "mets:xmlData/premis3:event/premis3:eventDetailInformation/premis3:eventDetail",
+            "mets:xmlData/premis:event/premis:eventDetailInformation/premis:eventDetail",
             context.am_user.mets.mets_nsmap,
         ).text
         assert "GPG" in premis_event_detail
         assert "version=" in premis_event_detail
         premis_event_od_note = premis_event.find(
-            "mets:xmlData/premis3:event/premis3:eventOutcomeInformation/premis3:eventOutcomeDetail/premis3:eventOutcomeDetailNote",
+            "mets:xmlData/premis:event/premis:eventOutcomeInformation/premis:eventOutcomeDetail/premis:eventOutcomeDetailNote",
             context.am_user.mets.mets_nsmap,
         ).text.strip()
         assert 'Status="encryption ok"' in premis_event_od_note
@@ -590,7 +602,7 @@ def assert_pointer_premis_event(**kwargs):
             kwargs["context"].am_user.mets.mets_nsmap,
         ):
             premis_event_type_el = premis_event_el.find(
-                "mets:xmlData/premis3:event/premis3:eventType",
+                "mets:xmlData/premis:event/premis:eventType",
                 kwargs["context"].am_user.mets.mets_nsmap,
             )
             if premis_event_type_el.text.strip() == kwargs["event_type"]:
@@ -598,13 +610,13 @@ def assert_pointer_premis_event(**kwargs):
                 break
         assert premis_event is not None
         premis_event_uuid = premis_event.find(
-            "mets:xmlData/premis3:event/premis3:eventIdentifier/premis3:eventIdentifierValue",
+            "mets:xmlData/premis:event/premis:eventIdentifier/premis:eventIdentifierValue",
             kwargs["context"].am_user.mets.mets_nsmap,
         ).text.strip()
         if kwargs.get("in_evt_dtl"):
             in_evt_dtl = kwargs["in_evt_dtl"] or []
             premis_event_detail = premis_event.find(
-                "mets:xmlData/premis3:event/premis3:eventDetailInformation/premis3:eventDetail",
+                "mets:xmlData/premis:event/premis:eventDetailInformation/premis:eventDetail",
                 kwargs["context"].am_user.mets.mets_nsmap,
             ).text.strip()
             for substr in in_evt_dtl:
@@ -612,7 +624,7 @@ def assert_pointer_premis_event(**kwargs):
         if kwargs.get("in_evt_out"):
             in_evt_out = kwargs["in_evt_out"] or []
             premis_event_out = premis_event.find(
-                "mets:xmlData/premis3:event/premis3:eventOutcomeInformation/premis3:eventOutcome",
+                "mets:xmlData/premis:event/premis:eventOutcomeInformation/premis:eventOutcome",
                 kwargs["context"].am_user.mets.mets_nsmap,
             ).text.strip()
             for substr in in_evt_out:
@@ -620,7 +632,7 @@ def assert_pointer_premis_event(**kwargs):
         if kwargs.get("in_evt_out_dtl_nt"):
             in_evt_out_dtl_nt = kwargs["in_evt_out_dtl_nt"] or []
             premis_event_od_note = premis_event.find(
-                "mets:xmlData/premis3:event/premis3:eventOutcomeInformation/premis3:eventOutcomeDetail/premis3:eventOutcomeDetailNote",
+                "mets:xmlData/premis:event/premis:eventOutcomeInformation/premis:eventOutcomeDetail/premis:eventOutcomeDetailNote",
                 kwargs["context"].am_user.mets.mets_nsmap,
             ).text.strip()
             for substr in in_evt_out_dtl_nt:
@@ -706,14 +718,14 @@ def assert_pointer_transform_file_encryption(pointer_path, ns, fingerprint=None)
                 "TRANSFORMKEY fingerprint {} does not match expected"
                 " fingerprint {}".format(transform_key, fingerprint)
             )
-        # premis3:compositionLevel incremented
+        # premis:compositionLevel incremented
         compos_lvl_el = doc.find(
             "mets:amdSec/mets:techMD/mets:mdWrap/mets:xmlData/premis:object/premis:objectCharacteristics/premis:compositionLevel",
             ns,
         )
         assert compos_lvl_el is not None
         assert compos_lvl_el.text.strip() == "2"
-        # premis3:inhibitors added
+        # premis:inhibitors added
         inhibitors_el = doc.find(
             "mets:amdSec/mets:techMD/mets:mdWrap/mets:xmlData/premis:object/premis:objectCharacteristics/premis:inhibitors",
             ns,

@@ -218,7 +218,7 @@ class ArchivematicaBrowserAbility(
             ).send_keys(dip_uuid)
             Select(
                 self.driver.find_element_by_css_selector('select[title="field name"]')
-            ).select_by_visible_text("SIP UUID")
+            ).select_by_visible_text("Transfer UUID")
             Select(
                 self.driver.find_element_by_css_selector('select[title="query type"]')
             ).select_by_visible_text("Phrase")

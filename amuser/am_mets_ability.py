@@ -24,24 +24,23 @@ class ArchivematicaMETSAbility(base.Base):
         dicts.
         """
         result = []
-        for premis_event_el in mets.findall(".//premis3:event", c.METS_NSMAP):
+        for premis_event_el in mets.findall(".//premis:event", c.METS_NSMAP):
             result.append(
                 {
                     "event_type": premis_event_el.find(
-                        "premis3:eventType", c.METS_NSMAP
+                        "premis:eventType", c.METS_NSMAP
                     ).text,
                     "event_detail": premis_event_el.find(
-                        "premis3:eventDetailInformation/premis3:eventDetail",
-                        c.METS_NSMAP,
+                        "premis:eventDetailInformation/premis:eventDetail", c.METS_NSMAP
                     ).text,
                     "event_outcome": premis_event_el.find(
-                        "premis3:eventOutcomeInformation/premis3:eventOutcome",
+                        "premis:eventOutcomeInformation/premis:eventOutcome",
                         c.METS_NSMAP,
                     ).text,
                     "event_outcome_detail_note": premis_event_el.find(
-                        "premis3:eventOutcomeInformation"
-                        "/premis3:eventOutcomeDetail"
-                        "/premis3:eventOutcomeDetailNote",
+                        "premis:eventOutcomeInformation"
+                        "/premis:eventOutcomeDetail"
+                        "/premis:eventOutcomeDetailNote",
                         c.METS_NSMAP,
                     ).text,
                 }
@@ -120,13 +119,13 @@ class ArchivematicaMETSAbility(base.Base):
         assert dmd_sec_el is not None
         identifiers = []
         for obj_idfr_el in dmd_sec_el.findall(
-            "mets:mdWrap/" "mets:xmlData/" "premis3:object/" "premis3:objectIdentifier",
+            "mets:mdWrap/" "mets:xmlData/" "premis:object/" "premis:objectIdentifier",
             ns,
         ):
             identifiers.append(
                 (
-                    obj_idfr_el.find("premis3:objectIdentifierType", ns).text,
-                    obj_idfr_el.find("premis3:objectIdentifierValue", ns).text,
+                    obj_idfr_el.find("premis:objectIdentifierType", ns).text,
+                    obj_idfr_el.find("premis:objectIdentifierValue", ns).text,
                 )
             )
         uuid_id = [ival for itype, ival in identifiers if itype == "UUID"][0]
@@ -153,27 +152,27 @@ def _add_entity_identifiers(entity, doc, ns):
         obj_idfr_els = amd_sec_el.findall(
             ".//mets:mdWrap/"
             "mets:xmlData/"
-            "premis3:object/"
-            "premis3:objectIdentifier",
+            "premis:object/"
+            "premis:objectIdentifier",
             ns,
         )
         for obj_idfr_el in obj_idfr_els:
             identifiers.append(
                 (
-                    obj_idfr_el.find("premis3:objectIdentifierType", ns).text,
-                    obj_idfr_el.find("premis3:objectIdentifierValue", ns).text,
+                    obj_idfr_el.find("premis:objectIdentifierType", ns).text,
+                    obj_idfr_el.find("premis:objectIdentifierValue", ns).text,
                 )
             )
     else:
         dmd_sec_el = doc.xpath("mets:dmdSec[@ID='{}']".format(e_id), namespaces=ns)[0]
         for obj_idfr_el in dmd_sec_el.findall(
-            "mets:mdWrap/" "mets:xmlData/" "premis3:object/" "premis3:objectIdentifier",
+            "mets:mdWrap/" "mets:xmlData/" "premis:object/" "premis:objectIdentifier",
             ns,
         ):
             identifiers.append(
                 (
-                    obj_idfr_el.find("premis3:objectIdentifierType", ns).text,
-                    obj_idfr_el.find("premis3:objectIdentifierValue", ns).text,
+                    obj_idfr_el.find("premis:objectIdentifierType", ns).text,
+                    obj_idfr_el.find("premis:objectIdentifierValue", ns).text,
                 )
             )
     entity["identifiers"] = identifiers

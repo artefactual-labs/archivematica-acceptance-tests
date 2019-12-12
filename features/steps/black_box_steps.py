@@ -231,9 +231,9 @@ def step_impl(context):
             'mets:amdSec[@ID="{}"]'.format(amdsec_id), namespaces=context.mets_nsmap
         )
         object_uuid = amdsec.xpath(
-            "mets:techMD/mets:mdWrap/mets:xmlData/premis3:object/"
-            'premis3:objectIdentifier/premis3:objectIdentifierType[text()="UUID"]/'
-            "../premis3:objectIdentifierValue",
+            "mets:techMD/mets:mdWrap/mets:xmlData/premis:object/"
+            'premis:objectIdentifier/premis:objectIdentifierType[text()="UUID"]/'
+            "../premis:objectIdentifierValue",
             namespaces=context.mets_nsmap,
         )[0].text
         assert object_uuid == file_uuid
@@ -263,7 +263,7 @@ def step_impl(context):
     tree = etree.parse(context.current_transfer["aip_mets_location"])
     premis_events = tree.findall(
         'mets:amdSec/mets:digiprovMD/mets:mdWrap[@MDTYPE="PREMIS:EVENT"]/'
-        "mets:xmlData/premis3:event",
+        "mets:xmlData/premis:event",
         namespaces=context.mets_nsmap,
     )
     error = "The {} file does not contain any PREMIS events".format(
@@ -272,12 +272,12 @@ def step_impl(context):
     assert premis_events, error
     for event in premis_events:
         event_agents = event.findall(
-            "premis3:linkingAgentIdentifier", namespaces=context.mets_nsmap
+            "premis:linkingAgentIdentifier", namespaces=context.mets_nsmap
         )
         event_agent_types = set(
             [
                 event_agent.findtext(
-                    "premis3:linkingAgentIdentifierType", namespaces=context.mets_nsmap
+                    "premis:linkingAgentIdentifierType", namespaces=context.mets_nsmap
                 )
                 for event_agent in event_agents
             ]
