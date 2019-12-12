@@ -315,8 +315,7 @@ PC_DECISION2ID = {
 # Namespace map for parsing METS XML.
 METS_NSMAP = {
     "mets": "http://www.loc.gov/METS/",
-    "premis": "info:lc/xmlns/premis-v2",
-    "premis3": "http://www.loc.gov/premis/v3",
+    "premis": "http://www.loc.gov/premis/v3",
     "dc": "http://purl.org/dc/elements/1.1/",
     "dcterms": "http://purl.org/dc/terms/",
     "xlink": "http://www.w3.org/1999/xlink",

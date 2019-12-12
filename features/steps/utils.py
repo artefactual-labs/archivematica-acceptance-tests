@@ -869,3 +869,9 @@ def assert_source_md_in_bagit_mets(mets_root, mets_nsmap):
     assert element_count > 0, "No elements in BagIt transfer metadata: {}".format(
         element_count
     )
+
+
+def get_gpg_space_location_description(space_uuid):
+    return "Store AIP Encrypted in standard Archivematica Directory ({})".format(
+        space_uuid
+    )
