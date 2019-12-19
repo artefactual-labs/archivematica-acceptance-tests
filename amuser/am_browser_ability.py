@@ -425,12 +425,6 @@ class ArchivematicaBrowserAbility(
             });
         """
         self.set_processing_config_decision(
-            decision_label="Send transfer to quarantine", choice_value="No"
-        )
-        self.set_processing_config_decision(
-            decision_label="Remove from quarantine after (days)", choice_value="28"
-        )
-        self.set_processing_config_decision(
             decision_label="Generate transfer structure report", choice_value="No"
         )
         self.set_processing_config_decision(

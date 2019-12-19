@@ -118,7 +118,6 @@ MICRO_SERVICES2GROUPS = {
     "Create SIP(s)": ("Create SIP from Transfer",),
     "Create thumbnails directory": ("Normalize",),
     "Create transfer metadata XML": ("Complete transfer",),
-    "Designate to process as a standard transfer": ("Quarantine",),
     "Determine if transfer contains packages": ("Extract packages",),
     "Determine which files to identify": ("Identify file format",),
     "Do you want to perform file format identification?": (
@@ -127,7 +126,6 @@ MICRO_SERVICES2GROUPS = {
     ),
     "Document empty directories?": ("Generate AIP METS",),
     "Examine contents?": ("Examine contents",),
-    "Find type to process as": ("Quarantine",),
     "Generate METS.xml document": ("Generate METS.xml document", "Generate AIP METS"),
     "Generate transfer structure report": ("Generate transfer structure report",),
     "Grant normalization options for no pre-existing DIP": ("Normalize",),
@@ -170,7 +168,6 @@ MICRO_SERVICES2GROUPS = {
     ),
     "Move to select file ID tool": ("Identify file format", "Normalize"),
     "Move to the store AIP approval directory": ("Store AIP",),
-    "Move to workFlowDecisions-quarantineSIP directory": ("Quarantine",),
     "Normalization report": ("Normalize",),
     "Normalize": ("Normalize",),
     "Normalize for preservation": ("Normalize",),
@@ -194,7 +191,6 @@ MICRO_SERVICES2GROUPS = {
     "Remove empty manual normalization directories": ("Process metadata directory",),
     "Remove files without linking information (failed normalization"
     " artifacts etc.)": ("Process submission documentation", "Normalize"),
-    "Remove from quarantine": ("Quarantine",),
     "Remove hidden files and directories": ("Verify transfer compliance",),
     "Remove the processing directory": ("Store AIP",),
     "Remove unneeded files": ("Verify transfer compliance",),
@@ -251,7 +247,6 @@ MICRO_SERVICES2GROUPS = {
         "Verify transfer compliance",
     ),
     "Verify transfer compliance": ("Verify transfer compliance",),
-    "Workflow decision - send transfer to quarantine": ("Quarantine",),
 }
 
 # The following JavaScript run in the browser console will create an object
@@ -285,11 +280,9 @@ PC_DECISION2ID = {
     "Assign UUIDs to directories": "id_bd899573-694e-4d33-8c9b-df0af802437d",
     "Document empty directories": "id_d0dfa5fc-e3c2-4638-9eda-f96eea1070e0",
     "Bind PIDs": "id_a2ba5278-459a-4638-92d9-38eb1588717d",
-    "Send transfer to quarantine": "id_755b4177-c587-41a7-8c52-015277568302",
     "Perform policy checks on access derivatives": "id_8ce07e94-6130-4987-96f0-2399ad45c5c2",
     "Perform policy checks on preservation derivatives": "id_153c5f41-3cfb-47ba-9150-2dd44ebc27df",
     "Perform policy checks on originals": "id_70fc7040-d4fb-4d19-a0e6-792387ca1006",
-    "Remove from quarantine after (days)": "id_19adb668-b19a-4fcb-8938-f49d7485eaf3",
     "Generate transfer structure report": "id_56eebd45-5600-4768-a8c2-ec0114555a3d",
     "Perform file format identification (Transfer)": "id_f09847c2-ee51-429a-9478-a860477f6b8d",
     "Extract packages": "id_dec97e3c-5598-4b99-b26e-f87a435a6b7f",
