@@ -82,31 +82,8 @@ Feature: PREMIS events are recorded correctly
     And the user waits for the "Store AIP (review)" decision point to appear during ingest
     Then in the METS file there are/is 6 PREMIS event(s) of type registration with properties {"eventOutcomeInformation/eventOutcomeDetail/eventOutcomeDetailNote": [["equals", "accession#1234-567"]]}
 
-  @quarantine
-  Scenario: Isla wants to confirm that quarantine PREMIS events are created when files are put under quarantine
-    Given that the user has ensured that the default processing config is in its default state
-    And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Fido"
-    And the processing config decision "Assign UUIDs to directories" is set to "No"
-    And the processing config decision "Perform policy checks on originals" is set to "No"
-    And the processing config decision "Create SIP(s)" is set to "Create single SIP and continue processing"
-    And the processing config decision "Select file format identification command (Ingest)" is set to "Identify using Fido"
-    And the processing config decision "Normalize" is set to "Do not normalize"
-    And the processing config decision "Approve normalization" is set to "Yes"
-    And the processing config decision "Perform policy checks on preservation derivatives" is set to "No"
-    And the processing config decision "Perform policy checks on access derivatives" is set to "No"
-    And the processing config decision "Bind PIDs" is set to "No"
-    And the processing config decision "Document empty directories" is set to "No"
-    And the processing config decision "Select file format identification command (Submission documentation & metadata)" is set to "Identify using Fido"
-    And the processing config decision "Send transfer to quarantine" is set to "None"
-    When a transfer is initiated on directory ~/archivematica-sampledata/SampleTransfers/BagTransfer
-    And the user waits for the "Workflow decision - send transfer to quarantine" decision point to appear and chooses "Quarantine" during transfer
-    And the user waits for the "Remove from quarantine" decision point to appear and chooses "Unquarantine" during transfer
-    And the user waits for the "Store AIP (review)" decision point to appear during ingest
-    Then in the METS file there are/is 6 PREMIS event(s) of type quarantine
-    And in the METS file there are/is 6 PREMIS event(s) of type unquarantine
-
   @format-identification
-  Scenario: Isla wants to confirm that quarantine PREMIS events are created when files are put under quarantine
+  Scenario: Isla wants to confirm that format identification PREMIS events are created when a package is ingested
     Given that the user has ensured that the default processing config is in its default state
     And the processing config decision "Select file format identification command (Transfer)" is set to "Identify using Siegfried"
     And the processing config decision "Assign UUIDs to directories" is set to "No"
