@@ -6,7 +6,7 @@ Alma wants to be able to create AIPs from all of Archivematica's different trans
 Background: The storage service is configured with a transfer source that can see the archivematica-sampledata repository.
 
   Scenario: Generate an AIP using a standard transfer workflow
-    Given a "standard" transfer type located in "SampleTransfers/DemoTransferCSV"
+    Given a "standard" transfer type located in "amauat-automated-acceptance-tests/standard-transfer/DemoTransferCSV"
     When the AIP is downloaded
     Then the AIP METS can be accessed and parsed by mets-reader-writer
     And the AIP conforms to expected content and structure
@@ -20,13 +20,13 @@ Background: The storage service is configured with a transfer source that can se
     And every PREMIS event recorded in the AIP METS records the logged-in user, the organization and the software as PREMIS agents
 
   Scenario: Generate an AIP using an unzipped bag transfer workflow
-    Given a "unzipped bag" transfer type located in "SampleTransfers/BagTransfer"
+    Given a "unzipped bag" transfer type located in "amauat-automated-acceptance-tests/bagit/BagTransfer"
     When the transfer is approved
     Then the "Verify bag, and restructure for compliance" job completes successfully
     And there is a sourceMD containing a BagIt mdWrap in the AIP METS
 
   Scenario: Generate an AIP using a Dataverse workflow
-    Given a "dataverse" transfer type located in "SampleTransfers/Dataverse/NDSAStaffingReport"
+    Given a "dataverse" transfer type located in "amauat-automated-acceptance-tests/Dataverse/NDSAStaffingReport"
     When the AIP is downloaded
     Then the "Set convert Dataverse structure flag" job completes successfully
     And the "Set parse Dataverse METS flag" job completes successfully

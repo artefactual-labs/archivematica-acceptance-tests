@@ -11,6 +11,6 @@ Feature: Alma wants to ensure that PREMIS events are recorded for all preservati
     And there are <validated_objects_count> original objects in the AIP METS with a validation event
 
     Examples: sample transfers
-      | sample_transfer_path            | validated_objects_count |
-      | SampleTransfers/DemoTransferCSV | 2                       |
-      | TestTransfers/badNames          | 0                       |
+      | sample_transfer_path                                                  | validated_objects_count |
+      | amauat-automated-acceptance-tests/standard-transfer/DemoTransferCSV   | 2                       |
+      | amauat-automated-acceptance-tests/standard-transfer/badNames          | 0                       |
