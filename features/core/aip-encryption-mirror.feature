@@ -41,7 +41,7 @@ Feature: AIP Encryption via Mirror Locations
     And there is a standard GPG-encrypted Replicator location in the storage service
     And the default AIP Storage location has the GPG-encrypted Replicator location as its replicator
     And automated processing with all decision points resolved
-    When a transfer is initiated on directory SampleTransfers/BagTransfer
+    When a transfer is initiated on directory amauat-automated-acceptance-tests/bagit/BagTransfer
     And the user waits for the AIP to appear in archival storage
     And the user searches for the AIP UUID in the Storage Service
     Then the master AIP and its replica are returned by the search

@@ -60,6 +60,6 @@ Feature: UUIDs for Directories
     And the UUIDs for the subfolders and digital objects are written to the METS file
 
     Examples: transfer sources
-    | type       | directory_path                                                                                 | transfer_path                                                       |
-    | standard   | ~/archivematica-sampledata/TestTransfers/acceptance-tests/pid-binding/hierarchy-with-empty-dir | TestTransfers/acceptance-tests/pid-binding/hierarchy-with-empty-dir |
-    | zipped bag | ~/archivematica-sampledata/SampleTransfers/BagTransfer.zip                                     | SampleTransfers/BagTransfer.zip                                     |
+    | type       | directory_path                                                                                                        | transfer_path                                                                            |
+    | standard   | ~/archivematica-sampledata/amauat-automated-acceptance-tests/standard-transfer/pid-binding/hierarchy-with-empty-dir   | amauat-automated-acceptance-tests/standard-transfer/pid-binding/hierarchy-with-empty-dir |
+    | zipped bag | ~/archivematica-sampledata/amauat-automated-acceptance-tests/bagit/BagTransfer.zip                                    | amauat-automated-acceptance-tests/bagit/BagTransfer.zip                                  |
