@@ -470,7 +470,7 @@ class ArchivematicaBrowserAbility(
         )
         self.set_processing_config_decision(
             decision_label="Select compression level",
-            choice_value="5 - normal compression mode",
+            choice_value="5 - normal compression",
         )
         self.set_processing_config_decision(
             decision_label="Store AIP", choice_value="None"
