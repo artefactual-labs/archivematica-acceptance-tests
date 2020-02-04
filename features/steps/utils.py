@@ -566,6 +566,25 @@ def get_premis_events_by_type(entry, event_type):
     return [ev for ev in entry.get_premis_events() if ev.type == event_type]
 
 
+def get_transfer_dir_from_structmap(tree, transfer_name, sip_uuid, nsmap):
+    structmap = tree.find('mets:structMap[@TYPE="physical"]', namespaces=nsmap)
+    transfer_dir = structmap.find(
+        'mets:div[@LABEL="{}-{}"][@TYPE="Directory"]'.format(transfer_name, sip_uuid),
+        namespaces=nsmap,
+    )
+    return transfer_dir
+
+
+def get_submission_docs_from_structmap(tree, nsmap):
+    label = "submissionDocumentation"
+    structmap = tree.find('mets:structMap[@TYPE="physical"]', namespaces=nsmap)
+    transfer_dir = structmap.find(
+        '*//mets:div[@LABEL="{}"][@TYPE="Directory"]'.format(label), namespaces=nsmap
+    )
+    submission_docs = transfer_dir.findall("*//mets:div", namespaces=nsmap)
+    return set([doc.get("LABEL") for doc in submission_docs])
+
+
 def get_path_before_sanitization(entry, transfer_contains_objects_dir=False):
     clean_name_premis_events = get_premis_events_by_type(entry, "name cleanup")
     if not clean_name_premis_events:
@@ -617,6 +636,25 @@ def is_valid_download(path):
     assert path, errors["path"]
     assert os.path.isfile(path), errors["validate"]
     assert os.stat(path).st_size >= 1, errors["size"]
+
+
+def retrieve_md_section_ids(tree, section, md_type, nsmap):
+    md_sec_ids = []
+    md_secs = tree.findall(section, namespaces=nsmap)
+    for md_sec in md_secs:
+        md_sec_id = md_sec.get("ID")
+        for md in md_sec:
+            if md.get("MDTYPE") == md_type:
+                md_sec_ids.append(md_sec_id)
+    return set(md_sec_ids)
+
+
+def retrieve_rights_linking_object_identifiers(tree, nsmap):
+    rights_objects = tree.findall(
+        "mets:amdSec/mets:rightsMD/mets:mdWrap/mets:xmlData/premis:rightsStatement/premis:linkingObjectIdentifier/premis:linkingObjectIdentifierValue",
+        namespaces=nsmap,
+    )
+    return set([id_.text for id_ in rights_objects])
 
 
 def get_filesec_files(tree, use=None, nsmap={}):
