@@ -193,21 +193,16 @@ def step_impl(context):
 
 
 @then(
-    "the physical structMap of the AIP METS accurately reflects "
-    "the physical layout of the AIP"
+    "the physical structMap of the AIP METS accurately reflects the physical layout of the AIP"
 )
 def step_impl(context):
     root_path = os.path.join(context.current_transfer["extracted_aip_dir"], "data")
     tree = etree.parse(context.current_transfer["aip_mets_location"])
-    structmap = tree.find(
-        'mets:structMap[@TYPE="physical"]', namespaces=context.mets_nsmap
-    )
-    transfer_dir = structmap.find(
-        'mets:div[@LABEL="{}-{}"][@TYPE="Directory"]'.format(
-            context.current_transfer["transfer_name"],
-            context.current_transfer["sip_uuid"],
-        ),
-        namespaces=context.mets_nsmap,
+    transfer_dir = utils.get_transfer_dir_from_structmap(
+        tree,
+        context.current_transfer["transfer_name"],
+        context.current_transfer["sip_uuid"],
+        nsmap=context.mets_nsmap,
     )
     error = (
         'The {} file does not contain any "Directory" entries in its physical '
@@ -496,3 +491,94 @@ def step_impl(context):
         )
     )
     assert dmdsecs_contain_ddi_metadata, error
+
+
+@then(
+    "there are {expected_object_count:d} {object_type} in the AIP METS with a DMDSEC containing DC metadata"
+)
+def step_impl(context, expected_object_count, object_type):
+    ORIGINAL = "original objects"
+    DIRS = "directories"
+    dir_ids = []
+    item_ids = []
+    mets = metsrw.METSDocument.fromfile(context.current_transfer["aip_mets_location"])
+    dmd_sec_ids = utils.retrieve_md_section_ids(
+        mets.tree, section="mets:dmdSec", md_type="DC", nsmap=context.mets_nsmap
+    )
+    for file in mets.all_files():
+        for dmd_sec in file.dmdsecs:
+            if file.mets_div_type == "Directory" and dmd_sec.id_string in dmd_sec_ids:
+                dir_ids.append(dmd_sec.id_string)
+            elif (
+                file.mets_div_type == "Item"
+                and file.use == "original"
+                and dmd_sec.id_string in dmd_sec_ids
+            ):
+                item_ids.append(dmd_sec.id_string)
+    err = (
+        "The {} file does not contain the correct number of DC dmdSecs: {} expected {}"
+    )
+    if object_type == ORIGINAL:
+        error = err.format(
+            context.current_transfer["aip_mets_location"],
+            len(item_ids),
+            expected_object_count,
+        )
+        assert len(item_ids) == expected_object_count, error
+    elif object_type == DIRS:
+        error = err.format(
+            context.current_transfer["aip_mets_location"],
+            len(dir_ids),
+            expected_object_count,
+        )
+        assert len(dir_ids) == expected_object_count, error
+    else:
+        raise NotImplementedError("Object type cannot be parsed out of METS yet")
+
+
+@then(
+    "there are {expected_entries_count:d} objects in the AIP METS with a rightsMD section containing PREMIS:RIGHTS"
+)
+def step_impl(context, expected_entries_count):
+    mets = metsrw.METSDocument.fromfile(context.current_transfer["aip_mets_location"])
+    rights_linking_ids = utils.retrieve_rights_linking_object_identifiers(
+        mets.tree, nsmap=context.mets_nsmap
+    )
+    error = "Expected objects with rightsMD sections: {} is incorrect: {}".format(
+        expected_entries_count, len(rights_linking_ids)
+    )
+    assert len(rights_linking_ids) == expected_entries_count, error
+
+
+@then("there are {expected_entries_count:d} PREMIS:RIGHTS entries")
+def step_impl(context, expected_entries_count):
+    mets = metsrw.METSDocument.fromfile(context.current_transfer["aip_mets_location"])
+    rights_md_ids = utils.retrieve_md_section_ids(
+        mets.tree,
+        section="mets:amdSec/mets:rightsMD",
+        md_type="PREMIS:RIGHTS",
+        nsmap=context.mets_nsmap,
+    )
+    error = "Expected objects with rightsMD sections: {} is incorrect: {}".format(
+        expected_entries_count, len(rights_md_ids)
+    )
+    assert len(rights_md_ids) == expected_entries_count, error
+
+
+@then(
+    "there are {expected_entries_count:d} submission documents listed in the AIP METS as submission documentation"
+)
+def step_impl(context, expected_entries_count):
+    mets = metsrw.METSDocument.fromfile(context.current_transfer["aip_mets_location"])
+    submission_docs = utils.get_submission_docs_from_structmap(
+        mets.tree, nsmap=context.mets_nsmap
+    )
+    # Archivematica added submission documentation. We only care about
+    # user submitted docs.
+    METS = "METS.xml"
+    if METS in submission_docs:
+        submission_docs.remove(METS)
+    error = "Expected submission documents: {} is incorrect: {}".format(
+        expected_entries_count, len(submission_docs)
+    )
+    assert len(submission_docs) == expected_entries_count, error
