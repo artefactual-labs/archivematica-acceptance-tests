@@ -14,6 +14,6 @@ Feature: Transfer (i.e., pre-ingest) Conformance Check
     Then all PREMIS implementation-check-type validation events have eventOutcome = <event_outcome>
 
     Examples: File Validity Possibilities
-    | file_validity | microservice_output    | event_outcome | transfer_path          |
-    | valid         | Completed successfully | pass          | TestTransfers/acceptance-tests/preforma/all-valid     |
-    | not valid     | Failed                 | fail          | TestTransfers/acceptance-tests/preforma/none-valid    |
+    | file_validity | microservice_output    | event_outcome | transfer_path                                                              |
+    | valid         | Completed successfully | pass          | amauat-automated-acceptance-tests/standard-transfer/preforma/all-valid     |
+    | not valid     | Failed                 | fail          | amauat-automated-acceptance-tests/standard-transfer/preforma/none-valid    |

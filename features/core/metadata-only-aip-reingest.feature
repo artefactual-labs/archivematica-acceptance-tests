@@ -23,7 +23,7 @@ Feature: Metadata-only AIP re-ingest
 
   Scenario: Isla creates an AIP, and then performs a metadata-only re-ingest on it, adds metadata to it, and confirms that her newly added metadata are in the modified METS file.
     Given automated processing with all decision points resolved
-    When a transfer is initiated on directory SampleTransfers/Images/pictures
+    When a transfer is initiated on directory amauat-automated-acceptance-tests/standard-transfer/pictures
     And the user waits for the AIP to appear in archival storage
     Then in the METS file the metsHdr element has a CREATEDATE attribute but no LASTMODDATE attribute
     And in the METS file the metsHdr element has one dmdSec next sibling element(s)

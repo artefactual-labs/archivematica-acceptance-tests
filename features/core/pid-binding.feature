@@ -50,5 +50,5 @@ Feature: Archivematica's entities can be assigned PIDs with specified resolution
     And the empty directory in <empty_dir_rel_path> is in the normative structMap and has identifiers
 
     Examples: transfer sources
-    | directory_path                                                      | empty_dir_rel_path  |
-    | TestTransfers/acceptance-tests/pid-binding/hierarchy-with-empty-dir | dir2/dir2a/dir2aiii |
+    | directory_path                                                                            | empty_dir_rel_path  |
+    | amauat-automated-acceptance-tests/standard-transfer/pid-binding/hierarchy-with-empty-dir/ | dir2/dir2a/dir2aiii |

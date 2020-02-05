@@ -31,7 +31,7 @@ Feature: AIP Encryption
     And there is a standard GPG-encrypted AIP Storage location in the storage service
     And automated processing with all decision points resolved
     And automated processing configured to Store AIP Encrypted in standard Archivematica Directory
-    When a transfer is initiated on directory SampleTransfers/BagTransfer
+    When a transfer is initiated on directory amauat-automated-acceptance-tests/bagit/BagTransfer
     And the user waits for the AIP to appear in archival storage
     And the user downloads the AIP pointer file
     Then the pointer file contains a PREMIS:EVENT element for the encryption event
@@ -47,7 +47,7 @@ Feature: AIP Encryption
     And automated processing with all decision points resolved
     And the processing config decision "Select compression algorithm" is set to "Uncompressed"
     And automated processing configured to Store AIP Encrypted in standard Archivematica Directory
-    When a transfer is initiated on directory SampleTransfers/BagTransfer
+    When a transfer is initiated on directory amauat-automated-acceptance-tests/bagit/BagTransfer
     And the user waits for the AIP to appear in archival storage
     And the user queries the API until the AIP has been stored
     Then the uncompressed AIP on disk at /var/archivematica/sharedDirectory/www/AIPsStoreEncrypted/ is encrypted
@@ -61,7 +61,7 @@ Feature: AIP Encryption
     And there is a standard GPG-encrypted Transfer Backlog location in the storage service
     And automated processing with all decision points resolved
     And the processing config decision "Create SIP(s)" is set to "Send to backlog"
-    When a transfer is initiated on directory SampleTransfers/BagTransfer
+    When a transfer is initiated on directory amauat-automated-acceptance-tests/bagit/BagTransfer
     And the user waits for the SIP to appear in transfer backlog
     Then the transfer on disk is encrypted
     # TODO: implement the following steps. Spending time implementing these did
@@ -87,7 +87,7 @@ Feature: AIP Encryption
     And automated processing with all decision points resolved
     And automated processing configured to Store AIP Encrypted in standard Archivematica Directory
     When the user creates a new GPG key and assigns it to the standard GPG-encrypted space
-    And an encrypted AIP is created from the directory at SampleTransfers/BagTransfer
+    And an encrypted AIP is created from the directory at amauat-automated-acceptance-tests/bagit/BagTransfer
     And the user attempts to delete the new GPG key
     Then the user is prevented from deleting the key because it is attached to a space
     When the user assigns a different GPG key to the standard GPG-encrypted space

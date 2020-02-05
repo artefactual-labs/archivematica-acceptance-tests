@@ -2,7 +2,7 @@
 Feature: Alma wants package files included in the transfer to be extracted.
 
   Scenario: packages are extracted successfully
-    Given a "standard" transfer type located in "SampleTransfers/OfficeDocs"
+    Given a "standard" transfer type located in "amauat-automated-acceptance-tests/standard-transfer/OfficeDocs"
     When the transfer compliance is verified
     Then the "Extract contents from compressed archives" job completes successfully
     And the "Sanitize extracted objects' file and directory names" job completes successfully
@@ -12,7 +12,7 @@ Feature: Alma wants package files included in the transfer to be extracted.
     And the "Determine if transfer still contains packages" job completes successfully
 
   Scenario: packages are not extracted successfully
-    Given a "standard" transfer type located in "TestTransfers/broken_package_format_types"
+    Given a "standard" transfer type located in "amauat-automated-acceptance-tests/standard-transfer/broken_package_format_types"
     When the transfer compliance is verified
     Then the "Extract contents from compressed archives" job fails
     And the "Failed transfer" microservice is executed

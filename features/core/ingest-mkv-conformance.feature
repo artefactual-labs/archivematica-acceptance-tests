@@ -23,9 +23,9 @@ Feature: Ingest (i.e., post-normalization) conformance check
     Then all PREMIS implementation-check-type validation events have eventOutcome = <event_outcome>
 
     Examples: Normalized for Preservation File Validity Possibilities
-    | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                        |
-    | valid         | Completed successfully | Passed            | pass          | TestTransfers/acceptance-tests/preforma/when-normalized-all-valid   |
-    #| not valid     | Failed                 | Failed            | fail          | TestTransfers/acceptance-tests/preforma/when-normalized-none-valid  |
+    | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                                                                            |
+    | valid         | Completed successfully | Passed            | pass          | amauat-automated-acceptance-tests/standard-transfer/preforma/when-normalized-all-valid   |
+    | not valid     | Failed                 | Failed            | fail          | amauat-automated-acceptance-tests/standard-transfer/preforma/when-normalized-none-valid  |
 
   @access
   Scenario Outline: Isla wants to confirm that normalization to .mkv for access is successful
@@ -40,4 +40,4 @@ Feature: Ingest (i.e., post-normalization) conformance check
 
     Examples: Normalized for Access File Validity Possibilities
     | file_validity | microservice_output    | validation_result | event_outcome | transfer_path                              |
-    | valid         | Completed successfully | Passed            | pass          | TestTransfers/acceptance-tests/preforma/when-normalized-access-all-valid  |
+    | valid         | Completed successfully | Passed            | pass          | amauat-automated-acceptance-tests/standard-transfer/preforma/when-normalized-access-all-valid  |
