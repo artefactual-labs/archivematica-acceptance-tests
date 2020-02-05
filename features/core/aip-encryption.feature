@@ -96,3 +96,12 @@ Feature: AIP Encryption
     When the AIP is deleted
     And the user attempts to delete the new GPG key
     Then the user succeeds in deleting the GPG key
+
+  @reencrypt-different-key
+  Scenario: Richard wants to confirm that he can re-encrypt an encrypted AIP with a new key. He has encrypted an AIP with GPG key A in space S. He later changed space S to use the more secure GPG key B. He wants to decrypt the AIPs encrypted with A and re-encrypt them with key B. Finally, he wants to delete the now unused key A from the storage service.
+    Given an encrypted AIP in the standard GPG-encrypted space
+    And the reminder to add metadata is enabled
+    When the user creates a new GPG key and assigns it to the standard GPG-encrypted space
+    And the user performs a metadata-only re-ingest on the AIP
+    And the user downloads the AIP pointer file
+    Then the AIP pointer file references the fingerprint of the new GPG key

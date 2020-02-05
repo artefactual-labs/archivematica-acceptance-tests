@@ -460,18 +460,10 @@ def step_impl(context):
     context.execute_steps(
         "When the user initiates a metadata-only re-ingest on the AIP\n"
         'And the user waits for the "Approve AIP reingest" decision point to appear and chooses "Approve AIP reingest" during ingest\n'
-        'And the user waits for the "Normalize" decision point to appear and chooses "Do not normalize" during ingest\n'
-        'And the user waits for the "Perform policy checks on preservation derivatives?" decision point to appear and chooses "No" during ingest\n'
-        'And the user waits for the "Perform policy checks on access derivatives?" decision point to appear and chooses "No" during ingest\n'
         'And the user waits for the "Reminder: add metadata if desired" decision point to appear during ingest\n'
         "And the user adds metadata\n"
         'And the user chooses "Continue" at decision point "Reminder: add metadata if desired" during ingest\n'
         # TODO: change the below step to 'Perform file format identification ...' post 1.8 if fixing-up this test.
-        'And the user waits for the "Select file format identification command|Process submission documentation" decision point to appear and chooses "Identify using Fido" during ingest\n'
-        'And the user waits for the "Bind PIDs?" decision point to appear and chooses "No" during ingest\n'
-        'And the user waits for the "Document empty directories?" decision point to appear and chooses "No" during ingest\n'
-        'And the user waits for the "Store AIP (review)" decision point to appear and chooses "Store AIP" during ingest\n'
-        'And the user waits for the "Store AIP location" decision point to appear and chooses "Store AIP Encrypted in standard Archivematica Directory" during ingest\n'
         "And the user waits for the AIP to appear in archival storage"
     )
 
