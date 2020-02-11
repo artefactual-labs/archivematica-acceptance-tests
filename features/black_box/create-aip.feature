@@ -33,3 +33,10 @@ Background: The storage service is configured with a transfer source that can se
     And the "Convert Dataverse structure" job completes successfully
     And the "Parse Dataverse METS XML" job completes successfully
     And the METS file contains a dmdSec with DDI metadata
+
+  Scenario: Generate an AIP using a Dspace transfer workflow
+    Given a "dspace" transfer type located in "SampleTransfers/DSpaceExport/ITEM@2429-2700.zip"
+    When the AIP is downloaded
+    Then the "Identify DSpace mets files" job completes successfully
+    And the "Identify DSpace text files" job completes successfully
+    And the "Verify checksums in fileSec of DSpace METS files" job completes successfully
