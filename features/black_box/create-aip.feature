@@ -25,6 +25,13 @@ Background: The storage service is configured with a transfer source that can se
     Then the "Verify bag, and restructure for compliance" job completes successfully
     And there is a sourceMD containing a BagIt mdWrap in the AIP METS
 
+  Scenario: Generate an AIP using a zipped bag transfer workflow
+    Given a "zipped bag" transfer type located in "SampleTransfers/BagExamples/ZippedBags/BagTransfer.zip"
+    When the transfer is approved
+    Then the "Extract zipped bag transfer" job completes successfully
+    And the "Verify bag, and restructure for compliance" job completes successfully
+    And there is a sourceMD containing a BagIt mdWrap in the AIP METS
+
   Scenario: Generate an AIP using a Dataverse workflow
     Given a "dataverse" transfer type located in "SampleTransfers/Dataverse/NDSAStaffingReport"
     When the AIP is downloaded
@@ -40,3 +47,11 @@ Background: The storage service is configured with a transfer source that can se
     Then the "Identify DSpace mets files" job completes successfully
     And the "Identify DSpace text files" job completes successfully
     And the "Verify checksums in fileSec of DSpace METS files" job completes successfully
+
+  Scenario: Generate an AIP using a Zipped directory transfer workflow
+    Given a "zipfile" transfer type located in "SampleTransfers/ZippedDirectoryTransfers/DemoTransferCSV.zip"
+    When the transfer is approved
+    Then the "Extract zipped transfer" job completes successfully
+    When the AIP is downloaded
+    Then the AIP METS can be accessed and parsed by mets-reader-writer
+    And the AIP conforms to expected content and structure
