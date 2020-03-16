@@ -80,35 +80,29 @@ class ArchivematicaBrowserAbility(
     # Archival Storage Tab
     # ==========================================================================
 
+    @base.retry_with_object_attributes(
+        max_attempts_attr="max_search_aip_archival_storage_attempts",
+        wait_attr="optimistic_wait",
+    )
     def wait_for_aip_in_archival_storage(self, aip_uuid):
         """Wait for the AIP with UUID ``aip_uuid`` to appear in the Archival
         storage tab.
         """
-        max_attempts = self.max_search_aip_archival_storage_attempts
-        attempts = 0
-        while True:
-            self.navigate(self.get_archival_storage_url(), reload=True)
-            self.driver.find_element_by_css_selector(
-                'input[title="search query"]'
-            ).send_keys(aip_uuid)
-            Select(
-                self.driver.find_element_by_css_selector('select[title="field name"]')
-            ).select_by_visible_text("AIP UUID")
-            Select(
-                self.driver.find_element_by_css_selector('select[title="query type"]')
-            ).select_by_visible_text("Phrase")
-            self.driver.find_element_by_id("search_submit").click()
-            summary_el = self.driver.find_element_by_css_selector("div.search-summary")
-            if "No results, please try another search." in summary_el.text:
-                attempts += 1
-                if attempts > max_attempts:
-                    break
-                time.sleep(self.optimistic_wait)
-            else:
-                time.sleep(
-                    self.optimistic_wait
-                )  # Sleep a little longer, for good measure
-                break
+        self.navigate(self.get_archival_storage_url(), reload=True)
+        self.driver.find_element_by_css_selector(
+            'input[title="search query"]'
+        ).send_keys(aip_uuid)
+        Select(
+            self.driver.find_element_by_css_selector('select[title="field name"]')
+        ).select_by_visible_text("AIP UUID")
+        Select(
+            self.driver.find_element_by_css_selector('select[title="query type"]')
+        ).select_by_visible_text("Phrase")
+        self.driver.find_element_by_id("search_submit").click()
+        summary_el = self.driver.find_element_by_css_selector("div.search-summary")
+        if "No results, please try another search." in summary_el.text:
+            raise LookupError
+        time.sleep(self.optimistic_wait)  # Sleep a little longer, for good measure
 
     def request_aip_delete(self, aip_uuid):
         """Request the deletion of the AIP with UUID ``aip_uuid`` using the

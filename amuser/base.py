@@ -1,6 +1,7 @@
 """Base class for ArchivematicaUser and other related classes."""
 # pylint: disable=too-many-instance-attributes
 
+import copy
 import os
 import re
 import shutil
@@ -10,9 +11,54 @@ try:
 except ImportError:  # above is available in py3+, below is py2.7
     import urlparse as parse
 
+import tenacity
+
 from . import constants as c
 from . import urls
 from . import utils
+
+
+def combine_conditions(initial, additional):
+    # This assumes all retry conditions (stop, wait, etc) can be combined
+    result = copy.deepcopy(initial)
+    for name, condition in additional.items():
+        if name in result:
+            result[name] |= condition
+        else:
+            result[name] = condition
+    return result
+
+
+def get_conditions_from_attributes(obj, max_attempts_attr, wait_attr):
+    result = {}
+    try:
+        attempts = int(getattr(obj, max_attempts_attr))
+        result["stop"] = tenacity.stop_after_attempt(attempts)
+    except (TypeError, ValueError):
+        pass
+    try:
+        wait = int(getattr(obj, wait_attr))
+        result["wait"] = tenacity.wait_fixed(wait)
+    except (TypeError, ValueError):
+        pass
+    return result
+
+
+def retry_with_object_attributes(
+    max_attempts_attr=None, wait_attr=None, **default_conditions
+):
+    def decorator(f):
+        def wrapper(*args, **kwargs):
+            obj = args[0]  # An ArchivematicaUser object
+            object_conditions = get_conditions_from_attributes(
+                obj, max_attempts_attr, wait_attr
+            )
+            conditions = combine_conditions(default_conditions, object_conditions)
+            return tenacity.Retrying(**conditions)(f, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class ArchivematicaUserError(Exception):

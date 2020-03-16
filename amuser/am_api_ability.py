@@ -9,6 +9,7 @@ import os
 import time
 
 import requests
+import tenacity
 
 from . import base
 
@@ -25,6 +26,11 @@ class ArchivematicaAPIAbility(base.Base):
     interact with AM.
     """
 
+    @base.retry_with_object_attributes(
+        max_attempts_attr="max_download_aip_attempts",
+        wait_attr="optimistic_wait",
+        retry=tenacity.retry_if_exception_type(LookupError),
+    )
     def download_aip(self, transfer_name, sip_uuid, ss_api_key):
         """Use the AM SS API to download the completed AIP.
         Calls http://localhost:8000/api/v2/file/<SIP-UUID>/download/\
@@ -34,38 +40,39 @@ class ArchivematicaAPIAbility(base.Base):
         url = "{}api/v2/file/{}/download/".format(self.ss_url, sip_uuid)
         aip_name = "{}-{}.7z".format(transfer_name, sip_uuid)
         aip_path = os.path.join(self.tmp_path, aip_name)
-        max_attempts = self.max_download_aip_attempts
-        attempt = 0
-        while True:
-            r = requests.get(url, params=payload, stream=True)
-            if r.ok:
-                _save_download(r, aip_path)
-                return aip_path
-            elif r.status_code in (404, 500) and attempt < max_attempts:
-                logger.warning(
-                    "Trying again to download AIP %s via GET request to URL %s;"
-                    " SS returned status code %s and message %s",
-                    sip_uuid,
-                    url,
-                    r.status_code,
-                    r.text,
-                )
-                attempt += 1
-                time.sleep(self.optimistic_wait)
-            else:
-                logger.warning(
-                    "Unable to download AIP %s via GET request to"
-                    " URL %s; SS returned status code %s and message"
-                    " %s",
-                    sip_uuid,
-                    url,
-                    r.status_code,
-                    r.text,
-                )
-                raise ArchivematicaAPIAbilityError(
-                    "Unable to download AIP {}".format(sip_uuid)
-                )
+        r = requests.get(url, params=payload, stream=True)
+        if r.ok:
+            _save_download(r, aip_path)
+            return aip_path
+        elif r.status_code in (404, 500):
+            logger.warning(
+                "Trying again to download AIP %s via GET request to URL %s;"
+                " SS returned status code %s and message %s",
+                sip_uuid,
+                url,
+                r.status_code,
+                r.text,
+            )
+            raise LookupError
+        else:
+            logger.warning(
+                "Unable to download AIP %s via GET request to"
+                " URL %s; SS returned status code %s and message"
+                " %s",
+                sip_uuid,
+                url,
+                r.status_code,
+                r.text,
+            )
+            raise ArchivematicaAPIAbilityError(
+                "Unable to download AIP {}".format(sip_uuid)
+            )
 
+    @base.retry_with_object_attributes(
+        max_attempts_attr="max_download_aip_attempts",
+        wait_attr="optimistic_wait",
+        retry=tenacity.retry_if_exception_type(LookupError),
+    )
     def download_aip_pointer_file(self, sip_uuid, ss_api_key):
         """Use the AM SS API to download the completed AIP's pointer file.
         Calls http://localhost:8000/api/v2/file/<SIP-UUID>/pointer_file/\
@@ -75,38 +82,34 @@ class ArchivematicaAPIAbility(base.Base):
         url = "{}api/v2/file/{}/pointer_file/".format(self.ss_url, sip_uuid)
         pointer_file_name = "pointer.{}.xml".format(sip_uuid)
         pointer_file_path = os.path.join(self.tmp_path, pointer_file_name)
-        max_attempts = self.max_download_aip_attempts
-        attempt = 0
-        while True:
-            r = requests.get(url, params=payload, stream=True)
-            if r.ok:
-                _save_download(r, pointer_file_path)
-                return pointer_file_path
-            elif r.status_code in (404, 500) and attempt < max_attempts:
-                logger.warning(
-                    "Trying again to download AIP %s pointer file via GET"
-                    " request to URL %s; SS returned status code %s and message"
-                    " %s",
-                    sip_uuid,
-                    url,
-                    r.status_code,
-                    r.text,
-                )
-                attempt += 1
-                time.sleep(self.optimistic_wait)
-            else:
-                logger.warning(
-                    "Unable to download AIP %s pointer file via GET"
-                    " request to URL %s; SS returned status code %s"
-                    " and message %s",
-                    sip_uuid,
-                    url,
-                    r.status_code,
-                    r.text,
-                )
-                raise ArchivematicaAPIAbilityError(
-                    "Unable to download AIP {} pointer file".format(sip_uuid)
-                )
+        r = requests.get(url, params=payload, stream=True)
+        if r.ok:
+            _save_download(r, pointer_file_path)
+            return pointer_file_path
+        elif r.status_code in (404, 500):
+            logger.warning(
+                "Trying again to download AIP %s pointer file via GET"
+                " request to URL %s; SS returned status code %s and message"
+                " %s",
+                sip_uuid,
+                url,
+                r.status_code,
+                r.text,
+            )
+            raise LookupError
+        else:
+            logger.warning(
+                "Unable to download AIP %s pointer file via GET"
+                " request to URL %s; SS returned status code %s"
+                " and message %s",
+                sip_uuid,
+                url,
+                r.status_code,
+                r.text,
+            )
+            raise ArchivematicaAPIAbilityError(
+                "Unable to download AIP {} pointer file".format(sip_uuid)
+            )
 
     def poll_until_aip_stored(
         self, sip_uuid, ss_api_key, poll_interval=1, max_polls=None
