@@ -5,7 +5,7 @@ from selenium.common.exceptions import WebDriverException
 
 
 TEST_URL = "https://www.artefactual.com"
-TEST_TITLE = "Artefactual Systems Inc."
+TEST_TITLE = "Home - Artefactual"
 
 
 def get_chrome_driver():
