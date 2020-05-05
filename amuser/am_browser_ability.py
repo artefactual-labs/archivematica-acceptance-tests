@@ -98,8 +98,8 @@ class ArchivematicaBrowserAbility(
                 self.driver.find_element_by_css_selector('select[title="query type"]')
             ).select_by_visible_text("Phrase")
             self.driver.find_element_by_id("search_submit").click()
-            summary_el = self.driver.find_element_by_css_selector("div.search-summary")
-            if "No results, please try another search." in summary_el.text:
+            summary_el = self.driver.find_element_by_id("archival-storage-entries_info")
+            if summary_el.text.strip() == "Showing 0 to 0 of 0 entries":
                 attempts += 1
                 if attempts > max_attempts:
                     break
