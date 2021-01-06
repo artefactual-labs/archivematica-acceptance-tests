@@ -1,0 +1,56 @@
+---
+name: "Integration"
+on:
+  pull_request:
+  push:
+    branches:
+      - "qa/**"
+      - "stable/**"
+      - "dev/ci-with-github"
+jobs:
+  lint:
+    name: "Test ${{ matrix.tag }}"
+    runs-on: "ubuntu-18.04"
+    continue-on-error: true
+    strategy:
+      matrix:
+        tag:
+          - "aip-encrypt"
+          - "aip-encrypt-mirror"
+          - "black-box"
+          - "mo-aip-reingest"
+          - "tcc"
+          - "tpc"
+          - "uuids-dirs"
+    steps:
+      - name: "Check out repository"
+        uses: "actions/checkout@v2"
+      - name: "Check out archivematica"
+        uses: "actions/checkout@v2"
+        with:
+          repository: "artefactual/archivematica"
+          ref: "qa/1.x"
+          path: "integration/archivematica"
+      - name: "Check out archivematica-storage-service"
+        uses: "actions/checkout@v2"
+        with:
+          repository: "artefactual/archivematica-storage-service"
+          ref: "qa/0.x"
+          path: "integration/archivematica-storage-service"
+      - name: "Check out archivematica-sampledata"
+        uses: "actions/checkout@v2"
+        with:
+          repository: "artefactual/archivematica-sampledata"
+          path: "integration/archivematica-sampledata"
+      - name: "Check out am"
+        uses: "actions/checkout@v2"
+        with:
+          repository: "artefactual-labs/am"
+          path: "integration/am"
+      - name: "Run acceptance test tag"
+        run: |
+          ./run.sh ${{ matrix.tag }}
+        working-directory: "integration"
+        env:
+          COMPOSE_DOCKER_CLI_BUILD: 1
+          DOCKER_BUILDKIT: 1
