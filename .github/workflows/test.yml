@@ -6,7 +6,6 @@ on:
     branches:
       - "qa/**"
       - "stable/**"
-      - "dev/issue-1199-simplebrowsertest-disable-shared-memory"
 jobs:
   test-virtualenv:
     name: "Test (virtualenv)"
@@ -53,7 +52,6 @@ jobs:
           docker run \
             --rm \
             --security-opt="seccomp=etc/docker/seccomp/chrome.json" \
-            --shm-size=32m \
             archivematica-acceptance-tests \
             /home/artefactual/acceptance-tests/simplebrowsertest.py
   lint:
