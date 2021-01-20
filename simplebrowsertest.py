@@ -11,6 +11,7 @@ TEST_TITLE = "Home - Artefactual"
 def get_chrome_driver():
     options = webdriver.ChromeOptions()
     options.add_argument("headless")
+    options.add_argument("--disable-dev-shm-usage")
     driver = webdriver.Chrome(chrome_options=options)
     driver.set_window_size(1700, 900)
     return driver
@@ -43,9 +44,11 @@ def run_test(driver_getter, name):
         return 1
     finally:
         driver.quit()
+    return 0
 
 
 if __name__ == "__main__":
     print("Starting tests...")
-    run_test(get_chrome_driver, "Chrome")
-    run_test(get_firefox_driver, "Firefox")
+    chrome_result = run_test(get_chrome_driver, "Chrome")
+    firefox_result = run_test(get_firefox_driver, "Firefox")
+    exit(chrome_result or firefox_result)

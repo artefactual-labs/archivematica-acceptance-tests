@@ -7,6 +7,53 @@ on:
       - "qa/**"
       - "stable/**"
 jobs:
+  test-virtualenv:
+    name: "Test (virtualenv)"
+    runs-on: "ubuntu-18.04"
+    steps:
+      - name: "Check out repository"
+        uses: "actions/checkout@v2"
+      - name: "Set up Python"
+        uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.8"
+      - name: "Get pip cache dir"
+        id: "pip-cache"
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+      - name: "Cache pip packages"
+        uses: "actions/cache@v2"
+        with:
+          path: "${{ steps.pip-cache.outputs.dir }}"
+          key: "${{ runner.os }}-pip-${{ hashFiles('**/base.txt', '**/test.txt') }}"
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: "Install requirements"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: "Run test"
+        run: |
+          ./simplebrowsertest.py
+  test-docker:
+    name: "Test (docker)"
+    runs-on: "ubuntu-18.04"
+    steps:
+      - name: "Check out repository"
+        uses: "actions/checkout@v2"
+      - name: "Build containers"
+        run: |
+          docker build -t archivematica-acceptance-tests .
+        env:
+          COMPOSE_DOCKER_CLI_BUILD: 1
+          DOCKER_BUILDKIT: 1
+      - name: "Run test"
+        run: |
+          docker run \
+            --rm \
+            --security-opt="seccomp=etc/docker/seccomp/chrome.json" \
+            archivematica-acceptance-tests \
+            /home/artefactual/acceptance-tests/simplebrowsertest.py
   lint:
     name: "Lint"
     runs-on: "ubuntu-18.04"
