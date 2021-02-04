@@ -702,10 +702,12 @@ def get_transfer_result(api_clients_config, transfer_uuid):
     """
     transfer_response = wait_for_transfer(api_clients_config, transfer_uuid)
     if transfer_response["status"] == "FAILED":
+        logger.error("Transfer failed: %r", transfer_response)
         return {}
     sip_uuid = transfer_response["sip_uuid"]
     ingest_response = wait_for_ingest(api_clients_config, sip_uuid)
     if ingest_response["status"] == "FAILED":
+        logger.error("Ingest failed: %r", ingest_response)
         return {}
     extracted_aip_dir = extract_aip(api_clients_config, sip_uuid)
     aip_mets_location = get_aip_mets_location(extracted_aip_dir, sip_uuid)
