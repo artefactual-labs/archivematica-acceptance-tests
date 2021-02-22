@@ -118,6 +118,9 @@ class ArchivematicaBrowserStorageServiceAbility(
 
     def create_ss_space(self, attributes):
         """Create an AM SS Space using ``attributes``."""
+        if attributes.get("Access protocol") == "GPG encryption on Local Filesystem":
+            # Visiting this URL creates a default GPG key when there is none
+            self.navigate(self.get_gpg_keys_url())
         self.navigate(self.get_spaces_create_url())
         form_el = self.driver.find_element_by_css_selector(
             'form[action="/spaces/create/"]'
@@ -138,6 +141,10 @@ class ArchivematicaBrowserStorageServiceAbility(
                                     input_el.send_keys(val)
         self.driver.find_element_by_css_selector("input[type=submit]").click()
         self.wait_for_presence("div.alert-success", self.nihilistic_wait)
+        assert (
+            self.driver.find_element_by_css_selector("div.alert-success").text.strip()
+            == "Space saved."
+        )
         header = self.driver.find_element_by_tag_name("h1").text.strip()
         space_uuid = header.split()[0].replace('"', "").replace(":", "")
         return space_uuid
