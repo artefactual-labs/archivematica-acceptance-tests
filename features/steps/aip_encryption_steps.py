@@ -72,9 +72,7 @@ def step_impl(context):
     )
 
 
-@given(
-    "there is a standard GPG-encrypted Replicator location in the storage" " service"
-)
+@given("there is a standard GPG-encrypted Replicator location in the storage service")
 def step_impl(context):
     context.execute_steps(
         "Given the user has ensured that there is a location in the GPG Space with"
@@ -210,7 +208,7 @@ def step_impl(context):
         )
 
 
-@when("the user assigns a different GPG key to the standard GPG-encrypted" " space")
+@when("the user assigns a different GPG key to the standard GPG-encrypted space")
 def step_impl(context):
     """Edit the standard GPG-encrypted space so that it is using a GPG key
     other than the one stored in ``context.scenario.new_key_name``.
@@ -314,7 +312,7 @@ def step_impl(context, aip_description, second_aip_description, event_type):
         assert event_uuid == premis_related_event_uuid
 
 
-@then("the {aip_description} pointer file contains a(n) {event_type}" " PREMIS:EVENT")
+@then("the {aip_description} pointer file contains a(n) {event_type} PREMIS:EVENT")
 def step_impl(context, aip_description, event_type):
     aip_ptr_attr = utils.aip_descr_to_ptr_attr(aip_description)
     pointer_path = getattr(context.scenario, aip_ptr_attr)

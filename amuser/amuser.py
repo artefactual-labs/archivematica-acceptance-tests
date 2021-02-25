@@ -51,7 +51,7 @@ class ArchivematicaUser(base.Base):
             fname, extension = os.path.splitext(fname)
         if extension != ".7z":
             logger.info(
-                "decompress_package; extension %s of fname %s is NOT" " .7z",
+                "decompress_package; extension %s of fname %s is NOT .7z",
                 extension,
                 fname,
             )
@@ -67,7 +67,7 @@ class ArchivematicaUser(base.Base):
             )
         except subprocess.CalledProcessError:
             logger.info(
-                "7z extraction failed. File %s is not a .7z file or it" " is encrypted",
+                "7z extraction failed. File %s is not a .7z file or it is encrypted",
                 package_path,
             )
             return None

@@ -145,7 +145,7 @@ def step_impl(context, filename):
     pass
 
 
-@then("there is non-zero stdout and stderr for the client scripts in" " {filename}")
+@then("there is non-zero stdout and stderr for the client scripts in {filename}")
 def step_impl(context, filename):
     pass
 

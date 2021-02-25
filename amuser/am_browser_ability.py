@@ -98,6 +98,7 @@ class ArchivematicaBrowserAbility(
                 self.driver.find_element_by_css_selector('select[title="query type"]')
             ).select_by_visible_text("Phrase")
             self.driver.find_element_by_id("search_submit").click()
+            self.wait_for_presence("#archival-storage-entries_info")
             summary_el = self.driver.find_element_by_id("archival-storage-entries_info")
             if summary_el.text.strip() == "Showing 0 to 0 of 0 entries":
                 attempts += 1
@@ -155,7 +156,7 @@ class ArchivematicaBrowserAbility(
             r = s.get(url)
             if r.status_code == requests.codes.ok:
                 logger.info(
-                    "Requests got OK status code %s when requesting" " %s",
+                    "Requests got OK status code %s when requesting %s",
                     r.status_code,
                     url,
                 )
@@ -223,6 +224,7 @@ class ArchivematicaBrowserAbility(
                 self.driver.find_element_by_css_selector('select[title="query type"]')
             ).select_by_visible_text("Phrase")
             self.driver.find_element_by_id("search_submit").click()
+            self.wait_for_presence("#backlog-entries_info")
             summary_el = self.driver.find_element_by_id("backlog-entries_info")
             if summary_el.text.strip() == "Showing 0 to 0 of 0 entries":
                 seconds += 1
@@ -564,6 +566,6 @@ def _get_decision_id_from_label(decision_label):
                 break
     if decision_id is None:
         raise ArchivematicaBrowserAbilityError(
-            "Unable to determine a decision id given input" " parameters"
+            "Unable to determine a decision id given input parameters"
         )
     return decision_id

@@ -28,7 +28,7 @@ POLICIES_DIR = "etc/mediaconch-policies"
 # ------------------------------------------------------------------------------
 
 
-@given("directory {transfer_path} contains files that are all {file_validity}" " .mkv")
+@given("directory {transfer_path} contains files that are all {file_validity} .mkv")
 def step_impl(context, transfer_path, file_validity):
     pass
 
@@ -89,6 +89,7 @@ def step_impl(context):
 def step_impl(context):
     context.execute_steps(
         "Given a base processing configuration for MediaConch tests\n"
+        "And the user enables the preservation normalization rules for video files\n"
         'And the processing config decision "Perform policy checks on preservation derivatives" is set to "Yes"\n'
         'And the processing config decision "Normalize" is set to "Normalize for preservation"\n'
         'And the processing config decision "Store AIP" is set to "Yes"'
@@ -99,6 +100,7 @@ def step_impl(context):
 def step_impl(context):
     context.execute_steps(
         "Given a base processing configuration for MediaConch tests\n"
+        "And the user enables the preservation normalization rules for video files\n"
         'And the processing config decision "Approve normalization" is set to "None"\n'
         'And the processing config decision "Normalize" is set to "Normalize for preservation"'
     )
@@ -124,7 +126,7 @@ def step_impl(context, transfer_path):
     """
 
 
-@given("a processing configuration for conformance checks on access" " derivatives")
+@given("a processing configuration for conformance checks on access derivatives")
 def step_impl(context):
     context.execute_steps(
         "Given a base processing configuration for MediaConch tests\n"
@@ -202,6 +204,18 @@ def step_impl(context, purpose, format_, command):
     context.am_user.browser.ensure_fpr_rule(purpose, format_, command)
 
 
+@given("the user enables the preservation normalization rules for video files")
+def step_impl(context):
+    # There are many more disabled rules but only these are needed by the sample data
+    formats = ["Generic MKV", "Generic MOV", "MPEG-4 Video"]
+    for format_ in formats:
+        context.am_user.browser.ensure_fpr_rule_enabled(
+            "Preservation",
+            "Video:{}:{}".format(format_, format_),
+            "Transcoding to mkv with ffmpeg",
+        )
+
+
 # Whens
 # ------------------------------------------------------------------------------
 
@@ -226,7 +240,7 @@ def step_impl(context, policy_file):
     context.am_user.browser.upload_policy(policy_path)
 
 
-@when("the user ensures there is an FPR command that uses policy file" " {policy_file}")
+@when("the user ensures there is an FPR command that uses policy file {policy_file}")
 def step_impl(context, policy_file):
     policy_path = get_policy_path(policy_file)
     context.am_user.browser.ensure_fpr_policy_check_command(policy_file, policy_path)
@@ -397,16 +411,14 @@ def step_impl(context, policy_file):
             assert doc.getroot().tag == "{https://mediaarea.net/mediaconch}MediaConch"
 
 
-@then(
-    "validate preservation derivatives micro-service output is" " {microservice_output}"
-)
+@then("validate preservation derivatives micro-service output is {microservice_output}")
 def step_impl(context, microservice_output):
     utils.ingest_ms_output_is(
         "Validate preservation derivatives", microservice_output, context
     )
 
 
-@then("validate access derivatives micro-service output is" " {microservice_output}")
+@then("validate access derivatives micro-service output is {microservice_output}")
 def step_impl(context, microservice_output):
     utils.ingest_ms_output_is(
         "Validate access derivatives", microservice_output, context

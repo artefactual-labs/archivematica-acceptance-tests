@@ -61,7 +61,7 @@ class ArchivematicaMETSAbility(base.Base):
             # All entities have an id, i.e., DMDID or ADMID
             assert entity.get(
                 "id"
-            ), "Unable to find a DMDID/ADMID for entity" " {}".format(entity["path"])
+            ), "Unable to find a DMDID/ADMID for entity {}".format(entity["path"])
             purls = []
             # All entities should have the following types of identifier
             for idfr_type in ("UUID", "hdl", "URI"):
@@ -74,7 +74,7 @@ class ArchivematicaMETSAbility(base.Base):
                     " {}".format(idfr_type, entity["path"])
                 )
                 if idfr_type == "UUID":
-                    assert utils.is_uuid(idfr), "Identifier {} is not a" " UUID".format(
+                    assert utils.is_uuid(idfr), "Identifier {} is not a UUID".format(
                         idfr
                     )
                 elif idfr_type == "hdl":
@@ -119,8 +119,7 @@ class ArchivematicaMETSAbility(base.Base):
         assert dmd_sec_el is not None
         identifiers = []
         for obj_idfr_el in dmd_sec_el.findall(
-            "mets:mdWrap/" "mets:xmlData/" "premis:object/" "premis:objectIdentifier",
-            ns,
+            "mets:mdWrap/mets:xmlData/premis:object/premis:objectIdentifier", ns
         ):
             identifiers.append(
                 (
@@ -166,8 +165,7 @@ def _add_entity_identifiers(entity, doc, ns):
     else:
         dmd_sec_el = doc.xpath("mets:dmdSec[@ID='{}']".format(e_id), namespaces=ns)[0]
         for obj_idfr_el in dmd_sec_el.findall(
-            "mets:mdWrap/" "mets:xmlData/" "premis:object/" "premis:objectIdentifier",
-            ns,
+            "mets:mdWrap/mets:xmlData/premis:object/premis:objectIdentifier", ns
         ):
             identifiers.append(
                 (

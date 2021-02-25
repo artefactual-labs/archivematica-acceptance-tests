@@ -66,7 +66,7 @@ class ArchivematicaBrowserFileExplorerAbility(
                 self.click_transfer_directory_tries
                 >= self.max_click_transfer_directory_attempts
             ):
-                logger.warning("Failed to navigate to transfer directory" " %s", path)
+                logger.warning("Failed to navigate to transfer directory %s", path)
                 self.click_transfer_directory_tries = 0
                 raise
             else:

@@ -107,9 +107,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         )
         description = self.get_policy_command_description(policy_file)
         if description in existing_policy_command_descriptions:
-            logger.info(
-                "The policy command already exists; no need to" " re-create it."
-            )
+            logger.info("The policy command already exists; no need to re-create it.")
             return
         policy_command = self.get_policy_command(policy_file, policy_path)
         logger.info("Creating the policy check FPR command.")
@@ -217,18 +215,42 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         description. Uses the FPR asynchronous search input.
         """
         terse_format = format_.split(":")[2].strip()
-        search_term = "{} {} {}".format(purpose, terse_format, command_description)
+        search_term = '"{}" "{}" "{}"'.format(
+            purpose, terse_format, command_description
+        )
         self.search_rules(search_term)
 
     def ensure_fpr_rule_enabled(self, purpose, format_, command_description):
         self.navigate(self.get_rules_url())
         self.search_for_fpr_rule(purpose, format_, command_description)
+        self.wait_for_presence("#DataTables_Table_0_info")
         info_el = self.driver.find_element_by_id("DataTables_Table_0_info")
         if info_el.text.strip().startswith("Showing 0 to 0 of 0 entries"):
             return
-        # TODO: click the "Enable" link. But we have to make sure there is only
-        # one matching rule that needs enabling. Not sure at this point whether
-        # this action is needed for testing.
+        disabled_rules = [
+            row
+            for row in self.driver.find_elements_by_css_selector(
+                "#DataTables_Table_0 tbody tr"
+            )
+            if row.find_element_by_css_selector("td:nth-child(5)").text == "No"
+        ]
+        if not disabled_rules:
+            logger.info(
+                'Tried to enable FPR rule with purpose "{}" that runs command "{}"'
+                ' against files with format "{}" but did not find it'.format(
+                    purpose, command_description, format_
+                )
+            )
+            return
+        assert len(disabled_rules) == 1, (
+            'Expected to enable one FPR rule with purpose "{}" that runs command "{}"'
+            ' against files with format "{}" but found {} disabled rules'.format(
+                purpose, command_description, format_, len(disabled_rules)
+            )
+        )
+        rule = disabled_rules[0]
+        rule.find_element_by_css_selector("td:nth-child(6) a:nth-child(3)").click()
+        self.driver.find_element_by_css_selector("input[value=Enable]").click()
 
     @staticmethod
     def get_policy_command_description(policy_file):
