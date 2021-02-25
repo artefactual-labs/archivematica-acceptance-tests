@@ -44,7 +44,7 @@ def step_impl(context, count, event_type, properties):
     )
 
 
-@then("in the METS file there are/is {count} PREMIS event(s) of type" " {event_type}")
+@then("in the METS file there are/is {count} PREMIS event(s) of type {event_type}")
 def step_impl(context, count, event_type):
     mets = utils.get_mets_from_scenario(context)
     events = []
@@ -87,9 +87,7 @@ def step_impl(context, conj_quant):
     # del context.scenario.mets
 
 
-@then(
-    "in the METS file the metsHdr element has {quant} dmdSec next sibling" " element(s)"
-)
+@then("in the METS file the metsHdr element has {quant} dmdSec next sibling element(s)")
 def step_impl(context, quant):
     mets = utils.get_mets_from_scenario(context, api=True)
     mets_dmd_sec_els = mets.findall(".//mets:dmdSec", context.am_user.mets.mets_nsmap)

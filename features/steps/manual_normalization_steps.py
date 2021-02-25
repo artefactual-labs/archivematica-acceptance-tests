@@ -72,7 +72,7 @@ def step_impl(context, transfer_path):
 @then("all preservation tasks recognize the manually normalized derivatives")
 def step_impl(context):
     skipping_msg = (
-        "is file group usage manualNormalization instead of" "  original  - skipping"
+        "is file group usage manualNormalization instead of original  - skipping"
     )
     already_nmlzd_msg = "was already manually normalized into"
     for task in context.scenario.job["tasks"].values():

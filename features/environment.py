@@ -192,7 +192,7 @@ def after_scenario(context, scenario):
     # In the following scenario, we've created a weird FPR rule. Here we put
     # things back as they were: make access .mov files normalize to .mp4
     if scenario.name == (
-        "Isla wants to confirm that normalization to .mkv for" " access is successful"
+        "Isla wants to confirm that normalization to .mkv for access is successful"
     ):
         context.am_user.browser.change_normalization_rule_command(
             "Access Generic MOV", "Transcoding to mp4 with ffmpeg"

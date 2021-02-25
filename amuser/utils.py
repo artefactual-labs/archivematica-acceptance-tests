@@ -34,8 +34,7 @@ def is_hdl(idfr, entity_type, accession_no=None):
         _, pid = idfr.split("/")
     except ValueError:
         logger.info(
-            "Unable to get exactly two values by splitting %s on a forward" " slash",
-            idfr,
+            "Unable to get exactly two values by splitting %s on a forward slash", idfr
         )
         return False
     if accession_no and entity_type == "aip":

@@ -163,7 +163,7 @@ def step_impl(context):
     es_indexing_config_text = context.am_user.browser.get_es_indexing_config_text()
     assert es_indexing_config_text is not None
     assert es_indexing_config_text.strip() == (
-        "Elasticsearch indexing has been disabled in this Archivematica" " installation"
+        "Elasticsearch indexing has been disabled in this Archivematica installation"
     )
 
 
@@ -257,7 +257,7 @@ def step_impl(context):
             rel_path,
         )
         logger.info(
-            "Relative path %s in the indexless AIP matches %s in" " the indexed one",
+            "Relative path %s in the indexless AIP matches %s in the indexed one",
             rel_path,
             counterpart,
         )
@@ -293,7 +293,7 @@ def step_impl(context, tab_name):
     assert tab_name not in displayed_tabs
 
 
-@then("a warning is displayed indicating that the {tab_name} is not" " operational")
+@then("a warning is displayed indicating that the {tab_name} is not operational")
 def step_impl(context, tab_name):
     tab_name = tab_name.replace(" tab", "").strip().lower()
     msg1 = "Elasticsearch Indexing Disabled"
@@ -366,7 +366,7 @@ def _get_rel_paths(path):
 
 
 uuid_pattern = re.compile(
-    "[a-f0-9]{8}-" "[a-f0-9]{4}-" "[a-f0-9]{4}-" "[a-f0-9]{4}-" "[a-f0-9]{12}"
+    "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"
 )
 
 

@@ -193,9 +193,7 @@ def step_impl(context):
                 )
 
 
-@then(
-    "the UUIDs for the subfolders and digital objects are written to the METS" " file"
-)
+@then("the UUIDs for the subfolders and digital objects are written to the METS file")
 def step_impl(context):
     """Make the following assertions:
     - All directories are listed in the logical (Normative Directory Structure)

@@ -113,7 +113,7 @@ class ArchivematicaSeleniumAbility(base.Base):
 
         def window_handles_count_has_changed(driver):
             logger.info(
-                "Previously we had %s window handles, now we have" " %s",
+                "Previously we had %s window handles, now we have %s",
                 len(handles_before),
                 len(driver.window_handles),
             )

@@ -86,7 +86,7 @@ class ArchivematicaSSHAbility(base.Base):
         directory.
         """
         if not self.ssh_accessible:
-            logger.info("You do not have SSH access to the Archivematica" " server")
+            logger.info("You do not have SSH access to the Archivematica server")
             return None
         if server_dir_path[-1] == "/":
             server_dir_path = server_dir_path[:-1]
@@ -141,7 +141,7 @@ class ArchivematicaSSHAbility(base.Base):
         and expecting to find no file at /etc/init.d/elasticsearch.
         """
         if not self.ssh_accessible:
-            logger.info("You do not have SSH access to the Archivematica" " server")
+            logger.info("You do not have SSH access to the Archivematica server")
             return None
         if self.server_user and self.ssh_identity_file:
             cmd = (

@@ -19,3 +19,4 @@ reports/
 data/
 *.log
 *~
+*.py[co]
