@@ -2,7 +2,6 @@
 
 import logging
 
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
 
@@ -48,7 +47,6 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         command_select_el = self.driver.find_element_by_id("id_f-command")
         command_select_el.click()
         Select(command_select_el).select_by_visible_text(command_name)
-        command_select_el.send_keys(Keys.RETURN)
 
     def save_fpr_command(self):
         command_select_el = self.driver.find_element_by_css_selector(

@@ -36,7 +36,6 @@ class ArchivematicaBrowserAuthenticationAbility(
         password_elem.send_keys(self.am_password)
         submit_button_elem = self.driver.find_element_by_tag_name("button")
         submit_button_elem.click()
-        # submit_button_elem.send_keys(Keys.RETURN)
 
     def login_ss(self):
         """Login to Archivematica Storage Service."""
