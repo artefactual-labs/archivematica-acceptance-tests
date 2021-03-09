@@ -399,13 +399,13 @@ def step_impl(context):
         'And the user waits for the "Perform policy checks on originals?" decision point to appear and chooses "No" during transfer\n'
         'And the user waits for the "Create SIP(s)" decision point to appear and chooses "Create single SIP and continue processing" during transfer\n'
         'And the user waits for the "Normalize" decision point to appear and chooses "Normalize for preservation" during ingest\n'
-        'And the user waits for the "Approve normalization (review)" decision point to appear and chooses "Approve" during ingest\n'
+        'And the user waits for the "Approve normalization (review)" decision point to appear and chooses "Yes" during ingest\n'
         'And the user waits for the "Perform policy checks on preservation derivatives?" decision point to appear and chooses "No" during ingest\n'
         'And the user waits for the "Perform policy checks on access derivatives?" decision point to appear and chooses "No" during ingest\n'
         'And the user waits for the "Do you want to perform file format identification?|Process submission documentation" decision point to appear and chooses "Yes" during ingest\n'
         'And the user waits for the "Bind PIDs?" decision point to appear and chooses "No" during ingest\n'
         'And the user waits for the "Document empty directories?" decision point to appear and chooses "No" during ingest\n'
-        'And the user waits for the "Store AIP (review)" decision point to appear and chooses "Store AIP" during ingest'
+        'And the user waits for the "Store AIP (review)" decision point to appear and chooses "Yes" during ingest'
     )
 
 
