@@ -18,7 +18,7 @@ Feature: Ingest (i.e., post-normalization) conformance check
     Then the "Validate preservation derivatives" micro-service output is "<microservice_output>" during ingest
     When the user waits for the "Approve normalization (review)" decision point to appear during ingest
     Then all preservation conformance checks in the normalization report have value <validation_result>
-    When the user chooses "Approve" at decision point "Approve normalization (review)" during ingest
+    When the user chooses "Yes" at decision point "Approve normalization (review)" during ingest
     When the user waits for the AIP to appear in archival storage
     Then all PREMIS implementation-check-type validation events have eventOutcome = <event_outcome>
 
