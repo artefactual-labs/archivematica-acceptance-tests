@@ -568,21 +568,19 @@ def get_premis_events_by_type(entry, event_type):
 
 def get_transfer_dir_from_structmap(tree, transfer_name, sip_uuid, nsmap):
     structmap = tree.find('mets:structMap[@TYPE="physical"]', namespaces=nsmap)
-    transfer_dir = structmap.find(
+    return structmap.find(
         'mets:div[@LABEL="{}-{}"][@TYPE="Directory"]'.format(transfer_name, sip_uuid),
         namespaces=nsmap,
     )
-    return transfer_dir
 
 
-def get_submission_docs_from_structmap(tree, nsmap):
-    label = "submissionDocumentation"
-    structmap = tree.find('mets:structMap[@TYPE="physical"]', namespaces=nsmap)
-    transfer_dir = structmap.find(
-        '*//mets:div[@LABEL="{}"][@TYPE="Directory"]'.format(label), namespaces=nsmap
+def get_submission_docs_from_structmap(tree, transfer_name, sip_uuid, nsmap):
+    transfer_dir = get_transfer_dir_from_structmap(tree, transfer_name, sip_uuid, nsmap)
+    return transfer_dir.findall(
+        'mets:div[@LABEL="objects"]/mets:div[@LABEL="submissionDocumentation"]'
+        '//mets:div[@TYPE="Item"]',
+        namespaces=nsmap,
     )
-    submission_docs = transfer_dir.findall("*//mets:div", namespaces=nsmap)
-    return set([doc.get("LABEL") for doc in submission_docs])
 
 
 def get_path_before_sanitization(entry, transfer_contains_objects_dir=False):
