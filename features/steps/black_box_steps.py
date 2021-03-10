@@ -507,14 +507,11 @@ def step_impl(context, expected_object_count, object_type):
     )
     for file in mets.all_files():
         for dmd_sec in file.dmdsecs:
-            if file.mets_div_type == "Directory" and dmd_sec.id_string in dmd_sec_ids:
-                dir_ids.append(dmd_sec.id_string)
-            elif (
-                file.mets_div_type == "Item"
-                and file.use == "original"
-                and dmd_sec.id_string in dmd_sec_ids
-            ):
-                item_ids.append(dmd_sec.id_string)
+            if dmd_sec.id_string in dmd_sec_ids:
+                if file.mets_div_type == "Directory":
+                    dir_ids.append(dmd_sec.id_string)
+                elif file.mets_div_type == "Item" and file.use == "original":
+                    item_ids.append(dmd_sec.id_string)
     err = (
         "The {} file does not contain the correct number of DC dmdSecs: {} expected {}"
     )
@@ -570,14 +567,19 @@ def step_impl(context, expected_entries_count):
 )
 def step_impl(context, expected_entries_count):
     mets = metsrw.METSDocument.fromfile(context.current_transfer["aip_mets_location"])
-    submission_docs = utils.get_submission_docs_from_structmap(
-        mets.tree, nsmap=context.mets_nsmap
-    )
     # Archivematica added submission documentation. We only care about
     # user submitted docs.
     METS = "METS.xml"
-    if METS in submission_docs:
-        submission_docs.remove(METS)
+    submission_docs = [
+        doc
+        for doc in utils.get_submission_docs_from_structmap(
+            mets.tree,
+            context.current_transfer["transfer_name"],
+            context.current_transfer["sip_uuid"],
+            nsmap=context.mets_nsmap,
+        )
+        if doc.get("LABEL") != METS
+    ]
     error = "Expected submission documents: {} is incorrect: {}".format(
         expected_entries_count, len(submission_docs)
     )

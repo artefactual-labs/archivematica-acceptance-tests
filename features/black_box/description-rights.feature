@@ -15,4 +15,6 @@ Feature: Alma wants to ensure the AIP METS contains metadata from description an
 
     Examples: sample transfers
       | sample_transfer_path            | original_object_count | directory_count | original_object_rights_count | rights_entries_count | submission_documents_count |
-      | SampleTransfers/DemoTransferCSV | 7                     | 2               | 2                            | 8                    | 1                          |
+      | SampleTransfers/DemoTransferCSV | 7                     | 1               | 2                            | 8                    | 1                          |
+      | SampleTransfers/CSVmultiLevel   | 4                     | 1               | 0                            | 0                    | 0                          |
+      | TestTransfers/rightsTransfer    | 0                     | 0               | 2                            | 4                    | 0                          |
