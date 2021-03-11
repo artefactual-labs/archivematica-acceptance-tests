@@ -180,16 +180,16 @@ def step_impl(context):
             ):
                 continue
             assert dirpath in subpaths, (
-                "Expected directory path\n{}\nis not in METS structmap"
-                " paths\n{}".format(dirpath, pprint.pformat(subpaths))
+                "Expected directory path\n{}\nis not in METS {}-type structmap"
+                " paths\n{}".format(dirpath, type_, pprint.pformat(subpaths))
             )
-        if type == "physical":
+        if type_ == "physical":
             for filepath in context.scenario.remote_dir_files:
                 if os.path.basename(filepath) == ".gitignore":
                     continue
                 assert filepath in subpaths, (
-                    "Expected file path\n{}\nis not in METS structmap"
-                    " paths\n{}".format(filepath, pprint.pformat(subpaths))
+                    "Expected file path\n{}\nis not in METS {}-type structmap"
+                    " paths\n{}".format(filepath, type_, pprint.pformat(subpaths))
                 )
 
 
@@ -225,7 +225,9 @@ def step_impl(context):
             )
             assert (
                 mets_div_el is not None
-            ), "Could not find a <mets:div> for directory at {}".format(dirpath)
+            ), "Could not find a <mets:div> for directory at {} in {}-type structmap".format(
+                dirpath, type_
+            )
             if (
                 type_ == "logical"
                 and dirpath not in context.scenario.remote_dir_empty_subfolders
@@ -235,7 +237,9 @@ def step_impl(context):
             dmdSec_el = mets.find('.//mets:dmdSec[@ID="{}"]'.format(dmdid), ns)
             assert (
                 dmdSec_el is not None
-            ), "Could not find a <mets:dmdSec> for directory at {}".format(dirpath)
+            ), "Could not find a <mets:dmdSec> for directory at {} in {}-type structmap".format(
+                dirpath, type_
+            )
             try:
                 id_type = dmdSec_el.find(
                     ".//premis:objectIdentifierType", ns

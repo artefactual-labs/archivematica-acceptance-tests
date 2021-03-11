@@ -285,7 +285,7 @@ def get_duration_as_float(duration_string):
 
 
 def unzip(zip_path):
-    directory_to_extract_to = os.path.dirname(zip_path)
+    directory_to_extract_to = tempfile.mkdtemp()
     zip_ref = zipfile.ZipFile(zip_path, "r")
     try:
         zip_ref.extractall(directory_to_extract_to)
