@@ -75,14 +75,28 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
         mets_path = "{}/data/{}".format(absolute_transfer_name, mets_name)
         mets_tmp_dir = tempfile.mkdtemp()
         mets_tmp_file = os.path.join(mets_tmp_dir, mets_name)
-        AMClient(
-            ss_api_key=self._ss_api_key,
-            ss_user_name=self.ss_username,
-            ss_url=self.ss_url.rstrip("/"),
-            package_uuid=sip_uuid,
-            relative_path=mets_path,
-            saveas_filename=mets_tmp_file,
-        ).extract_file()
+        attempts = 0
+        max_attempts = 3
+        response = None
+
+        def is_invalid_api_response(response):
+            return response is None or isinstance(response, int)
+
+        while is_invalid_api_response(response):
+            response = AMClient(
+                ss_api_key=self._ss_api_key,
+                ss_user_name=self.ss_username,
+                ss_url=self.ss_url.rstrip("/"),
+                package_uuid=sip_uuid,
+                relative_path=mets_path,
+                saveas_filename=mets_tmp_file,
+            ).extract_file()
+            attempts += 1
+            if is_invalid_api_response(response):
+                if attempts == max_attempts:
+                    raise Exception("Could not retrieve METS from API")
+                logger.warning("Failed to retreive METS. Retrying...")
+                time.sleep(self.optimistic_wait * attempts)
         mets = ""
         with open(mets_tmp_file, "r") as mets_file:
             mets = mets_file.read()
