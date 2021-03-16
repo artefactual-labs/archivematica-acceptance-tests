@@ -378,7 +378,7 @@ def return_default_ts_location(api_clients_config):
     )
     for location_object in response.get("objects", []):
         if (
-            location_object.get("description") == ""
+            location_object.get("description") == "Default transfer source"
             and location_object.get("enabled") is True
             and location_object.get("relative_path").endswith("home")
             and location_object.get("purpose") == "TS"
