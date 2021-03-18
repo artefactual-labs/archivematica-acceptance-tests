@@ -122,9 +122,9 @@ def step_impl(context):
     if objects_dir_browse_result:
         contains_objects_dir = True
         cached_directories[objects_dir] = objects_dir_browse_result
-    # get the paths (before sanitization) of each 'original' file
+    # get the paths (before filename change) of each 'original' file
     original_file_paths = [
-        utils.get_path_before_sanitization(fsentry, contains_objects_dir)
+        utils.get_path_before_filename_change(fsentry, contains_objects_dir)
         for fsentry in mets.all_files()
         if fsentry.use == "original"
     ]
