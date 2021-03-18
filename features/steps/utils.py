@@ -583,12 +583,12 @@ def get_submission_docs_from_structmap(tree, transfer_name, sip_uuid, nsmap):
     )
 
 
-def get_path_before_sanitization(entry, transfer_contains_objects_dir=False):
-    clean_name_premis_events = get_premis_events_by_type(entry, "name cleanup")
-    if not clean_name_premis_events:
+def get_path_before_filename_change(entry, transfer_contains_objects_dir=False):
+    filename_change_premis_events = get_premis_events_by_type(entry, "filename change")
+    if not filename_change_premis_events:
         result = entry.path
     else:
-        event = clean_name_premis_events[0]
+        event = filename_change_premis_events[0]
         note = event.event_outcome_detail_note
         # this parsing is based on
         # metsrw.plugins.premisrw.premis.PREMISEvent.parsed_event_detail

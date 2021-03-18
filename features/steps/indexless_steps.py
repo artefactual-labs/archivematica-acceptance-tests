@@ -335,7 +335,7 @@ def _assert_mets_files_equivalent(indexless_mets, indexed_mets, mets_ability):
         "fixity check",
         "ingestion",
         "virus check",
-        "name cleanup",
+        "filename change",
         "format identification",
         "normalization",
     ):
