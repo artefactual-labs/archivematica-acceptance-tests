@@ -304,7 +304,7 @@ Timeouts and attempt counters
 At various points, these tests wait for fixed periods of time or attempt to
 perform some action a fixed number of times before giving up the attempt. The
 variables holding these *wait* and *attempt* values are listed with their
-defaults in `features/environment.py <features/environment.py`_, e.g.,
+defaults in `features/environment.py <features/environment.py>`_, e.g.,
 ``MAX_DOWNLOAD_AIP_ATTEMPTS``. If you find that tests are failing because of
 timeouts being exceeded, or conversely that tests that should be failing are
 waiting too long for an event that will never happen, you can modify these

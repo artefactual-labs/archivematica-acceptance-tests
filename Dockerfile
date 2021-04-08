@@ -19,6 +19,7 @@ RUN apt-get -qqy update \
 		wget \
 		git \
 		build-essential \
+		locales \
 		openssh-client \
 		p7zip-full \
 		python \
@@ -29,6 +30,13 @@ RUN apt-get -qqy update \
 		libxslt-dev \
 		zlib1g-dev \
 	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+
+# Set the locale
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 
 ENV TZ "UTC"
 RUN echo "${TZ}" > /etc/timezone \
