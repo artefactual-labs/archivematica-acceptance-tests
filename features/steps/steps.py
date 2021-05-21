@@ -361,6 +361,7 @@ def step_impl(context, aip_description):
 def step_impl(context):
     uuid_val = utils.get_uuid_val(context, "transfer")
     context.am_user.browser.wait_for_dip_in_transfer_backlog(uuid_val)
+    time.sleep(context.am_user.pessimistic_wait)
 
 
 @when("the user adds metadata")
