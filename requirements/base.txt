@@ -1,7 +1,8 @@
-git+https://github.com/artefactual-labs/amclient@e779e45a0d31e1c576cd9279d792fec59a62c20f#egg=amclient
+amclient==1.1.1
 behave>=1.0
 lxml
 metsrw
 pexpect
 requests<3.0
+tenacity==7.0.0
 selenium==3.14.0
