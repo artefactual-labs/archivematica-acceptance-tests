@@ -16,6 +16,7 @@ from selenium.common.exceptions import (
     NoSuchElementException,
     TimeoutException,
 )
+import tenacity
 
 from amclient import AMClient
 
@@ -66,6 +67,7 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
         logger.info("Got SIP UUID %s", sip_uuid)
         return sip_uuid
 
+    @tenacity.retry(stop=tenacity.stop_after_attempt(20), wait=tenacity.wait_fixed(15))
     def get_mets_via_api(self, transfer_name, sip_uuid=None, parse_xml=True):
         """Return METS once stored in an AIP."""
         if not sip_uuid:
