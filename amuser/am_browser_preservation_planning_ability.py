@@ -41,7 +41,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
                 break
 
     def wait_for_rule_edit_interface(self):
-        self.wait_for_presence("#id_f-purpose")
+        self.wait_for_presence("input[type=submit]")
 
     def set_fpr_command(self, command_name):
         command_select_el = self.driver.find_element_by_id("id_f-command")
