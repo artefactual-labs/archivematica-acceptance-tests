@@ -429,7 +429,9 @@ def step_impl(context):
 def step_impl(context, job_name):
     default_valid_exit_codes = (0,)
     valid_exit_codes_by_job_name = {
-        "Determine if transfer still contains packages": (0, 1)
+        "Assign UUIDs to directories": (0, 1),
+        "Determine if transfer contains packages": (0, 1),
+        "Determine if transfer still contains packages": (0, 1),
     }
     valid_exit_codes = valid_exit_codes_by_job_name.get(
         job_name, default_valid_exit_codes
@@ -437,6 +439,39 @@ def step_impl(context, job_name):
     utils.assert_jobs_completed_successfully(
         context.api_clients_config,
         context.current_transfer["transfer_uuid"],
+        job_name=job_name,
+        valid_exit_codes=valid_exit_codes,
+    )
+
+
+@then('the "{job_name}" ingest job completes successfully')
+def step_impl(context, job_name):
+    default_valid_exit_codes = (0,)
+    valid_exit_codes_by_job_name = {
+        "Bind PID": (0, 1),
+        "Check for Access directory": (0, 179),
+        "Check for manual normalized files": (0, 179),
+        "Check if AIP is a file or directory": (0, 1),
+        "Check if DIP should be generated": (0, 1),
+        "Check if SIP is from Maildir Transfer": (0, 179),
+        "Index AIP": (0, 179),
+        "Is maildir AIP": (0, 179),
+        "Normalize for access": (0, 1, 2),
+        "Normalize for preservation": (0, 1, 2),
+        "Normalize for thumbnails": (0, 1, 2),
+        "Normalize service files for access": (0, 1, 2),
+        "Normalize service files for thumbnails": (0, 1, 2),
+        "Policy checks for access derivatives": (0, 1),
+        "Policy checks for preservation derivatives": (0, 1),
+        "Validate access derivatives": (0, 1),
+        "Validate preservation derivatives": (0, 1),
+    }
+    valid_exit_codes = valid_exit_codes_by_job_name.get(
+        job_name, default_valid_exit_codes
+    )
+    utils.assert_jobs_completed_successfully(
+        context.api_clients_config,
+        context.current_transfer["sip_uuid"],
         job_name=job_name,
         valid_exit_codes=valid_exit_codes,
     )
@@ -451,11 +486,29 @@ def step_impl(context, job_name):
     )
 
 
+@then('the "{job_name}" ingest job fails')
+def step_impl(context, job_name):
+    utils.assert_jobs_fail(
+        context.api_clients_config,
+        context.current_transfer["sip_uuid"],
+        job_name=job_name,
+    )
+
+
 @then('the "{microservice_name}" microservice is executed')
 def step_impl(context, microservice_name):
     utils.assert_microservice_executes(
         context.api_clients_config,
         context.current_transfer["transfer_uuid"],
+        microservice_name,
+    )
+
+
+@then('the "{microservice_name}" ingest microservice is executed')
+def step_impl(context, microservice_name):
+    utils.assert_microservice_executes(
+        context.api_clients_config,
+        context.current_transfer["sip_uuid"],
         microservice_name,
     )
 
