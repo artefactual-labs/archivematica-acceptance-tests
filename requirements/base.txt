@@ -1,4 +1,4 @@
-amclient==1.1.1
+git+https://github.com/artefactual-labs/amclient.git@69949c0cc0b2af401ccf291ee5230e43dab55e62#egg=amclient
 behave>=1.0
 lxml
 metsrw
