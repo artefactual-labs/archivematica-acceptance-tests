@@ -769,9 +769,6 @@ def get_ingest_result(api_clients_config, sip_uuid):
 def create_sample_transfer(
     api_clients_config, sample_transfer_path, transfer_type="standard"
 ):
-    cached_transfer = environment.transfers_cache.setdefault(sample_transfer_path, {})
-    if "aip_mets_location" in cached_transfer:
-        return cached_transfer
     transfer = start_sample_transfer(
         api_clients_config, sample_transfer_path, transfer_type=transfer_type
     )
@@ -781,7 +778,6 @@ def create_sample_transfer(
     transfer["sip_uuid"] = transfer_result["sip_uuid"]
     transfer["extracted_aip_dir"] = transfer_result["extracted_aip_dir"]
     transfer["aip_mets_location"] = transfer_result["aip_mets_location"]
-    cached_transfer.update(transfer)
     return transfer
 
 
