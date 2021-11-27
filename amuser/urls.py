@@ -14,6 +14,10 @@ AM_URLS = (
         "get_edit_default_processing_config_url",
         "{}administration/processing/edit/default/",
     ),
+    (
+        "get_reset_default_processing_config_url",
+        "{}administration/processing/reset/default/",
+    ),
     ("get_handle_config_url", "{}administration/handle/"),
     ("get_ingest_url", "{}ingest/"),
     ("get_installer_welcome_url", "{}installer/welcome/"),

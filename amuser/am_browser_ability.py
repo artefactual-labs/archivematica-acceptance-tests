@@ -307,6 +307,9 @@ class ArchivematicaBrowserAbility(
     # Processing Configuration
     # =========================================================================
 
+    def reset_default_processing_config(self):
+        self.navigate(self.get_reset_default_processing_config_url())
+
     def save_default_processing_config(self):
         """Click the "Save" button in the default processing config edit
         interface.

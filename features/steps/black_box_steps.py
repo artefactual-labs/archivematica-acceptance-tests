@@ -49,6 +49,27 @@ def step_impl(context, transfer_type, sample_transfer_path):
     context.current_transfer = transfer
 
 
+@given("a processing configuration for metadata only reingests")
+def step_impl(context):
+    context.am_user.browser.reset_default_processing_config()
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Normalize", choice_value="Do not normalize"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Reminder: add metadata if desired", choice_value="Continue"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Transcribe files (OCR)", choice_value="No"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store AIP", choice_value="Yes"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store AIP location", choice_value="Default location"
+    )
+    context.am_user.browser.save_default_processing_config()
+
+
 @when(
     'a "{reingest_type}" reingest is started using the "{processing_config}" processing configuration'
 )
@@ -107,6 +128,15 @@ def step_impl(context):
     )
     utils.is_valid_download(context.current_transfer["aip_mets_location"])
     utils.is_valid_download(context.current_transfer["reingest_aip_mets_location"])
+
+
+@when('the "{metadata_file}" metadata file is added')
+def step_impl(context, metadata_file):
+    utils.copy_metadata_files(
+        context.api_clients_config,
+        context.current_transfer["sip_uuid"],
+        [metadata_file],
+    )
 
 
 @then("the AIP METS can be accessed and parsed by mets-reader-writer")
@@ -514,6 +544,24 @@ def step_impl(context, microservice_name):
     )
 
 
+@then('the "{microservice_name}" microservice completes successfully')
+def step_impl(context, microservice_name):
+    utils.assert_jobs_completed_successfully(
+        context.api_clients_config,
+        context.current_transfer["transfer_uuid"],
+        job_microservice=microservice_name,
+    )
+
+
+@then('the "{microservice_name}" ingest microservice completes successfully')
+def step_impl(context, microservice_name):
+    utils.assert_jobs_completed_successfully(
+        context.api_clients_config,
+        context.current_transfer["sip_uuid"],
+        job_microservice=microservice_name,
+    )
+
+
 @then("the METS file contains a dmdSec with DDI metadata")
 def step_impl(context):
     tree = etree.parse(context.current_transfer["aip_mets_location"])
@@ -653,3 +701,13 @@ def step_impl(context, expected_entries_count):
         expected_entries_count, len(submission_docs)
     )
     assert len(submission_docs) == expected_entries_count, error
+
+
+@then('the "{metadata_file}" file is in the reingest metadata directory')
+def step_impl(context, metadata_file):
+    utils.is_valid_download(
+        utils.get_aip_file_location(
+            context.current_transfer["reingest_extracted_aip_dir"],
+            os.path.join("data", "objects", "metadata", metadata_file),
+        )
+    )

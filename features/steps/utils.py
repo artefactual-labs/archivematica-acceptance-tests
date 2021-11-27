@@ -458,7 +458,7 @@ def approve_partial_reingest(api_clients_config, reingest_uuid):
             endpoint=am.approve_partial_reingest, warning_message="", error_message=""
         )
         if not response.get("error"):
-            return response["uuid"]
+            return reingest_uuid
         raise environment.EnvironmentError(response["error"])
 
 
@@ -808,14 +808,15 @@ def create_reingest(api_clients_config, transfer, reingest_type, processing_conf
 
 def finish_reingest(api_clients_config, reingest_type, reingest_uuid):
     if reingest_type == "FULL":
-        result = get_transfer_result(api_clients_config, reingest_uuid)
-        return {
-            "reingest_uuid": result["sip_uuid"],
-            "reingest_extracted_aip_dir": result["extracted_aip_dir"],
-            "reingest_aip_mets_location": result["aip_mets_location"],
-        }
+        result_handler = get_transfer_result
     else:
-        raise NotImplementedError("Not yet")
+        result_handler = get_ingest_result
+    result = result_handler(api_clients_config, reingest_uuid)
+    return {
+        "reingest_uuid": result["sip_uuid"],
+        "reingest_extracted_aip_dir": result["extracted_aip_dir"],
+        "reingest_aip_mets_location": result["aip_mets_location"],
+    }
 
 
 def get_jobs(
@@ -937,3 +938,20 @@ def get_gpg_space_location_description(space_uuid):
     return "Store AIP Encrypted in standard Archivematica Directory ({})".format(
         space_uuid
     )
+
+
+def copy_metadata_files(api_clients_config, sip_uuid, relative_paths):
+    transfer_source_uuid = return_default_ts_location(api_clients_config)
+    source_paths = [
+        (transfer_source_uuid, os.path.join(environment.sample_data_path, path))
+        for path in relative_paths
+    ]
+    am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
+    response = call_api_endpoint(
+        endpoint=am.copy_metadata_files,
+        endpoint_args=[sip_uuid, source_paths],
+        warning_message="Cannot copy metadata files",
+        error_message="Cannot copy metadata files",
+    )
+    expected_message = "Metadata files added successfully."
+    assert response["message"] == expected_message, response["message"]
