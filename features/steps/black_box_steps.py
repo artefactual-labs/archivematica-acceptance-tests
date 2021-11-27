@@ -49,19 +49,27 @@ def step_impl(context, transfer_type, sample_transfer_path):
     context.current_transfer = transfer
 
 
-@given(
-    'a "{transfer_type}" transfer type located in "{sample_transfer_path}" has been reingested'
+@when(
+    'a "{reingest_type}" reingest is started using the "{processing_config}" processing configuration'
 )
-def step_impl(context, transfer_type, sample_transfer_path):
-    context.execute_steps(
-        'Given a "{}" transfer type located in "{}"\n'.format(
-            transfer_type, sample_transfer_path
-        )
-    )
+def step_impl(context, reingest_type, processing_config):
     reingest = utils.create_reingest(
-        context.api_clients_config, context.current_transfer
+        context.api_clients_config,
+        context.current_transfer,
+        reingest_type,
+        processing_config,
     )
     context.current_transfer.update(reingest)
+
+
+@when("the reingest is approved")
+def step_impl(context):
+    if context.current_transfer["reingest_type"] == "FULL":
+        utils.approve_transfer(
+            context.api_clients_config, context.current_transfer["reingest_uuid"]
+        )
+    else:
+        raise NotImplementedError("not yet")
 
 
 @when("the AIP is downloaded")
@@ -89,6 +97,13 @@ def step_impl(context):
 
 @when("the reingest has been processed")
 def step_impl(context):
+    context.current_transfer.update(
+        utils.finish_reingest(
+            context.api_clients_config,
+            context.current_transfer["reingest_type"],
+            context.current_transfer["reingest_uuid"],
+        )
+    )
     utils.is_valid_download(context.current_transfer["aip_mets_location"])
     utils.is_valid_download(context.current_transfer["reingest_aip_mets_location"])
 
