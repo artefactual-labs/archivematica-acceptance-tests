@@ -49,6 +49,27 @@ def step_impl(context, transfer_type, sample_transfer_path):
     context.current_transfer = transfer
 
 
+@given("a processing configuration for metadata only reingests")
+def step_impl(context):
+    context.am_user.browser.reset_default_processing_config()
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Normalize", choice_value="Do not normalize"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Reminder: add metadata if desired", choice_value="Continue"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Transcribe files (OCR)", choice_value="No"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store AIP", choice_value="Yes"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store AIP location", choice_value="Default location"
+    )
+    context.am_user.browser.save_default_processing_config()
+
+
 @when(
     'a "{reingest_type}" reingest is started using the "{processing_config}" processing configuration'
 )
@@ -101,12 +122,23 @@ def step_impl(context):
     context.current_transfer.update(
         utils.finish_reingest(
             context.api_clients_config,
+            context.current_transfer["transfer_name"],
+            context.current_transfer["transfer_uuid"],
             context.current_transfer["reingest_type"],
             context.current_transfer["reingest_uuid"],
         )
     )
     utils.is_valid_download(context.current_transfer["aip_mets_location"])
     utils.is_valid_download(context.current_transfer["reingest_aip_mets_location"])
+
+
+@when('the "{metadata_file}" metadata file is added')
+def step_impl(context, metadata_file):
+    utils.copy_metadata_files(
+        context.api_clients_config,
+        context.current_transfer["sip_uuid"],
+        [metadata_file],
+    )
 
 
 @then("the AIP METS can be accessed and parsed by mets-reader-writer")
@@ -514,6 +546,24 @@ def step_impl(context, microservice_name):
     )
 
 
+@then('the "{microservice_name}" microservice completes successfully')
+def step_impl(context, microservice_name):
+    utils.assert_jobs_completed_successfully(
+        context.api_clients_config,
+        context.current_transfer["transfer_uuid"],
+        job_microservice=microservice_name,
+    )
+
+
+@then('the "{microservice_name}" ingest microservice completes successfully')
+def step_impl(context, microservice_name):
+    utils.assert_jobs_completed_successfully(
+        context.api_clients_config,
+        context.current_transfer["sip_uuid"],
+        job_microservice=microservice_name,
+    )
+
+
 @then("the METS file contains a dmdSec with DDI metadata")
 def step_impl(context):
     tree = etree.parse(context.current_transfer["aip_mets_location"])
@@ -653,3 +703,128 @@ def step_impl(context, expected_entries_count):
         expected_entries_count, len(submission_docs)
     )
     assert len(submission_docs) == expected_entries_count, error
+
+
+@then('the "{metadata_file}" file is in the reingest metadata directory')
+def step_impl(context, metadata_file):
+    utils.is_valid_download(
+        utils.get_aip_file_location(
+            context.current_transfer["reingest_extracted_aip_dir"],
+            os.path.join("data", "objects", "metadata", metadata_file),
+        )
+    )
+
+
+@then("the DIP is downloaded")
+def step_impl(context):
+    context.current_transfer.update(
+        utils.get_dip(context.api_clients_config, context.current_transfer["sip_uuid"])
+    )
+
+
+@then("the DIP contains access copies for each original object in the transfer")
+def step_impl(context):
+    mets = metsrw.METSDocument.fromfile(context.current_transfer["aip_mets_location"])
+    # get the UUID of each 'original' file
+    original_file_uuids = set(
+        [fsentry.file_uuid for fsentry in mets.all_files() if fsentry.use == "original"]
+    )
+    assert original_file_uuids, format_original_files_error(context.current_transfer)
+    # verify each file UUID has a matching entry in the objects directory of the DIP
+    dip_file_uuids = set(
+        [
+            f[:36]
+            for f in os.listdir(
+                os.path.join(context.current_transfer["extracted_dip_dir"], "objects")
+            )
+        ]
+    )
+    error = "The DIP at {} does not contain access copies for all the original files of the {} AIP".format(
+        context.current_transfer["extracted_dip_dir"],
+        context.current_transfer["sip_uuid"],
+    )
+    assert original_file_uuids == dip_file_uuids, error
+
+
+@then(
+    "every file in the reingested metadata.csv file has two dmdSecs with the original and updated metadata"
+)
+def step_impl(context):
+    expected_dmdsec_status = ("original", "updated")
+    assert context.current_transfer[
+        "metadata_csv_files"
+    ], "Could not extract the rows of the original metadata.csv in {}".format(
+        context.current_transfer["extracted_aip_dir"]
+    )
+    assert context.current_transfer[
+        "reingest_metadata_csv_files"
+    ], "Could not extract the rows of the reingested metadata.csv in {}".format(
+        context.current_transfer["reingest_extracted_aip_dir"]
+    )
+    reingest_mets = metsrw.METSDocument.fromfile(
+        context.current_transfer["reingest_aip_mets_location"]
+    )
+    # XXX: using lxml to bypass an issue with metsrw where a dmdSec with status
+    #      `updated` resets the status of the previous dmdSec to `None`
+    reingest_tree = etree.parse(context.current_transfer["reingest_aip_mets_location"])
+    original_metadata_csv_filenames = [
+        row["filename"] for row in context.current_transfer["metadata_csv_files"]
+    ]
+    rows = [
+        row
+        for row in context.current_transfer["reingest_metadata_csv_files"]
+        if row["filename"] in original_metadata_csv_filenames
+    ]
+    assert rows, "Could not find any existing files in the reingested metadata.csv file"
+    namespaces_by_url = {v: k for k, v in context.mets_nsmap.items()}
+    errors = []
+    dmdsec_error_template = (
+        'Expected one dmdSec for filename "{}" with STATUS="{}" in metadata.csv '
+        "but got {}"
+    )
+    content_error_template = (
+        "Expected the dmdSec with status {} to contain an element {} "
+        "that matches the contents of the reingested metadadata.csv file"
+    )
+    for row in rows:
+        entry = reingest_mets.get_file(path=row["filename"])
+        all_dmdsecs = {}
+        dmdsecs_errors = []
+        for expected_status in expected_dmdsec_status:
+            dmdsecs = []
+            for dmdsec in entry.dmdsecs:
+                # XXX: using lxml to bypass an issue with metsrw mentioned above
+                if (
+                    len(
+                        reingest_tree.xpath(
+                            '//mets:dmdSec[@ID="{}"][@STATUS="{}"]'.format(
+                                dmdsec.id_string, expected_status
+                            ),
+                            namespaces=context.mets_nsmap,
+                        )
+                    )
+                    == 1
+                ):
+                    dmdsecs.append(dmdsec)
+            if len(dmdsecs) != 1:
+                dmdsecs_errors.append(
+                    dmdsec_error_template.format(
+                        row["filename"], ", ".join(expected_status), len(dmdsecs)
+                    )
+                )
+                continue
+            all_dmdsecs[expected_status] = dmdsecs[0]
+        if dmdsecs_errors:
+            errors.extend(dmdsecs_errors)
+            continue
+        # compare the newest dmdSec with the contents of the reingested csv
+        for child in all_dmdsecs.get(expected_dmdsec_status[-1]).contents.document:
+            q_name = etree.QName(child.tag)
+            ns = q_name.namespace
+            localname = q_name.localname
+            csv_field = "{}.{}".format(namespaces_by_url[ns], localname)
+            if row.get(csv_field) != child.text.strip():
+                errors.append(
+                    content_error_template.format(expected_dmdsec_status[-1], csv_field)
+                )
+    assert not errors, "\n".join(errors)
