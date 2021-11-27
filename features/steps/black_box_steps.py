@@ -65,11 +65,12 @@ def step_impl(context, reingest_type, processing_config):
 @when("the reingest is approved")
 def step_impl(context):
     if context.current_transfer["reingest_type"] == "FULL":
-        utils.approve_transfer(
-            context.api_clients_config, context.current_transfer["reingest_uuid"]
-        )
+        approve_handler = utils.approve_transfer
     else:
-        raise NotImplementedError("not yet")
+        approve_handler = utils.approve_partial_reingest
+    approve_handler(
+        context.api_clients_config, context.current_transfer["reingest_uuid"]
+    )
 
 
 @when("the AIP is downloaded")

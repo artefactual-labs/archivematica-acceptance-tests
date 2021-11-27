@@ -449,6 +449,19 @@ def approve_transfer(api_clients_config, transfer_uuid):
         raise environment.EnvironmentError(response["error"])
 
 
+def approve_partial_reingest(api_clients_config, reingest_uuid):
+    response = check_unit_status(api_clients_config, reingest_uuid, "ingest")
+    if response.get("status") == "USER_INPUT":
+        am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
+        am.sip_uuid = response["uuid"]
+        response = call_api_endpoint(
+            endpoint=am.approve_partial_reingest, warning_message="", error_message=""
+        )
+        if not response.get("error"):
+            return response["uuid"]
+        raise environment.EnvironmentError(response["error"])
+
+
 def start_reingest(
     api_clients_config,
     transfer_name,
@@ -737,7 +750,10 @@ def get_transfer_result(api_clients_config, transfer_uuid):
     transfer_response = wait_for_transfer(api_clients_config, transfer_uuid)
     if transfer_response["status"] == "FAILED":
         return {}
-    sip_uuid = transfer_response["sip_uuid"]
+    return get_ingest_result(api_clients_config, transfer_response["sip_uuid"])
+
+
+def get_ingest_result(api_clients_config, sip_uuid):
     ingest_response = wait_for_ingest(api_clients_config, sip_uuid)
     if ingest_response["status"] == "FAILED":
         return {}
