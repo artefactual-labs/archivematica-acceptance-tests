@@ -70,6 +70,39 @@ def step_impl(context):
     context.am_user.browser.save_default_processing_config()
 
 
+@given("a processing configuration for partial reingests")
+def step_impl(context):
+    context.am_user.browser.reset_default_processing_config()
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Normalize", choice_value="Normalize for access"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Approve normalization", choice_value="Yes"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Reminder: add metadata if desired", choice_value="Continue"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Transcribe files (OCR)", choice_value="No"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store AIP", choice_value="Yes"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store AIP location", choice_value="Default location"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Upload DIP", choice_value="Do not upload DIP"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store DIP", choice_value="Store DIP"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store DIP location", choice_value="Default location"
+    )
+    context.am_user.browser.save_default_processing_config()
+
+
 @when(
     'a "{reingest_type}" reingest is started using the "{processing_config}" processing configuration'
 )
@@ -711,3 +744,34 @@ def step_impl(context, metadata_file):
             os.path.join("data", "objects", "metadata", metadata_file),
         )
     )
+
+
+@then("the DIP is downloaded")
+def step_impl(context):
+    context.current_transfer.update(
+        utils.get_dip(context.api_clients_config, context.current_transfer["sip_uuid"])
+    )
+
+
+@then("the DIP contains access copies for each original object in the transfer")
+def step_impl(context):
+    mets = metsrw.METSDocument.fromfile(context.current_transfer["aip_mets_location"])
+    # get the UUID of each 'original' file
+    original_file_uuids = set(
+        [fsentry.file_uuid for fsentry in mets.all_files() if fsentry.use == "original"]
+    )
+    assert original_file_uuids, format_original_files_error(context.current_transfer)
+    # verify each file UUID has a matching entry in the objects directory of the DIP
+    dip_file_uuids = set(
+        [
+            f[:36]
+            for f in os.listdir(
+                os.path.join(context.current_transfer["extracted_dip_dir"], "objects")
+            )
+        ]
+    )
+    error = "The DIP at {} does not contain access copies for all the original files of the {} AIP".format(
+        context.current_transfer["extracted_dip_dir"],
+        context.current_transfer["sip_uuid"],
+    )
+    assert original_file_uuids == dip_file_uuids, error

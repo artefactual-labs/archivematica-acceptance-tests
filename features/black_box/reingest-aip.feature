@@ -33,3 +33,15 @@ Feature: Alma wants to be able to re-ingest an AIP and have the reingest recorde
     And the "Reingest AIP" ingest microservice completes successfully
     And there is a reingestion event for each original object in the AIP METS
     And the "metadata.csv" file is in the reingest metadata directory
+
+  Scenario: Partial reingest without error
+    Given a "standard" transfer type located in "SampleTransfers/DemoTransferCSV"
+    And a processing configuration for partial reingests
+    When a "OBJECTS" reingest is started using the "default" processing configuration
+    And the reingest is approved
+    And the reingest has been processed
+    Then the AIP can be successfully stored
+    And the "Reingest AIP" ingest microservice completes successfully
+    And there is a reingestion event for each original object in the AIP METS
+    And the DIP is downloaded
+    And the DIP contains access copies for each original object in the transfer
