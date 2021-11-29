@@ -70,6 +70,39 @@ def step_impl(context):
     context.am_user.browser.save_default_processing_config()
 
 
+@given("a processing configuration for partial reingests")
+def step_impl(context):
+    context.am_user.browser.reset_default_processing_config()
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Normalize", choice_value="Normalize for access"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Approve normalization", choice_value="Yes"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Reminder: add metadata if desired", choice_value="Continue"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Transcribe files (OCR)", choice_value="No"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store AIP", choice_value="Yes"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store AIP location", choice_value="Default location"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Upload DIP", choice_value="Do not upload DIP"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store DIP", choice_value="Store DIP"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Store DIP location", choice_value="Default location"
+    )
+    context.am_user.browser.save_default_processing_config()
+
+
 @when(
     'a "{reingest_type}" reingest is started using the "{processing_config}" processing configuration'
 )

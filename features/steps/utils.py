@@ -508,17 +508,17 @@ def check_unit_status(api_clients_config, unit_uuid, unit="transfer"):
     )
 
 
-def download_aip(api_clients_config, sip_uuid):
+def download_package(api_clients_config, sip_uuid):
     """
-    Download an AIP from the storage service.
+    Download a package from the storage service.
     """
     am = configure_ss_client(api_clients_config[SS_API_CONFIG_KEY])
     am.directory = tempfile.mkdtemp()
     return call_api_endpoint(
         endpoint=am.download_package,
         endpoint_args=[sip_uuid],
-        warning_message="Error downloading AIP",
-        error_message="Error donwloading AIP",
+        warning_message="Error downloading package",
+        error_message="Error donwloading package",
     )
 
 
@@ -531,35 +531,44 @@ def get_aip_mets_location(extracted_aip_dir, sip_uuid):
     return get_aip_file_location(extracted_aip_dir, path)
 
 
-def _automation_tools_extract_aip(aip_file, aip_uuid, tmp_dir):
+def get_dip_mets_location(extracted_dip_dir, sip_uuid):
+    return os.path.join(extracted_dip_dir, "METS.{}.xml".format(sip_uuid))
+
+
+def _automation_tools_extract_package(
+    package_file, package_uuid, tmp_dir, lookup_uuid=None
+):
     """
-    Extracts an AIP to a folder.
-    :param str aip_file: absolute path to an AIP
-    :param str aip_uuid: UUID from the AIP
-    :param str tmp_dir: absolute path to a directory to place the extracted AIP
-    :returns: absolute path to the extracted AIP folder
+    Extracts a package to a folder.
+    :param str package_file: absolute path to a package
+    :param str package_uuid: UUID of the package
+    :param str tmp_dir: absolute path to a directory to place the extracted package
+    :param str lookup_uuid: UUID to look for inside the extraction directory
+    :returns: absolute path to the extracted package folder
     """
-    command = ["7z", "x", "-bd", "-y", "-o{0}".format(tmp_dir), aip_file]
+    command = ["7z", "x", "-bd", "-y", "-o{0}".format(tmp_dir), package_file]
     try:
         subprocess.check_output(command, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-        logger.error("Could not extract AIP, error: %s", e.output)
+        logger.error("Could not extract package, error: %s", e.output)
         return
 
     # Remove extracted file to avoid multiple entries with the same UUID
     try:
-        os.remove(aip_file)
+        os.remove(package_file)
     except OSError:
         pass
 
-    # Find extracted entry. Assuming it contains the AIP UUID
+    # Find extracted entry. Assuming it contains the package UUID
     extracted_entry = None
+    if not lookup_uuid:
+        lookup_uuid = package_uuid
     for entry in os.listdir(tmp_dir):
-        if aip_uuid in entry:
+        if lookup_uuid in entry:
             extracted_entry = os.path.join(tmp_dir, entry)
 
     if not extracted_entry:
-        logger.error("Can not find extracted AIP by UUID")
+        logger.error("Can not find extracted package by UUID")
         return
 
     # Return folder path if it's a directory
@@ -567,13 +576,17 @@ def _automation_tools_extract_aip(aip_file, aip_uuid, tmp_dir):
         return extracted_entry
 
     # Re-try extraction if it's not a directory
-    return _automation_tools_extract_aip(extracted_entry, aip_uuid, tmp_dir)
+    return _automation_tools_extract_package(
+        extracted_entry, package_uuid, tmp_dir, lookup_uuid
+    )
 
 
-def extract_aip(api_clients_config, sip_uuid):
+def extract_package(api_clients_config, package_uuid, lookup_uuid=None):
     tmp = tempfile.mkdtemp()
-    aip_ss_filename = download_aip(api_clients_config, sip_uuid)
-    return _automation_tools_extract_aip(aip_ss_filename, sip_uuid, tmp)
+    package_ss_filename = download_package(api_clients_config, package_uuid)
+    return _automation_tools_extract_package(
+        package_ss_filename, package_uuid, tmp, lookup_uuid
+    )
 
 
 def get_premis_events_by_type(entry, event_type):
@@ -758,7 +771,7 @@ def get_ingest_result(api_clients_config, sip_uuid):
     ingest_response = wait_for_ingest(api_clients_config, sip_uuid)
     if ingest_response["status"] == "FAILED":
         return {}
-    extracted_aip_dir = extract_aip(api_clients_config, sip_uuid)
+    extracted_aip_dir = extract_package(api_clients_config, sip_uuid)
     aip_mets_location = get_aip_mets_location(extracted_aip_dir, sip_uuid)
     return {
         "sip_uuid": sip_uuid,
