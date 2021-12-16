@@ -1,5 +1,6 @@
 """Utilities for Steps files."""
 
+import csv
 import datetime
 import logging
 import os
@@ -13,6 +14,7 @@ from amclient.amclient import AMClient
 import environment
 from environment import AM_API_CONFIG_KEY
 from environment import SS_API_CONFIG_KEY
+from lxml import etree
 
 logger = logging.getLogger("amauat.steps.utils")
 
@@ -791,6 +793,11 @@ def create_sample_transfer(
     transfer["sip_uuid"] = transfer_result["sip_uuid"]
     transfer["extracted_aip_dir"] = transfer_result["extracted_aip_dir"]
     transfer["aip_mets_location"] = transfer_result["aip_mets_location"]
+    transfer["source_metadata_files"] = get_source_metadata(
+        transfer["transfer_name"],
+        transfer["transfer_uuid"],
+        transfer["extracted_aip_dir"],
+    )
     return transfer
 
 
@@ -815,7 +822,9 @@ def create_reingest(api_clients_config, transfer, reingest_type, processing_conf
         }
 
 
-def finish_reingest(api_clients_config, reingest_type, reingest_uuid):
+def finish_reingest(
+    api_clients_config, transfer_name, transfer_uuid, reingest_type, reingest_uuid
+):
     if reingest_type == "FULL":
         result_handler = get_transfer_result
     else:
@@ -825,6 +834,9 @@ def finish_reingest(api_clients_config, reingest_type, reingest_uuid):
         "reingest_uuid": result["sip_uuid"],
         "reingest_extracted_aip_dir": result["extracted_aip_dir"],
         "reingest_aip_mets_location": result["aip_mets_location"],
+        "reingest_source_metadata_files": get_source_metadata(
+            transfer_name, transfer_uuid, result["extracted_aip_dir"]
+        ),
     }
 
 
@@ -986,3 +998,61 @@ def get_dip(api_clients_config, sip_uuid):
         "extracted_dip_dir": extracted_dip_dir,
         "dip_mets_location": dip_mets_location,
     }
+
+
+def get_source_metadata(transfer_name, transfer_uuid, extracted_aip_dir):
+    filename = "source-metadata.csv"
+    # Look in the top level metadata directory first which is where metadata
+    # only reingests will place the following updated metadata XML files
+    csv_path = os.path.join(extracted_aip_dir, "data", "objects", "metadata", filename)
+    if not os.path.exists(csv_path):
+        # Look in the metadata/transfers directory which is where the initial
+        # ingest will place the original metadata XML files
+        csv_path = os.path.join(
+            extracted_aip_dir,
+            "data",
+            "objects",
+            "metadata",
+            "transfers",
+            "{}-{}".format(transfer_name, transfer_uuid),
+            filename,
+        )
+        if not os.path.exists(csv_path):
+            return []
+    return extract_source_metadata_rows(csv_path)
+
+
+def extract_source_metadata_rows(csv_path):
+    result = []
+    with open(csv_path) as f:
+        reader = csv.reader(f)
+        for i, row in enumerate(reader):
+            if i != 0:
+                result.append(
+                    {
+                        "original_filename": row[0],
+                        "metadata_filename": row[1],
+                        "type_id": row[2],
+                    }
+                )
+    metadata_dir = os.path.dirname(csv_path)
+    parser = etree.XMLParser(remove_blank_text=True)
+    for row in result:
+        metadata_file = os.path.join(metadata_dir, row["metadata_filename"])
+        row["document"] = None
+        if os.path.exists(metadata_file):
+            # Extracting only the line of the XML which is usually the root node and
+            # which should be enough to assert that the file is written to the METS
+            with open(metadata_file) as f:
+                try:
+                    row["document"] = etree.parse(f, parser=parser).getroot()
+                except etree.LxmlError:
+                    pass
+    return result
+
+
+def extract_document_text(doc):
+    if doc is not None:
+        return etree.tostring(doc, encoding="unicode", method="text").strip()
+    else:
+        return ""

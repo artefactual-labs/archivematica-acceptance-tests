@@ -1,7 +1,7 @@
 @black-box @black-box-metadata
 Feature: Alma wants to ensure the AIP METS contains metadata from description and rights CSVs
 
-  Background: metadata.csv and rights.csv are two reserved files that can be associated with a transfer these files contain information that should be transcribed to metadata elements in the METS.xml in the resulting AIP
+  Background: metadata.csv and rights.csv are two reserved files that can be associated with a transfer these files contain information that should be transcribed to metadata elements in the METS file in the resulting AIP
 
   Scenario Outline: Descriptive and rights metadata are listed in the AIP METS and submission documentation is listed correctly
     Given a "standard" transfer type located in "<sample_transfer_path>"
