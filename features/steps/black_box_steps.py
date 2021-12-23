@@ -794,35 +794,59 @@ def step_impl(context):
 def step_impl(context):
     expected_dmdsec_status = ("original",)
     expected_mdwrap_mdtype = ("OTHER",)
-    source_metadata_files = context.current_transfer["source_metadata_files"]
-    assert (
-        source_metadata_files
-    ), "Could not extract the rows of source-metadata.csv in {}".format(
+    assert context.current_transfer[
+        "source_metadata_files"
+    ], "Could not extract the rows of the original source-metadata.csv in {}".format(
         context.current_transfer["extracted_aip_dir"]
     )
     mets = metsrw.METSDocument.fromfile(context.current_transfer["aip_mets_location"])
+    # XXX: using lxml to bypass an issue with metsrw where a dmdSec with status
+    #      `updated` resets the status of the previous dmdSec to `None`
+    tree = etree.parse(context.current_transfer["aip_mets_location"])
+    rows = context.current_transfer["source_metadata_files"]
     errors = []
-    for row in source_metadata_files:
+    dmdsec_error_template = (
+        'Expected one dmdSec for filename "{}" with STATUS="{}" containing a '
+        'mdWrap with OTHERMDTYPE="{}" in source-metadata.csv but got {}'
+    )
+    for row in rows:
         entry = mets.get_file(label=row["original_filename"])
-        dmdsecs = [
-            dmdsec
-            for dmdsec in entry.dmdsecs
-            if dmdsec.status in expected_dmdsec_status
-            and dmdsec.contents.mdtype in expected_mdwrap_mdtype
-            and dmdsec.contents.othermdtype == row["type_id"]
-        ]
-        if len(dmdsecs) != 1:
-            errors.append(
-                'Expected one dmdSec for filename "{}" with STATUS="{}" containing a '
-                'mdWrap with OTHERMDTYPE="{}" in source-metadata.csv but got {}'.format(
-                    row["original_filename"],
-                    ", ".join(expected_dmdsec_status),
-                    row["type_id"],
-                    len(dmdsecs),
+        all_dmdsecs = {}
+        dmdsecs_errors = []
+        for expected_status in expected_dmdsec_status:
+            dmdsecs = []
+            for dmdsec in entry.dmdsecs:
+                # XXX: using lxml to bypass an issue with metsrw mentioned above
+                if (
+                    len(
+                        tree.xpath(
+                            '//mets:dmdSec[@ID="{}"][@STATUS="{}"]'.format(
+                                dmdsec.id_string, expected_status
+                            ),
+                            namespaces=context.mets_nsmap,
+                        )
+                    )
+                    == 1
+                    and dmdsec.contents.mdtype in expected_mdwrap_mdtype
+                    and dmdsec.contents.othermdtype == row["type_id"]
+                ):
+                    dmdsecs.append(dmdsec)
+            if len(dmdsecs) != 1:
+                dmdsecs_errors.append(
+                    dmdsec_error_template.format(
+                        row["original_filename"],
+                        expected_status,
+                        row["type_id"],
+                        len(dmdsecs),
+                    )
                 )
-            )
+                continue
+            all_dmdsecs[expected_status] = dmdsecs[0]
+        if dmdsecs_errors:
+            errors.extend(dmdsecs_errors)
             continue
-        mdwrap_text = utils.extract_document_text(dmdsecs[0].contents.document)
+        original_dmdsec = all_dmdsecs["original"]
+        mdwrap_text = utils.extract_document_text(original_dmdsec.contents.document)
         metadata_file_text = utils.extract_document_text(row["document"])
         if (
             not mdwrap_text
@@ -849,7 +873,7 @@ def step_impl(context):
     assert context.current_transfer[
         "source_metadata_files"
     ], "Could not extract the rows of the original source-metadata.csv in {}".format(
-        context.current_transfer["reingest_extracted_aip_dir"]
+        context.current_transfer["extracted_aip_dir"]
     )
     assert context.current_transfer[
         "reingest_source_metadata_files"
@@ -872,7 +896,6 @@ def step_impl(context):
         if row["metadata_filename"] in original_source_metadata_filenames
     ]
     assert rows, (
-        "This reingest does not look like an update to existing metadata XML files. "
         "Could not find any of the original metadata XML files in the reingested "
         "source-metadata.csv file"
     )
@@ -958,10 +981,6 @@ def step_impl(context):
     ], "Could not extract the rows of the original source-metadata.csv in {}".format(
         context.current_transfer["reingest_extracted_aip_dir"]
     )
-    original_source_metadata_filenames = [
-        row["metadata_filename"]
-        for row in context.current_transfer["source_metadata_files"]
-    ]
     assert context.current_transfer[
         "reingest_source_metadata_files"
     ], "Could not extract the rows of the reingested source-metadata.csv in {}".format(
@@ -973,6 +992,10 @@ def step_impl(context):
     # XXX: using lxml to bypass an issue with metsrw where a dmdSec with status
     #      `updated` resets the status of the previous dmdSec to `None`
     reingest_tree = etree.parse(context.current_transfer["reingest_aip_mets_location"])
+    original_source_metadata_filenames = [
+        row["metadata_filename"]
+        for row in context.current_transfer["source_metadata_files"]
+    ]
     rows = [
         row
         for row in context.current_transfer["reingest_source_metadata_files"]
@@ -1035,6 +1058,104 @@ def step_impl(context):
                 'Wrapped text of mdWrap[OTHERMDTYPE="{}"] does not match the text '
                 'of the original metadata XML file "{}"'.format(
                     row["type_id"], row["metadata_filename"]
+                )
+            )
+    assert not errors, "\n".join(errors)
+
+
+@then(
+    "every deleted metadata XML file in the reingested source-metadata.csv has a "
+    "dmdSec with STATUS deleted that has a mdWrap with the specified OTHERMDTYPE "
+    "which wraps the original XML content"
+)
+def step_impl(context):
+    expected_dmdsec_status = ("deleted",)
+    expected_mdwrap_mdtype = ("OTHER",)
+    assert context.current_transfer[
+        "source_metadata_files"
+    ], "Could not extract the rows of the original source-metadata.csv in {}".format(
+        context.current_transfer["reingest_extracted_aip_dir"]
+    )
+    original_source_metadata_by_type_id = {
+        row["type_id"]: row for row in context.current_transfer["source_metadata_files"]
+    }
+    assert context.current_transfer[
+        "reingest_source_metadata_files"
+    ], "Could not extract the rows of the reingested source-metadata.csv in {}".format(
+        context.current_transfer["reingest_extracted_aip_dir"]
+    )
+    reingest_mets = metsrw.METSDocument.fromfile(
+        context.current_transfer["reingest_aip_mets_location"]
+    )
+    # XXX: using lxml to bypass an issue with metsrw where a dmdSec with status
+    #      `updated` resets the status of the previous dmdSec to `None`
+    reingest_tree = etree.parse(context.current_transfer["reingest_aip_mets_location"])
+    rows = [
+        row
+        for row in context.current_transfer["reingest_source_metadata_files"]
+        if not row["metadata_filename"]
+        and row["type_id"] in original_source_metadata_by_type_id
+    ]
+    assert rows, (
+        "Could not find any deleted metadata XML files in the reingested "
+        "source-metadata.csv file"
+    )
+    errors = []
+    dmdsec_error_template = (
+        'Expected one dmdSec for filename "{}" with STATUS="{}" containing a '
+        'mdWrap with OTHERMDTYPE="{}" in the reingested source-metadata.csv '
+        "but got {}"
+    )
+    for row in rows:
+        entry = reingest_mets.get_file(label=row["original_filename"])
+        all_dmdsecs = {}
+        dmdsecs_errors = []
+        for expected_status in expected_dmdsec_status:
+            dmdsecs = []
+            for dmdsec in entry.dmdsecs:
+                # XXX: using lxml to bypass an issue with metsrw mentioned above
+                if (
+                    len(
+                        reingest_tree.xpath(
+                            '//mets:dmdSec[@ID="{}"][@STATUS="{}"]'.format(
+                                dmdsec.id_string, expected_status
+                            ),
+                            namespaces=context.mets_nsmap,
+                        )
+                    )
+                    == 1
+                    and dmdsec.contents.mdtype in expected_mdwrap_mdtype
+                    and dmdsec.contents.othermdtype == row["type_id"]
+                ):
+                    dmdsecs.append(dmdsec)
+            if len(dmdsecs) != 1:
+                dmdsecs_errors.append(
+                    dmdsec_error_template.format(
+                        row["original_filename"],
+                        ", ".join(expected_dmdsec_status),
+                        row["type_id"],
+                        len(dmdsecs),
+                    )
+                )
+                continue
+            all_dmdsecs[expected_status] = dmdsecs[0]
+        if dmdsecs_errors:
+            errors.extend(dmdsecs_errors)
+            continue
+        mdwrap_text = utils.extract_document_text(dmdsecs[0].contents.document)
+        original_metadata_row = original_source_metadata_by_type_id[row["type_id"]]
+        metadata_file_text = utils.extract_document_text(
+            original_metadata_row["document"]
+        )
+        if (
+            not mdwrap_text
+            or not metadata_file_text
+            or mdwrap_text != metadata_file_text
+        ):
+            errors.append(
+                'Wrapped text of mdWrap[OTHERMDTYPE="{}"] does not match the text '
+                'of the original metadata XML file "{}"'.format(
+                    row["type_id"], original_metadata_row["metadata_filename"]
                 )
             )
     assert not errors, "\n".join(errors)

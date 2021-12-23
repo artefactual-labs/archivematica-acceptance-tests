@@ -1025,24 +1025,20 @@ def get_source_metadata(transfer_name, transfer_uuid, extracted_aip_dir):
 def extract_source_metadata_rows(csv_path):
     result = []
     with open(csv_path) as f:
-        reader = csv.reader(f)
-        for i, row in enumerate(reader):
-            if i != 0:
-                result.append(
-                    {
-                        "original_filename": row[0],
-                        "metadata_filename": row[1],
-                        "type_id": row[2],
-                    }
-                )
+        reader = csv.DictReader(
+            f, fieldnames=["original_filename", "metadata_filename", "type_id"]
+        )
+        # Skip header row
+        result.extend(list(reader)[1:])
     metadata_dir = os.path.dirname(csv_path)
     parser = etree.XMLParser(remove_blank_text=True)
     for row in result:
-        metadata_file = os.path.join(metadata_dir, row["metadata_filename"])
         row["document"] = None
+        if not row["metadata_filename"]:
+            # Skip metadata files that should be deleted
+            continue
+        metadata_file = os.path.join(metadata_dir, row["metadata_filename"])
         if os.path.exists(metadata_file):
-            # Extracting only the line of the XML which is usually the root node and
-            # which should be enough to assert that the file is written to the METS
             with open(metadata_file) as f:
                 try:
                     row["document"] = etree.parse(f, parser=parser).getroot()

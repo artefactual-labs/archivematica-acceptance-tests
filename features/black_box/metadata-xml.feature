@@ -40,3 +40,18 @@ Background: The MCPClient service has been configured to validate metadata XML f
     And the "Generate METS.xml document" ingest job completes successfully
     And every existing metadata XML file in the reingested source-metadata.csv has two dmdSecs with the same GROUPID, one with the original XML content which has been superseded by a new one that contains the updated XML content
     And every new metadata XML file in the reingested source-metadata.csv has a dmdSec with STATUS update that has a mdWrap with the specified OTHERMDTYPE which wraps the XML content
+
+  Scenario: Metadata XML information from source-metadata.csv recorded in the AIP METS on first ingest can be deleted through metadata only reingest
+    Given a "unzipped bag" transfer type located in "SampleTransfers/MetadataXMLValidation/small"
+    And a processing configuration for metadata only reingests
+    When the AIP is downloaded
+    And a "METADATA" reingest is started using the "default" processing configuration
+    And the "SampleTransfers/MetadataXMLValidation/small_mdupdate_file-deletions/data/metadata/bag-info.xml" metadata file is added
+    And the "SampleTransfers/MetadataXMLValidation/small_mdupdate_file-deletions/data/metadata/source-metadata.csv" metadata file is added
+    And the reingest is approved
+    And the reingest has been processed
+    Then the AIP can be successfully stored
+    And the "Reingest AIP" ingest microservice completes successfully
+    And the "Generate METS.xml document" ingest job completes successfully
+    And every new metadata XML file in the reingested source-metadata.csv has a dmdSec with STATUS update that has a mdWrap with the specified OTHERMDTYPE which wraps the XML content
+    And every deleted metadata XML file in the reingested source-metadata.csv has a dmdSec with STATUS deleted that has a mdWrap with the specified OTHERMDTYPE which wraps the original XML content
