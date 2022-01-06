@@ -12,9 +12,11 @@ import zipfile
 
 from amclient.amclient import AMClient
 import environment
+import tenacity
 from environment import AM_API_CONFIG_KEY
 from environment import SS_API_CONFIG_KEY
 from lxml import etree
+from selenium.webdriver.support.ui import Select
 
 logger = logging.getLogger("amauat.steps.utils")
 
@@ -802,8 +804,6 @@ def create_sample_transfer(
 
 
 def create_reingest(api_clients_config, transfer, reingest_type, processing_config):
-    if "reingest_aip_mets_location" in transfer:
-        return transfer
     try:
         reingest_uuid = start_reingest(
             api_clients_config,
@@ -1052,3 +1052,92 @@ def extract_document_text(doc):
         return etree.tostring(doc, encoding="unicode", method="text").strip()
     else:
         return ""
+
+
+def is_metadata_validation_event(event_detail):
+    return (
+        set(event_detail.keys())
+        == {"type", "validation-source-type", "validation-source", "program", "version"}
+        and event_detail["type"] == "metadata"
+    )
+
+
+def get_passed_metadata_validation_events(entry):
+    return [
+        event
+        for event in get_premis_events_by_type(entry, "validation")
+        if getattr(event, "parsed_event_detail", {})
+        and is_metadata_validation_event(event.parsed_event_detail)
+        and event.outcome == "pass"
+    ]
+
+
+def add_slub_namespaces(namespaces):
+    result = {}
+    for key in namespaces:
+        result[key] = namespaces[key]
+    result["lido"] = "http://www.lido-schema.org"
+    result["marc21"] = "http://www.loc.gov/MARC21/slim"
+    result["mods"] = "http://www.loc.gov/mods/v3"
+    result["slubarchiv"] = "http://slubarchiv.slub-dresden.de/rights1"
+    result["alto"] = "http://www.loc.gov/standards/alto/ns-v2#"
+    return result
+
+
+def get_search_phrase_for_metadata_file(document, namespaces):
+    xpath_selectors_by_tag = {
+        "bag-info": "//SLUBArchiv-lzaId",
+        "dc": "//dc:identifier",
+        "lidoWrap": "//lido:lidoRecID",
+        "record": "//marc21:leader",
+        "mods": "//mods:identifier",
+        "rightsRecord": "//slubarchiv:copyrightStatus",
+        "alto": "//alto:softwareCreator",
+    }
+    namespaces = add_slub_namespaces(namespaces)
+    tag = etree.QName(document.tag).localname
+    selector = xpath_selectors_by_tag.get(tag, "/")
+    elements = document.xpath(selector, namespaces=namespaces)
+    if elements:
+        return elements[0].text
+
+
+@tenacity.retry(stop=tenacity.stop_after_attempt(3), wait=tenacity.wait_fixed(10))
+def find_aip(browser, aip_uuid, search_phrase, expected_summary_message):
+    browser.navigate(browser.get_archival_storage_url(), reload=True)
+    # Set AIP UUID phrase to avoid clashes with other AMAUAT runs that
+    # used the same sample transfer paths
+    browser.driver.find_element_by_css_selector(
+        'input[title="search query"]'
+    ).send_keys(aip_uuid)
+    Select(
+        browser.driver.find_element_by_css_selector('select[title="field name"]')
+    ).select_by_visible_text("AIP UUID")
+    Select(
+        browser.driver.find_element_by_css_selector('select[title="query type"]')
+    ).select_by_visible_text("Phrase")
+    # Add new boolean criteria
+    browser.driver.find_element_by_link_text("Add new").click()
+    Select(
+        browser.driver.find_element_by_css_selector("select.search_op_selector")
+    ).select_by_visible_text("and")
+    # Set search term phrase
+    browser.driver.find_elements_by_css_selector('input[title="search query"]')[
+        -1
+    ].send_keys('"{}"'.format(search_phrase))
+    Select(
+        browser.driver.find_elements_by_css_selector('select[title="field name"]')[-1]
+    ).select_by_visible_text("Transfer metadata")
+    Select(
+        browser.driver.find_elements_by_css_selector('select[title="query type"]')[-1]
+    ).select_by_visible_text("Phrase")
+    # Submit search and wait for expected result
+    browser.driver.find_element_by_id("search_submit").click()
+    browser.wait_for_presence("#archival-storage-entries tbody tr")
+    summary_el = browser.driver.find_element_by_id("archival-storage-entries_info")
+    summary_text = summary_el.text.strip()
+    result = summary_text == expected_summary_message
+    assert result, "Search phrase: {}, expected summary message: {}, result: {}".format(
+        repr(search_phrase), repr(expected_summary_message), repr(summary_text)
+    )
+    return result
