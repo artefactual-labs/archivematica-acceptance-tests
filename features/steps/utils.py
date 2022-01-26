@@ -697,9 +697,7 @@ def wait_for_transfer(api_clients_config, transfer_uuid):
     status = None
     resp = None
     try:
-        while status not in ("COMPLETE", "FAILED") or (
-            status == "COMPLETE" and resp.get("sip_uuid") is None
-        ):
+        while status not in ("COMPLETE", "FAILED"):
             time.sleep(environment.MEDIUM_WAIT)
             resp = check_unit_status(api_clients_config, transfer_uuid, "transfer")
             if isinstance(resp, int) or resp is None:
