@@ -980,7 +980,7 @@ def step_impl(context, dmdsec_status):
     assert context.current_transfer[
         "source_metadata_files"
     ], "Could not extract the rows of the original source-metadata.csv in {}".format(
-        context.current_transfer["reingest_extracted_aip_dir"]
+        context.current_transfer["extracted_aip_dir"]
     )
     assert context.current_transfer[
         "reingest_source_metadata_files"
@@ -1038,7 +1038,7 @@ def step_impl(context, dmdsec_status):
                 dmdsecs_errors.append(
                     dmdsec_error_template.format(
                         row["original_filename"],
-                        ", ".join(expected_dmdsec_status),
+                        ", ".join(expected_status),
                         row["type_id"],
                         len(dmdsecs),
                     )
@@ -1075,7 +1075,7 @@ def step_impl(context, dmdsec_status):
     assert context.current_transfer[
         "source_metadata_files"
     ], "Could not extract the rows of the original source-metadata.csv in {}".format(
-        context.current_transfer["reingest_extracted_aip_dir"]
+        context.current_transfer["extracted_aip_dir"]
     )
     original_source_metadata_by_type_id = {
         row["type_id"]: row for row in context.current_transfer["source_metadata_files"]
@@ -1133,7 +1133,7 @@ def step_impl(context, dmdsec_status):
                 dmdsecs_errors.append(
                     dmdsec_error_template.format(
                         row["original_filename"],
-                        ", ".join(expected_dmdsec_status),
+                        ", ".join(expected_status),
                         row["type_id"],
                         len(dmdsecs),
                     )
