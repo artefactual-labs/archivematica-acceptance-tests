@@ -1,7 +1,7 @@
 amclient==1.2.1
 behave>=1.0
 lxml
-git+https://github.com/artefactual-labs/mets-reader-writer.git@2e4092c9ffeae854c02ea6f133df19124c478778#egg=metsrw
+git+https://github.com/artefactual-labs/mets-reader-writer.git@1413706cf1a2eaecf0d0d32ac2a65724ab484b3f#egg=metsrw
 pexpect
 requests<3.0
 tenacity
