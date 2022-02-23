@@ -22,7 +22,6 @@ class EnvironmentError(Exception):
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Archivematica sample-data paths.
 sample_data_path = os.path.join("archivematica", "archivematica-sampledata")
-transfers_cache = {}
 
 # Change these to match your test environment
 # These may also be overridden as Behave userdata options
