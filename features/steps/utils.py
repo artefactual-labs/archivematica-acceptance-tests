@@ -1,5 +1,6 @@
 """Utilities for Steps files."""
 
+import csv
 import datetime
 import logging
 import os
@@ -449,6 +450,19 @@ def approve_transfer(api_clients_config, transfer_uuid):
         raise environment.EnvironmentError(response["error"])
 
 
+def approve_partial_reingest(api_clients_config, reingest_uuid):
+    response = check_unit_status(api_clients_config, reingest_uuid, "ingest")
+    if response.get("status") == "USER_INPUT":
+        am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
+        am.sip_uuid = response["uuid"]
+        response = call_api_endpoint(
+            endpoint=am.approve_partial_reingest, warning_message="", error_message=""
+        )
+        if not response.get("error"):
+            return reingest_uuid
+        raise environment.EnvironmentError(response["error"])
+
+
 def start_reingest(
     api_clients_config,
     transfer_name,
@@ -476,8 +490,8 @@ def start_reingest(
         error_message="Cannot reingest AIP",
     )
     reingest_uuid = response.get("reingest_uuid")
-    time.sleep(environment.MEDIUM_WAIT)
-    return approve_transfer(api_clients_config, reingest_uuid)
+    assert reingest_uuid, "Cannot reingest AIP"
+    return reingest_uuid
 
 
 def check_unit_status(api_clients_config, unit_uuid, unit="transfer"):
@@ -494,17 +508,17 @@ def check_unit_status(api_clients_config, unit_uuid, unit="transfer"):
     )
 
 
-def download_aip(api_clients_config, sip_uuid):
+def download_package(api_clients_config, sip_uuid):
     """
-    Download an AIP from the storage service.
+    Download a package from the storage service.
     """
     am = configure_ss_client(api_clients_config[SS_API_CONFIG_KEY])
     am.directory = tempfile.mkdtemp()
     return call_api_endpoint(
         endpoint=am.download_package,
         endpoint_args=[sip_uuid],
-        warning_message="Error downloading AIP",
-        error_message="Error donwloading AIP",
+        warning_message="Error downloading package",
+        error_message="Error donwloading package",
     )
 
 
@@ -517,35 +531,44 @@ def get_aip_mets_location(extracted_aip_dir, sip_uuid):
     return get_aip_file_location(extracted_aip_dir, path)
 
 
-def _automation_tools_extract_aip(aip_file, aip_uuid, tmp_dir):
+def get_dip_mets_location(extracted_dip_dir, sip_uuid):
+    return os.path.join(extracted_dip_dir, "METS.{}.xml".format(sip_uuid))
+
+
+def _automation_tools_extract_package(
+    package_file, package_uuid, tmp_dir, lookup_uuid=None
+):
     """
-    Extracts an AIP to a folder.
-    :param str aip_file: absolute path to an AIP
-    :param str aip_uuid: UUID from the AIP
-    :param str tmp_dir: absolute path to a directory to place the extracted AIP
-    :returns: absolute path to the extracted AIP folder
+    Extracts a package to a folder.
+    :param str package_file: absolute path to a package
+    :param str package_uuid: UUID of the package
+    :param str tmp_dir: absolute path to a directory to place the extracted package
+    :param str lookup_uuid: UUID to look for inside the extraction directory
+    :returns: absolute path to the extracted package folder
     """
-    command = ["7z", "x", "-bd", "-y", "-o{0}".format(tmp_dir), aip_file]
+    command = ["7z", "x", "-bd", "-y", "-o{0}".format(tmp_dir), package_file]
     try:
         subprocess.check_output(command, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-        logger.error("Could not extract AIP, error: %s", e.output)
+        logger.error("Could not extract package, error: %s", e.output)
         return
 
     # Remove extracted file to avoid multiple entries with the same UUID
     try:
-        os.remove(aip_file)
+        os.remove(package_file)
     except OSError:
         pass
 
-    # Find extracted entry. Assuming it contains the AIP UUID
+    # Find extracted entry. Assuming it contains the package UUID
     extracted_entry = None
+    if not lookup_uuid:
+        lookup_uuid = package_uuid
     for entry in os.listdir(tmp_dir):
-        if aip_uuid in entry:
+        if lookup_uuid in entry:
             extracted_entry = os.path.join(tmp_dir, entry)
 
     if not extracted_entry:
-        logger.error("Can not find extracted AIP by UUID")
+        logger.error("Can not find extracted package by UUID")
         return
 
     # Return folder path if it's a directory
@@ -553,13 +576,17 @@ def _automation_tools_extract_aip(aip_file, aip_uuid, tmp_dir):
         return extracted_entry
 
     # Re-try extraction if it's not a directory
-    return _automation_tools_extract_aip(extracted_entry, aip_uuid, tmp_dir)
+    return _automation_tools_extract_package(
+        extracted_entry, package_uuid, tmp_dir, lookup_uuid
+    )
 
 
-def extract_aip(api_clients_config, sip_uuid):
+def extract_package(api_clients_config, package_uuid, lookup_uuid=None):
     tmp = tempfile.mkdtemp()
-    aip_ss_filename = download_aip(api_clients_config, sip_uuid)
-    return _automation_tools_extract_aip(aip_ss_filename, sip_uuid, tmp)
+    package_ss_filename = download_package(api_clients_config, package_uuid)
+    return _automation_tools_extract_package(
+        package_ss_filename, package_uuid, tmp, lookup_uuid
+    )
 
 
 def get_premis_events_by_type(entry, event_type):
@@ -737,11 +764,14 @@ def get_transfer_result(api_clients_config, transfer_uuid):
     transfer_response = wait_for_transfer(api_clients_config, transfer_uuid)
     if transfer_response["status"] == "FAILED":
         return {}
-    sip_uuid = transfer_response["sip_uuid"]
+    return get_ingest_result(api_clients_config, transfer_response["sip_uuid"])
+
+
+def get_ingest_result(api_clients_config, sip_uuid):
     ingest_response = wait_for_ingest(api_clients_config, sip_uuid)
     if ingest_response["status"] == "FAILED":
         return {}
-    extracted_aip_dir = extract_aip(api_clients_config, sip_uuid)
+    extracted_aip_dir = extract_package(api_clients_config, sip_uuid)
     aip_mets_location = get_aip_mets_location(extracted_aip_dir, sip_uuid)
     return {
         "sip_uuid": sip_uuid,
@@ -753,9 +783,6 @@ def get_transfer_result(api_clients_config, transfer_uuid):
 def create_sample_transfer(
     api_clients_config, sample_transfer_path, transfer_type="standard"
 ):
-    cached_transfer = environment.transfers_cache.setdefault(sample_transfer_path, {})
-    if "aip_mets_location" in cached_transfer:
-        return cached_transfer
     transfer = start_sample_transfer(
         api_clients_config, sample_transfer_path, transfer_type=transfer_type
     )
@@ -765,29 +792,49 @@ def create_sample_transfer(
     transfer["sip_uuid"] = transfer_result["sip_uuid"]
     transfer["extracted_aip_dir"] = transfer_result["extracted_aip_dir"]
     transfer["aip_mets_location"] = transfer_result["aip_mets_location"]
-    cached_transfer.update(transfer)
+    transfer["metadata_csv_files"] = get_metadata_csv_files(
+        transfer["transfer_name"],
+        transfer["transfer_uuid"],
+        transfer["extracted_aip_dir"],
+    )
     return transfer
 
 
-def create_reingest(api_clients_config, transfer):
-    if "reingest_aip_mets_location" in transfer:
-        return transfer
-    result = {}
+def create_reingest(api_clients_config, transfer, reingest_type, processing_config):
     try:
-        result["reingest_transfer_uuid"] = start_reingest(
-            api_clients_config, transfer["transfer_name"], transfer["sip_uuid"]
+        reingest_uuid = start_reingest(
+            api_clients_config,
+            transfer["transfer_name"],
+            transfer["sip_uuid"],
+            reingest_type,
+            processing_config,
         )
     except environment.EnvironmentError as err:
         assert False, "Error starting reingest: {}".format(err)
-    reingest_transfer_result = get_transfer_result(
-        api_clients_config, result["reingest_transfer_uuid"]
-    )
-    if not reingest_transfer_result:
-        return reingest_transfer_result
-    result["reingest_sip_uuid"] = reingest_transfer_result["sip_uuid"]
-    result["reingest_extracted_aip_dir"] = reingest_transfer_result["extracted_aip_dir"]
-    result["reingest_aip_mets_location"] = reingest_transfer_result["aip_mets_location"]
-    return result
+    else:
+        return {
+            "reingest_uuid": reingest_uuid,
+            "reingest_type": reingest_type,
+            "reingest_processing_config": processing_config,
+        }
+
+
+def finish_reingest(
+    api_clients_config, transfer_name, transfer_uuid, reingest_type, reingest_uuid
+):
+    if reingest_type == "FULL":
+        result_handler = get_transfer_result
+    else:
+        result_handler = get_ingest_result
+    result = result_handler(api_clients_config, reingest_uuid)
+    return {
+        "reingest_uuid": result["sip_uuid"],
+        "reingest_extracted_aip_dir": result["extracted_aip_dir"],
+        "reingest_aip_mets_location": result["aip_mets_location"],
+        "reingest_metadata_csv_files": get_metadata_csv_files(
+            transfer_name, transfer_uuid, result["extracted_aip_dir"]
+        ),
+    }
 
 
 def get_jobs(
@@ -861,7 +908,7 @@ def assert_jobs_fail(
     )
     assert len(jobs), "No jobs found for unit {}".format(unit_uuid)
     for job in jobs:
-        job_error = "Job '{} ()' of unit '{}' does not have a FAILED status or one of its tasks has an invalid exit code ({})".format(
+        job_error = "Job '{} ({})' of unit '{}' does not have a FAILED status or one of its tasks has an invalid exit code ({})".format(
             job["name"], job["uuid"], unit_uuid, ", ".join(map(str, valid_exit_codes))
         )
         assert job["status"] == "FAILED" or job_tasks_failed(
@@ -909,3 +956,85 @@ def get_gpg_space_location_description(space_uuid):
     return "Store AIP Encrypted in standard Archivematica Directory ({})".format(
         space_uuid
     )
+
+
+def copy_metadata_files(api_clients_config, sip_uuid, relative_paths):
+    transfer_source_uuid = return_default_ts_location(api_clients_config)
+    source_paths = [
+        (transfer_source_uuid, os.path.join(environment.sample_data_path, path))
+        for path in relative_paths
+    ]
+    am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
+    response = call_api_endpoint(
+        endpoint=am.copy_metadata_files,
+        endpoint_args=[sip_uuid, source_paths],
+        warning_message="Cannot copy metadata files",
+        error_message="Cannot copy metadata files",
+    )
+    expected_message = "Metadata files added successfully."
+    assert response["message"] == expected_message, response["message"]
+
+
+def get_dip(api_clients_config, sip_uuid):
+    am = configure_ss_client(api_clients_config[SS_API_CONFIG_KEY])
+    response = call_api_endpoint(
+        endpoint=am.get_package,
+        endpoint_args=[{"package_type": "DIP"}],
+        warning_message="Cannot list DIP packages",
+        error_message="Cannot list DIP packages",
+    )
+    dips = [
+        dip
+        for dip in response.get("objects", [])
+        if dip["current_full_path"].endswith(sip_uuid)
+    ]
+    assert len(dips) == 1, "Could not find a DIP"
+    extracted_dip_dir = extract_package(api_clients_config, dips[0]["uuid"], sip_uuid)
+    dip_mets_location = get_dip_mets_location(extracted_dip_dir, sip_uuid)
+    return {
+        "extracted_dip_dir": extracted_dip_dir,
+        "dip_mets_location": dip_mets_location,
+    }
+
+
+def get_metadata_csv_files(transfer_name, transfer_uuid, extracted_aip_dir):
+    filename = "metadata.csv"
+    # Look in the top level metadata directory first which is where metadata
+    # only reingests will place the following updated files
+    csv_path = os.path.join(extracted_aip_dir, "data", "objects", "metadata", filename)
+    if not os.path.exists(csv_path):
+        # Look in the metadata/transfers directory which is where the initial
+        # ingest will place the original metadata XML files
+        csv_path = os.path.join(
+            extracted_aip_dir,
+            "data",
+            "objects",
+            "metadata",
+            "transfers",
+            "{}-{}".format(transfer_name, transfer_uuid),
+            filename,
+        )
+        if not os.path.exists(csv_path):
+            return []
+    return extract_metadata_csv_rows(csv_path)
+
+
+def extract_metadata_csv_rows(csv_path):
+    with open(csv_path) as f:
+        reader = csv.reader(f)
+        column_names = next(reader)
+        return [extract_metadata_csv_row(row, column_names) for row in reader]
+
+
+def extract_metadata_csv_row(row, column_names):
+    result = {}
+    for i, column in enumerate(column_names):
+        if column not in result:
+            # column data is stored as a list to support repeated columns
+            result[column] = []
+        result[column].append(row[i].strip())
+    for column in column_names:
+        if len(result[column]) == 1:
+            # if there is only one value for the column, flatten it
+            result[column] = result[column][0]
+    return result

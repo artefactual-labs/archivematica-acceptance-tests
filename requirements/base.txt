@@ -1,8 +1,8 @@
-amclient==1.1.1
+amclient
 behave>=1.0
 lxml
 metsrw
 pexpect
 requests<3.0
-tenacity==7.0.0
-selenium==3.141.0
+tenacity
+selenium<4.0
