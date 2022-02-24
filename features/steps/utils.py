@@ -12,8 +12,11 @@ import zipfile
 
 from amclient.amclient import AMClient
 import environment
+import tenacity
 from environment import AM_API_CONFIG_KEY
 from environment import SS_API_CONFIG_KEY
+from lxml import etree
+from selenium.webdriver.support.ui import Select
 
 logger = logging.getLogger("amauat.steps.utils")
 
@@ -797,6 +800,11 @@ def create_sample_transfer(
         transfer["transfer_uuid"],
         transfer["extracted_aip_dir"],
     )
+    transfer["source_metadata_files"] = get_source_metadata(
+        transfer["transfer_name"],
+        transfer["transfer_uuid"],
+        transfer["extracted_aip_dir"],
+    )
     return transfer
 
 
@@ -832,6 +840,9 @@ def finish_reingest(
         "reingest_extracted_aip_dir": result["extracted_aip_dir"],
         "reingest_aip_mets_location": result["aip_mets_location"],
         "reingest_metadata_csv_files": get_metadata_csv_files(
+            transfer_name, transfer_uuid, result["extracted_aip_dir"]
+        ),
+        "reingest_source_metadata_files": get_source_metadata(
             transfer_name, transfer_uuid, result["extracted_aip_dir"]
         ),
     }
@@ -1037,4 +1048,152 @@ def extract_metadata_csv_row(row, column_names):
         if len(result[column]) == 1:
             # if there is only one value for the column, flatten it
             result[column] = result[column][0]
+    return result
+
+
+def get_source_metadata(transfer_name, transfer_uuid, extracted_aip_dir):
+    filename = "source-metadata.csv"
+    # Look in the top level metadata directory first which is where metadata
+    # only reingests will place the following updated metadata XML files
+    csv_path = os.path.join(extracted_aip_dir, "data", "objects", "metadata", filename)
+    if not os.path.exists(csv_path):
+        # Look in the metadata/transfers directory which is where the initial
+        # ingest will place the original metadata XML files
+        csv_path = os.path.join(
+            extracted_aip_dir,
+            "data",
+            "objects",
+            "metadata",
+            "transfers",
+            "{}-{}".format(transfer_name, transfer_uuid),
+            filename,
+        )
+        if not os.path.exists(csv_path):
+            return []
+    return extract_source_metadata_rows(csv_path)
+
+
+def extract_source_metadata_rows(csv_path):
+    result = []
+    with open(csv_path) as f:
+        reader = csv.DictReader(
+            f, fieldnames=["original_filename", "metadata_filename", "type_id"]
+        )
+        # Skip header row
+        result.extend(list(reader)[1:])
+    metadata_dir = os.path.dirname(csv_path)
+    parser = etree.XMLParser(remove_blank_text=True)
+    for row in result:
+        row["document"] = None
+        if not row["metadata_filename"]:
+            # Skip metadata files that should be deleted
+            continue
+        metadata_file = os.path.join(metadata_dir, row["metadata_filename"])
+        if os.path.exists(metadata_file):
+            with open(metadata_file) as f:
+                try:
+                    row["document"] = etree.parse(f, parser=parser).getroot()
+                except etree.LxmlError:
+                    pass
+    return result
+
+
+def extract_document_text(doc):
+    if doc is not None:
+        return etree.tostring(doc, encoding="unicode", method="text").strip()
+    else:
+        return ""
+
+
+def is_metadata_validation_event(event_detail):
+    return (
+        set(event_detail.keys())
+        == {"type", "validation-source-type", "validation-source", "program", "version"}
+        and event_detail["type"] == "metadata"
+    )
+
+
+def get_passed_metadata_validation_events(entry):
+    return [
+        event
+        for event in get_premis_events_by_type(entry, "validation")
+        if getattr(event, "parsed_event_detail", {})
+        and is_metadata_validation_event(event.parsed_event_detail)
+        and event.outcome == "pass"
+    ]
+
+
+def get_metadata_xml_namespaces(namespaces):
+    result = {
+        "lido": "http://www.lido-schema.org",
+        "marc21": "http://www.loc.gov/MARC21/slim",
+        "mods": "http://www.loc.gov/mods/v3",
+        "slubarchiv": "http://slubarchiv.slub-dresden.de/rights1",
+        "alto": "http://www.loc.gov/standards/alto/ns-v2#",
+    }
+    result.update(namespaces)
+    return result
+
+
+xpath_selectors_by_tag = {
+    "bag-info": "//SLUBArchiv-lzaId",
+    "dc": "//dc:identifier",
+    "lidoWrap": "//lido:lidoRecID",
+    "record": "//marc21:leader",
+    "mods": "//mods:identifier",
+    "rightsRecord": "//slubarchiv:copyrightStatus",
+    "alto": "//alto:softwareCreator",
+}
+
+
+def get_search_phrase_for_metadata_file(document, namespaces):
+    # look for a specific element based on the tag of the root element
+    tag = etree.QName(document.tag).localname
+    selector = xpath_selectors_by_tag.get(tag, "/")
+    elements = document.xpath(selector, namespaces=namespaces)
+    if elements:
+        return elements[0].text
+
+
+@tenacity.retry(stop=tenacity.stop_after_attempt(3), wait=tenacity.wait_fixed(10))
+def find_aip_by_transfer_metadata(
+    browser, aip_uuid, search_phrase, expected_summary_message
+):
+    browser.navigate(browser.get_archival_storage_url(), reload=True)
+    # Set AIP UUID phrase to avoid clashes with other AMAUAT runs that
+    # used the same sample transfer paths
+    browser.driver.find_element_by_css_selector(
+        'input[title="search query"]'
+    ).send_keys(aip_uuid)
+    Select(
+        browser.driver.find_element_by_css_selector('select[title="field name"]')
+    ).select_by_visible_text("AIP UUID")
+    Select(
+        browser.driver.find_element_by_css_selector('select[title="query type"]')
+    ).select_by_visible_text("Phrase")
+    # Add new boolean criteria
+    browser.driver.find_element_by_link_text("Add new").click()
+    Select(
+        browser.driver.find_element_by_css_selector("select.search_op_selector")
+    ).select_by_visible_text("and")
+    # Set search term phrase
+    browser.driver.find_elements_by_css_selector('input[title="search query"]')[
+        -1
+    ].send_keys('"{}"'.format(search_phrase))
+    Select(
+        browser.driver.find_elements_by_css_selector('select[title="field name"]')[-1]
+    ).select_by_visible_text("Transfer metadata")
+    Select(
+        browser.driver.find_elements_by_css_selector('select[title="query type"]')[-1]
+    ).select_by_visible_text("Phrase")
+    # Submit search and wait for expected result
+    browser.driver.find_element_by_id("search_submit").click()
+    browser.wait_for_presence("#archival-storage-entries tbody tr")
+    summary_el = browser.driver.find_element_by_id("archival-storage-entries_info")
+    summary_text = summary_el.text.strip()
+    result = summary_text == expected_summary_message
+    # This assertion allows tenacity to retry the call on error
+    assert result, "Search phrase: {}, expected summary message: {}, got: {}".format(
+        repr(search_phrase), repr(expected_summary_message), repr(summary_text)
+    )
     return result
