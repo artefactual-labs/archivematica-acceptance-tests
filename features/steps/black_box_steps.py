@@ -797,9 +797,6 @@ def step_impl(context):
     reingest_mets = metsrw.METSDocument.fromfile(
         context.current_transfer["reingest_aip_mets_location"]
     )
-    # XXX: using lxml to bypass an issue with metsrw where a dmdSec with status
-    #      `updated` resets the status of the previous dmdSec to `None`
-    reingest_tree = etree.parse(context.current_transfer["reingest_aip_mets_location"])
     original_metadata_csv_filenames = [
         row["filename"] for row in context.current_transfer["metadata_csv_files"]
     ]
@@ -821,37 +818,27 @@ def step_impl(context):
     )
     for row in rows:
         entry = reingest_mets.get_file(path=row["filename"])
-        all_dmdsecs = {}
-        dmdsecs_errors = []
+        dmdsecs_by_status = {}
+        row_errors = []
         for expected_status in expected_dmdsec_status:
-            dmdsecs = []
-            for dmdsec in entry.dmdsecs:
-                # XXX: using lxml to bypass an issue with metsrw mentioned above
-                if (
-                    len(
-                        reingest_tree.xpath(
-                            '//mets:dmdSec[@ID="{}"][@STATUS="{}"]'.format(
-                                dmdsec.id_string, expected_status
-                            ),
-                            namespaces=context.mets_nsmap,
-                        )
-                    )
-                    == 1
-                ):
-                    dmdsecs.append(dmdsec)
+            dmdsecs = [
+                dmdsec for dmdsec in entry.dmdsecs if dmdsec.status == expected_status
+            ]
             if len(dmdsecs) != 1:
-                dmdsecs_errors.append(
+                row_errors.append(
                     dmdsec_error_template.format(
                         row["filename"], expected_status, len(dmdsecs)
                     )
                 )
                 continue
-            all_dmdsecs[expected_status] = dmdsecs[0]
-        if dmdsecs_errors:
-            errors.extend(dmdsecs_errors)
+            dmdsecs_by_status[expected_status] = dmdsecs[0]
+        if row_errors:
+            errors.extend(row_errors)
             continue
         # compare the newest dmdSec with the contents of the reingested csv
-        for child in all_dmdsecs.get(expected_dmdsec_status[-1]).contents.document:
+        for child in dmdsecs_by_status.get(
+            expected_dmdsec_status[-1]
+        ).contents.document:
             q_name = etree.QName(child.tag)
             ns = q_name.namespace
             localname = q_name.localname
@@ -878,9 +865,6 @@ def step_impl(context, dmdsec_status):
         mets_path = context.current_transfer["aip_mets_location"]
         rows = context.current_transfer["source_metadata_files"]
     mets = metsrw.METSDocument.fromfile(mets_path)
-    # XXX: using lxml to bypass an issue with metsrw where a dmdSec with status
-    #      `updated` resets the status of the previous dmdSec to `None`
-    tree = etree.parse(mets_path)
     errors = []
     dmdsec_error_template = (
         'Expected one dmdSec for filename "{}" with STATUS="{}" containing a '
@@ -888,28 +872,18 @@ def step_impl(context, dmdsec_status):
     )
     for row in rows:
         entry = mets.get_file(label=row["original_filename"])
-        all_dmdsecs = {}
-        dmdsecs_errors = []
+        dmdsecs_by_status = {}
+        row_errors = []
         for expected_status in expected_dmdsec_status:
-            dmdsecs = []
-            for dmdsec in entry.dmdsecs:
-                # XXX: using lxml to bypass an issue with metsrw mentioned above
-                if (
-                    len(
-                        tree.xpath(
-                            '//mets:dmdSec[@ID="{}"][@STATUS="{}"]'.format(
-                                dmdsec.id_string, expected_status
-                            ),
-                            namespaces=context.mets_nsmap,
-                        )
-                    )
-                    == 1
-                    and dmdsec.contents.mdtype in expected_mdwrap_mdtype
-                    and dmdsec.contents.othermdtype == row["type_id"]
-                ):
-                    dmdsecs.append(dmdsec)
+            dmdsecs = [
+                dmdsec
+                for dmdsec in entry.dmdsecs
+                if dmdsec.status == expected_status
+                and dmdsec.contents.mdtype in expected_mdwrap_mdtype
+                and dmdsec.contents.othermdtype == row["type_id"]
+            ]
             if len(dmdsecs) != 1:
-                dmdsecs_errors.append(
+                row_errors.append(
                     dmdsec_error_template.format(
                         row["original_filename"],
                         expected_status,
@@ -918,11 +892,11 @@ def step_impl(context, dmdsec_status):
                     )
                 )
                 continue
-            all_dmdsecs[expected_status] = dmdsecs[0]
-        if dmdsecs_errors:
-            errors.extend(dmdsecs_errors)
+            dmdsecs_by_status[expected_status] = dmdsecs[0]
+        if row_errors:
+            errors.extend(row_errors)
             continue
-        dmdsec = all_dmdsecs[expected_dmdsec_status[-1]]
+        dmdsec = dmdsecs_by_status[expected_dmdsec_status[-1]]
         mdwrap_text = utils.extract_document_text(dmdsec.contents.document)
         metadata_file_text = utils.extract_document_text(row["document"])
         if (
@@ -960,9 +934,6 @@ def step_impl(context):
     reingest_mets = metsrw.METSDocument.fromfile(
         context.current_transfer["reingest_aip_mets_location"]
     )
-    # XXX: using lxml to bypass an issue with metsrw where a dmdSec with status
-    #      `updated` resets the status of the previous dmdSec to `None`
-    reingest_tree = etree.parse(context.current_transfer["reingest_aip_mets_location"])
     original_source_metadata_filenames = [
         row["metadata_filename"]
         for row in context.current_transfer["source_metadata_files"]
@@ -983,28 +954,18 @@ def step_impl(context):
     )
     for row in rows:
         entry = reingest_mets.get_file(label=row["original_filename"])
-        all_dmdsecs = {}
-        dmdsecs_errors = []
+        dmdsecs_by_status = {}
+        row_errors = []
         for expected_status in expected_dmdsec_status:
-            dmdsecs = []
-            for dmdsec in entry.dmdsecs:
-                # XXX: using lxml to bypass an issue with metsrw mentioned above
-                if (
-                    len(
-                        reingest_tree.xpath(
-                            '//mets:dmdSec[@ID="{}"][@STATUS="{}"]'.format(
-                                dmdsec.id_string, expected_status
-                            ),
-                            namespaces=context.mets_nsmap,
-                        )
-                    )
-                    == 1
-                    and dmdsec.contents.mdtype in expected_mdwrap_mdtype
-                    and dmdsec.contents.othermdtype == row["type_id"]
-                ):
-                    dmdsecs.append(dmdsec)
+            dmdsecs = [
+                dmdsec
+                for dmdsec in entry.dmdsecs
+                if dmdsec.status == expected_status
+                and dmdsec.contents.mdtype in expected_mdwrap_mdtype
+                and dmdsec.contents.othermdtype == row["type_id"]
+            ]
             if len(dmdsecs) != 1:
-                dmdsecs_errors.append(
+                row_errors.append(
                     dmdsec_error_template.format(
                         row["original_filename"],
                         expected_status,
@@ -1013,11 +974,11 @@ def step_impl(context):
                     )
                 )
                 continue
-            all_dmdsecs[expected_status] = dmdsecs[0]
-        if dmdsecs_errors:
-            errors.extend(dmdsecs_errors)
+            dmdsecs_by_status[expected_status] = dmdsecs[0]
+        if row_errors:
+            errors.extend(row_errors)
             continue
-        group_ids = set([dmdsec.group_id for dmdsec in all_dmdsecs.values()])
+        group_ids = set([dmdsec.group_id for dmdsec in dmdsecs_by_status.values()])
         if len(group_ids) != 1:
             errors.append(
                 'Expected the {} dmdSecs for filename "{}" to have the same '
@@ -1028,7 +989,7 @@ def step_impl(context):
                 )
             )
             continue
-        update_dmdsec = all_dmdsecs["update"]
+        update_dmdsec = dmdsecs_by_status["update"]
         mdwrap_text = utils.extract_document_text(update_dmdsec.contents.document)
         metadata_file_text = utils.extract_document_text(row["document"])
         if (
@@ -1066,9 +1027,6 @@ def step_impl(context, dmdsec_status):
     reingest_mets = metsrw.METSDocument.fromfile(
         context.current_transfer["reingest_aip_mets_location"]
     )
-    # XXX: using lxml to bypass an issue with metsrw where a dmdSec with status
-    #      `updated` resets the status of the previous dmdSec to `None`
-    reingest_tree = etree.parse(context.current_transfer["reingest_aip_mets_location"])
     original_source_metadata_filenames = [
         row["metadata_filename"]
         for row in context.current_transfer["source_metadata_files"]
@@ -1090,28 +1048,18 @@ def step_impl(context, dmdsec_status):
     )
     for row in rows:
         entry = reingest_mets.get_file(label=row["original_filename"])
-        all_dmdsecs = {}
-        dmdsecs_errors = []
+        dmdsecs_by_status = {}
+        row_errors = []
         for expected_status in expected_dmdsec_status:
-            dmdsecs = []
-            for dmdsec in entry.dmdsecs:
-                # XXX: using lxml to bypass an issue with metsrw mentioned above
-                if (
-                    len(
-                        reingest_tree.xpath(
-                            '//mets:dmdSec[@ID="{}"][@STATUS="{}"]'.format(
-                                dmdsec.id_string, expected_status
-                            ),
-                            namespaces=context.mets_nsmap,
-                        )
-                    )
-                    == 1
-                    and dmdsec.contents.mdtype in expected_mdwrap_mdtype
-                    and dmdsec.contents.othermdtype == row["type_id"]
-                ):
-                    dmdsecs.append(dmdsec)
+            dmdsecs = [
+                dmdsec
+                for dmdsec in entry.dmdsecs
+                if dmdsec.status == expected_status
+                and dmdsec.contents.mdtype in expected_mdwrap_mdtype
+                and dmdsec.contents.othermdtype == row["type_id"]
+            ]
             if len(dmdsecs) != 1:
-                dmdsecs_errors.append(
+                row_errors.append(
                     dmdsec_error_template.format(
                         row["original_filename"],
                         expected_status,
@@ -1120,9 +1068,9 @@ def step_impl(context, dmdsec_status):
                     )
                 )
                 continue
-            all_dmdsecs[expected_status] = dmdsecs[0]
-        if dmdsecs_errors:
-            errors.extend(dmdsecs_errors)
+            dmdsecs_by_status[expected_status] = dmdsecs[0]
+        if row_errors:
+            errors.extend(row_errors)
             continue
         mdwrap_text = utils.extract_document_text(dmdsecs[0].contents.document)
         metadata_file_text = utils.extract_document_text(row["document"])
@@ -1164,9 +1112,6 @@ def step_impl(context, dmdsec_status):
     reingest_mets = metsrw.METSDocument.fromfile(
         context.current_transfer["reingest_aip_mets_location"]
     )
-    # XXX: using lxml to bypass an issue with metsrw where a dmdSec with status
-    #      `updated` resets the status of the previous dmdSec to `None`
-    reingest_tree = etree.parse(context.current_transfer["reingest_aip_mets_location"])
     rows = [
         row
         for row in context.current_transfer["reingest_source_metadata_files"]
@@ -1185,28 +1130,18 @@ def step_impl(context, dmdsec_status):
     )
     for row in rows:
         entry = reingest_mets.get_file(label=row["original_filename"])
-        all_dmdsecs = {}
-        dmdsecs_errors = []
+        dmdsecs_by_status = {}
+        row_errors = []
         for expected_status in expected_dmdsec_status:
-            dmdsecs = []
-            for dmdsec in entry.dmdsecs:
-                # XXX: using lxml to bypass an issue with metsrw mentioned above
-                if (
-                    len(
-                        reingest_tree.xpath(
-                            '//mets:dmdSec[@ID="{}"][@STATUS="{}"]'.format(
-                                dmdsec.id_string, expected_status
-                            ),
-                            namespaces=context.mets_nsmap,
-                        )
-                    )
-                    == 1
-                    and dmdsec.contents.mdtype in expected_mdwrap_mdtype
-                    and dmdsec.contents.othermdtype == row["type_id"]
-                ):
-                    dmdsecs.append(dmdsec)
+            dmdsecs = [
+                dmdsec
+                for dmdsec in entry.dmdsecs
+                if dmdsec.status == expected_status
+                and dmdsec.contents.mdtype in expected_mdwrap_mdtype
+                and dmdsec.contents.othermdtype == row["type_id"]
+            ]
             if len(dmdsecs) != 1:
-                dmdsecs_errors.append(
+                row_errors.append(
                     dmdsec_error_template.format(
                         row["original_filename"],
                         expected_status,
@@ -1215,9 +1150,9 @@ def step_impl(context, dmdsec_status):
                     )
                 )
                 continue
-            all_dmdsecs[expected_status] = dmdsecs[0]
-        if dmdsecs_errors:
-            errors.extend(dmdsecs_errors)
+            dmdsecs_by_status[expected_status] = dmdsecs[0]
+        if row_errors:
+            errors.extend(row_errors)
             continue
         mdwrap_text = utils.extract_document_text(dmdsecs[0].contents.document)
         original_metadata_row = original_source_metadata_by_type_id[row["type_id"]]
