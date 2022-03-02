@@ -59,6 +59,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         max_attempts = 3
         attempts = 0
         self.navigate(self.get_packages_url())
+        self.wait_for_presence('#DataTables_Table_0_filter input[type="text"]')
         self.driver.find_element_by_css_selector("input[type=text]").send_keys(aip_uuid)
         while True:
             # DataTables_Table_0
@@ -454,3 +455,6 @@ class ArchivematicaBrowserStorageServiceAbility(
         # Nihilistic wait is the only value working on Docker at present... and
         # may still need to be longer. Wait needed to accumulate GPG entropy.
         self.wait_for_presence("div.alert-success", self.nihilistic_wait)
+        assert self.driver.find_element_by_css_selector(
+            "div.alert-success"
+        ).text.strip() == ("Space saved.")
