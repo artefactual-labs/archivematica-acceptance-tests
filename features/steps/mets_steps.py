@@ -82,9 +82,6 @@ def step_impl(context, conj_quant):
             " {}".format(mets_hdr_el.attrib)
         )
         # TODO: assert that value is ISO datetime
-    # Crucial, otherwise we'll be looking at the previous METS in subsequent
-    # tests.
-    # del context.scenario.mets
 
 
 @then("in the METS file the metsHdr element has {quant} dmdSec next sibling element(s)")
@@ -92,26 +89,14 @@ def step_impl(context, quant):
     mets = utils.get_mets_from_scenario(context, api=True)
     mets_dmd_sec_els = mets.findall(".//mets:dmdSec", context.am_user.mets.mets_nsmap)
     try:
-        quant = {
-            "no": 0,
-            "zero": 0,
-            "one": 1,
-            "two": 2,
-            "three": 3,
-            "four": 4,
-            "five": 5,
-            "six": 6,
-            "seven": 7,
-            "eight": 8,
-            "nine": 9,
-        }[quant]
-    except KeyError:
+        assert len(mets_dmd_sec_els) == int(
+            quant
+        ), f"Expected {int(quant)} dmdSec element(s), got {len(mets_dmd_sec_els)}"
+    except ValueError:
         raise utils.ArchivematicaStepsError(
             "Unable to recognize the quantifier {} when checking for dmdSec"
             " elements in the METS file".format(quant)
         )
-    else:
-        assert len(mets_dmd_sec_els) == quant
 
 
 @then("in the METS file the dmdSec element contains the metadata added")

@@ -9,6 +9,8 @@ Background: The storage service is configured with a transfer source that can se
     Given a "standard" transfer type located in "SampleTransfers/DemoTransferCSV"
     When the AIP is downloaded
     Then the AIP METS can be accessed and parsed by mets-reader-writer
+    And in the METS file the metsHdr element has a CREATEDATE attribute but no LASTMODDATE attribute
+    And in the METS file the metsHdr element has 10 dmdSec next sibling element(s)
     And the AIP conforms to expected content and structure
     And the AIP contains all files that were present in the transfer
     And the AIP contains a file called README.html in the data directory

@@ -98,6 +98,15 @@ def get_mets_from_scenario(context, api=False):
     decision point on the ingest tab of Archivematica where the user has the
     opportunity to review the METS file from the browser window.
     """
+    if getattr(context, "current_transfer", None) is not None:
+        # It is a black-box test so there is no need to download the METS again.
+        # Try returning the reingested METS first if available.
+        return etree.parse(
+            context.current_transfer.get(
+                "reingest_aip_mets_location",
+                context.current_transfer["aip_mets_location"],
+            )
+        )
     if api:
         return context.am_user.browser.get_mets_via_api(
             context.scenario.transfer_name,
