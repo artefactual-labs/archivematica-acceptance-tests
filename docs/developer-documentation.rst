@@ -534,11 +534,10 @@ appropriate triggers.
 In the 1.7 release, we manually ran all of the relevant tests against the final
 release candidate and confirmed that they passed. The tags flag used was::
 
-    --tags=mo-aip-reingest,icc,ipc,tpc,picc,uuids-dirs,premis-events,pid-binding,aip-encrypt-mirror,aip-encrypt
+    --tags=icc,ipc,tpc,picc,uuids-dirs,premis-events,pid-binding,aip-encrypt-mirror,aip-encrypt
 
 which corresponds to running all of the following feature files:
 
-- mo-aip-reingest = `metadata-only-aip-reingest.feature <../features/core/metadata-only-aip-reingest.feature>`_
 - icc = `ingest-mkv-conformance.feature <../features/core/ingest-mkv-conformance.feature>`_
 - ipc = `ingest-policy-check.feature <../features/core/ingest-policy-check.feature>`_
 - tpc = `transfer-policy-check.feature <../features/core/transfer-policy-check.feature>`_

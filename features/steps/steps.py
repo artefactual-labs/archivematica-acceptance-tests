@@ -249,6 +249,8 @@ def _appear_in_storage(context):
     """Helper to wrap the functionality to test for an AIP in archival storage.
     """
     uuid_val = utils.get_uuid_val(context, "sip")
+    ingest = utils.wait_for_ingest(context.api_clients_config, uuid_val)
+    assert ingest["status"] != "FAILED", f"Ingest {uuid_val} failed"
     context.am_user.browser.wait_for_aip_in_archival_storage(uuid_val)
     time.sleep(context.am_user.pessimistic_wait)
 

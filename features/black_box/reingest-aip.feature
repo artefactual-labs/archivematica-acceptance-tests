@@ -32,6 +32,8 @@ Feature: Alma wants to be able to re-ingest an AIP and have the reingest recorde
     Then the AIP can be successfully stored
     And the "Reingest AIP" ingest microservice completes successfully
     And there is a reingestion event for each original object in the AIP METS
+    And in the METS file the metsHdr element has a CREATEDATE attribute and a LASTMODDATE attribute
+    And in the METS file the metsHdr element has 12 dmdSec next sibling element(s)
     And the "metadata.csv" file is in the reingest metadata directory
     And every file in the reingested metadata.csv file has two dmdSecs with the original and updated metadata
 
