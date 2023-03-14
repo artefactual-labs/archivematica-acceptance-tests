@@ -222,8 +222,8 @@ class ArchivematicaBrowserFileExplorerAbility(
         if is_file:
             return
         try:
-            folder_contents_selector = "div#{} + div.backbone-file-explorer-level".format(
-                folder_id
+            folder_contents_selector = (
+                "div#{} + div.backbone-file-explorer-level".format(folder_id)
             )
             block = WebDriverWait(self.driver, 10)
             block.until(

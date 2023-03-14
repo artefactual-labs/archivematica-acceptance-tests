@@ -144,9 +144,11 @@ def step_impl(context, key_fname):
 )
 def step_impl(context):
     # Create the new GPG key
-    new_key_name, new_key_email, new_key_fingerprint = (
-        context.am_user.browser.create_new_gpg_key()
-    )
+    (
+        new_key_name,
+        new_key_email,
+        new_key_fingerprint,
+    ) = context.am_user.browser.create_new_gpg_key()
     context.scenario.new_key_name = new_key_name
     context.scenario.new_key_fingerprint = new_key_fingerprint
     if getattr(context.scenario, "space_uuid", None) is not None:

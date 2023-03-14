@@ -69,9 +69,10 @@ class ArchivematicaMETSAbility(base.Base):
                     idfr = [x for x in entity["identifiers"] if x[0] == idfr_type][0][1]
                 except IndexError:
                     idfr = None
-                assert idfr, (
-                    "Unable to find an identifier of type {} for entity"
-                    " {}".format(idfr_type, entity["path"])
+                assert (
+                    idfr
+                ), "Unable to find an identifier of type {} for entity" " {}".format(
+                    idfr_type, entity["path"]
                 )
                 if idfr_type == "UUID":
                     assert utils.is_uuid(idfr), "Identifier {} is not a UUID".format(
