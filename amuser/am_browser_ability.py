@@ -208,8 +208,7 @@ class ArchivematicaBrowserAbility(
     # ==========================================================================
 
     def wait_for_dip_in_transfer_backlog(self, dip_uuid):
-        """Wait for the DIP with UUID ``dip_uuid`` to appear in the Backlog tab.
-        """
+        """Wait for the DIP with UUID ``dip_uuid`` to appear in the Backlog tab."""
         max_seconds = self.max_search_dip_backlog_attempts
         seconds = 0
         while True:

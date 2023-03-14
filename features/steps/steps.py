@@ -60,8 +60,7 @@ def step_impl(context):
 
 
 def _set_config(context, decision_label, choice_value):
-    """Helper to allow us to conveniently set processing configuration choices.
-    """
+    """Helper to allow us to conveniently set processing configuration choices."""
     context.am_user.browser.set_processing_config_decision(
         decision_label=decision_label, choice_value=choice_value
     )
@@ -246,8 +245,7 @@ def step_impl(context, choice, decision_point, unit_type):
 
 
 def _appear_in_storage(context):
-    """Helper to wrap the functionality to test for an AIP in archival storage.
-    """
+    """Helper to wrap the functionality to test for an AIP in archival storage."""
     uuid_val = utils.get_uuid_val(context, "sip")
     ingest = utils.wait_for_ingest(context.api_clients_config, uuid_val)
     assert ingest["status"] != "FAILED", f"Ingest {uuid_val} failed"
@@ -269,8 +267,8 @@ def step_impl(context):
 def step_impl(context):
     time.sleep(context.am_user.optimistic_wait)
     the_aip_uuid = utils.get_uuid_val(context, "sip")
-    context.scenario.aip_search_results = context.am_user.browser.search_for_aip_in_storage_service(
-        the_aip_uuid
+    context.scenario.aip_search_results = (
+        context.am_user.browser.search_for_aip_in_storage_service(the_aip_uuid)
     )
 
 

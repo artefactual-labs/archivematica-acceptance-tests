@@ -64,7 +64,7 @@ class ArchivematicaDockerAbility(base.Base):
         res = subprocess.check_output(
             shlex.split(cmd_str), cwd=self.docker_compose_path
         ).decode("utf8")
-        lines = [l for l in res.splitlines() if l.startswith("|")]
+        lines = [line for line in res.splitlines() if line.startswith("|")]
         keys = [k.strip() for k in lines[0].strip(" |").split("|")]
         for line in lines[1:]:
             vals = [v.strip() for v in line.strip(" |").split("|")]

@@ -185,7 +185,10 @@ def initiate_transfer(context, transfer_path, accession_no=None, transfer_type=N
     context.scenario.transfer_name = context.am_user.browser.unique_name(
         transfer_path2name(transfer_path)
     )
-    context.scenario.transfer_uuid, context.scenario.transfer_name = context.am_user.browser.start_transfer(
+    (
+        context.scenario.transfer_uuid,
+        context.scenario.transfer_name,
+    ) = context.am_user.browser.start_transfer(
         context.scenario.transfer_path,
         context.scenario.transfer_name,
         accession_no=accession_no,
@@ -380,7 +383,7 @@ def browse_default_ts_location(api_clients_config, browse_path):
 
 
 def return_default_ts_location(api_clients_config):
-    """"
+    """
     Return the UUID of the default transfer source location.
     """
     am = configure_ss_client(api_clients_config[SS_API_CONFIG_KEY])

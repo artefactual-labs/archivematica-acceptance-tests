@@ -59,7 +59,11 @@ class ArchivematicaBrowserTransferAbility(
         self.add_transfer_directory(transfer_path)
         self.click_start_transfer_button()
 
-        transfer_uuid, transfer_div_elem, transfer_name = self.wait_for_transfer_to_appear(
+        (
+            transfer_uuid,
+            transfer_div_elem,
+            transfer_name,
+        ) = self.wait_for_transfer_to_appear(
             transfer_name, name_is_prefix=name_is_prefix
         )
 
@@ -176,7 +180,11 @@ class ArchivematicaBrowserTransferAbility(
                 < self.max_check_transfer_appeared_attempts
             ):
                 time.sleep(self.quick_wait)
-                transfer_uuid, correct_transfer_div_elem, transfer_name = self.wait_for_transfer_to_appear(
+                (
+                    transfer_uuid,
+                    correct_transfer_div_elem,
+                    transfer_name,
+                ) = self.wait_for_transfer_to_appear(
                     transfer_name, name_is_prefix=name_is_prefix
                 )
             else:
@@ -246,8 +254,10 @@ class ArchivematicaBrowserTransferAbility(
         )
         while True:
             try:
-                approve_transfer_option = transfer_div_elem.find_element_by_css_selector(
-                    approve_transfer_option_selector
+                approve_transfer_option = (
+                    transfer_div_elem.find_element_by_css_selector(
+                        approve_transfer_option_selector
+                    )
                 )
             except NoSuchElementException:
                 logger.info(
