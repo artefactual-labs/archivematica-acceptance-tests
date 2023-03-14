@@ -49,6 +49,17 @@ def step_impl(context, transfer_type, sample_transfer_path):
     context.current_transfer = transfer
 
 
+@given("a processing configuration for metadata only reingests for uncompressed AIPs")
+def step_impl(context):
+    context.execute_steps(
+        "Given a processing configuration for metadata only reingests\n"
+    )
+    context.am_user.browser.set_processing_config_decision(
+        decision_label="Select compression algorithm", choice_value="Uncompressed"
+    )
+    context.am_user.browser.save_default_processing_config()
+
+
 @given("a processing configuration for metadata only reingests")
 def step_impl(context):
     context.am_user.browser.reset_default_processing_config()
@@ -371,8 +382,7 @@ def step_impl(context):
 use_step_matcher("re")
 
 
-@then("there is a.? (?P<event_type>.*) event for each original object in the AIP METS")
-def step_impl(context, event_type):
+def assert_event_count(context, event_count, event_type):
     mets_path = context.current_transfer["aip_mets_location"]
     if event_type == "reingestion":
         mets_path = context.current_transfer["reingest_aip_mets_location"]
@@ -385,13 +395,25 @@ def step_impl(context, event_type):
         events = utils.get_premis_events_by_type(
             fsentry, PREMIS_EVENT_TYPES[event_type]
         )
-        error = "Expected one {} event in the METS for file {}".format(
-            event_type, fsentry.path
+        error = "Expected {} {} event(s) in the METS for file {}".format(
+            event_count, event_type, fsentry.path
         )
-        assert len(events) == 1, error
+        assert len(events) == event_count, error
+
+
+@then("there is a.? (?P<event_type>.*) event for each original object in the AIP METS")
+def step_impl(context, event_type):
+    assert_event_count(context, 1, event_type)
 
 
 use_step_matcher("parse")
+
+
+@then(
+    "there are {event_count:d} {event_type} events for each original object in the AIP METS"
+)
+def step_impl(context, event_count, event_type):
+    assert_event_count(context, event_count, event_type)
 
 
 @then(

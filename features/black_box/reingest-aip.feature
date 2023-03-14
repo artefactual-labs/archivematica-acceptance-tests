@@ -48,3 +48,25 @@ Feature: Alma wants to be able to re-ingest an AIP and have the reingest recorde
     And there is a reingestion event for each original object in the AIP METS
     And the DIP is downloaded
     And the DIP contains access copies for each original object in the transfer
+
+  Scenario: Multiple Re-ingest for uncompressed AIPs
+    Given a "standard" transfer type located in "SampleTransfers/DemoTransferCSV"
+    #
+    # First reingest
+    #
+    And a processing configuration for metadata only reingests for uncompressed AIPs
+    When a "METADATA" reingest is started using the "default" processing configuration
+    And the "SampleTransfers/MetadataOnlyReingest/metadata.csv" metadata file is added
+    And the reingest is approved
+    And the reingest has been processed
+    Then the AIP can be successfully stored
+    And there is a reingestion event for each original object in the AIP METS
+    #
+    # Second reingest
+    #
+    Given a processing configuration for metadata only reingests for uncompressed AIPs
+    When a "METADATA" reingest is started using the "default" processing configuration
+    And the reingest is approved
+    And the reingest has been processed
+    Then the AIP can be successfully stored
+    And there are 2 reingestion events for each original object in the AIP METS
