@@ -9,20 +9,20 @@ on:
 jobs:
   test-virtualenv:
     name: "Test (virtualenv)"
-    runs-on: "ubuntu-18.04"
+    runs-on: "ubuntu-22.04"
     steps:
       - name: "Check out repository"
-        uses: "actions/checkout@v2"
+        uses: "actions/checkout@v3"
       - name: "Set up Python"
-        uses: "actions/setup-python@v2"
+        uses: "actions/setup-python@v4"
         with:
           python-version: "3.8"
       - name: "Get pip cache dir"
         id: "pip-cache"
         run: |
-          echo "::set-output name=dir::$(pip cache dir)"
+          echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
       - name: "Cache pip packages"
-        uses: "actions/cache@v2"
+        uses: "actions/cache@v3"
         with:
           path: "${{ steps.pip-cache.outputs.dir }}"
           key: "${{ runner.os }}-pip-${{ hashFiles('**/base.txt', '**/test.txt') }}"
@@ -37,10 +37,10 @@ jobs:
           ./simplebrowsertest.py
   test-docker:
     name: "Test (docker)"
-    runs-on: "ubuntu-18.04"
+    runs-on: "ubuntu-22.04"
     steps:
       - name: "Check out repository"
-        uses: "actions/checkout@v2"
+        uses: "actions/checkout@v3"
       - name: "Build containers"
         run: |
           docker build -t archivematica-acceptance-tests .
@@ -56,12 +56,12 @@ jobs:
             /home/artefactual/acceptance-tests/simplebrowsertest.py
   lint:
     name: "Lint"
-    runs-on: "ubuntu-18.04"
+    runs-on: "ubuntu-22.04"
     steps:
       - name: "Check out repository"
-        uses: "actions/checkout@v2"
+        uses: "actions/checkout@v3"
       - name: "Set up Python"
-        uses: "actions/setup-python@v2"
+        uses: "actions/setup-python@v4"
         with:
           python-version: "3.8"
       - name: "Install tox"
