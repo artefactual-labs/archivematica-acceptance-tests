@@ -1209,3 +1209,27 @@ def find_aip_by_transfer_metadata(
         repr(search_phrase), repr(expected_summary_message), repr(summary_text)
     )
     return result
+
+
+def assert_equal_lxml_elements(a, b):
+    # Compare tag and text contents.
+    assert a.tag == b.tag, f"Tags of {a} and {b} did not match"
+    assert a.text == b.text, f"Text of {a} and {b} did not match"
+
+    # Compare amount of children on both elements.
+    assert len(a) == len(b), f"Amount of children of {a} and {b} did not match"
+
+    # Compare attributes.
+    d_a = dict(a.attrib)
+    d_b = dict(b.attrib)
+
+    # Ignore attributes that metsrw regenerates with sequential and UUID
+    # based identifiers.
+    for attr_to_ignore in ["ID", "FILEID"]:
+        d_a.pop(attr_to_ignore, None)
+        d_b.pop(attr_to_ignore, None)
+
+    assert d_a == d_b, f"Attributes of {a} and {b} did not match"
+
+    for i, j in zip(a, b):
+        assert_equal_lxml_elements(i, j)
