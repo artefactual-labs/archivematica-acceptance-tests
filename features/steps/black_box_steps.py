@@ -1336,3 +1336,42 @@ def step_impl(context):
                 )
             )
     assert not errors, "\n".join(errors)
+
+
+@then("the provided structural map will be included in the AIP METs file")
+def step(context):
+    imported_structmap_file_path = os.path.join(
+        context.current_transfer["extracted_aip_dir"],
+        "data",
+        "objects",
+        "metadata",
+        "transfers",
+        "{}-{}".format(
+            context.current_transfer["transfer_name"],
+            context.current_transfer["transfer_uuid"],
+        ),
+        "mets_structmap.xml",
+    )
+    error = "mets_structmap.xml file was not found in the transfer"
+    assert os.path.exists(imported_structmap_file_path), error
+
+    mets = etree.parse(context.current_transfer["aip_mets_location"])
+    mets_logical_structmaps = [
+        e
+        for e in mets.findall(
+            'mets:structMap[@TYPE="logical"]', namespaces=context.mets_nsmap
+        )
+        if e.attrib.get("LABEL") != "Normative Directory Structure"
+    ]
+    error = "Could not find a custom logical structMap in the METS file"
+    assert mets_logical_structmaps, error
+    mets_logical_structmap = mets_logical_structmaps[0]
+
+    imported_structmap_doc = etree.parse(imported_structmap_file_path)
+    imported_structmap = imported_structmap_doc.find(
+        'mets:structMap[@TYPE="logical"]', namespaces=context.mets_nsmap
+    )
+    error = "Could not find a logical structMap in the mets_structmap.xml file"
+    assert imported_structmap is not None, error
+
+    utils.assert_equal_lxml_elements(mets_logical_structmap, imported_structmap)

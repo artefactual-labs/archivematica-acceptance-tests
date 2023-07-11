@@ -57,3 +57,16 @@ Background: The storage service is configured with a transfer source that can se
     When the AIP is downloaded
     Then the AIP METS can be accessed and parsed by mets-reader-writer
     And the AIP conforms to expected content and structure
+
+  Scenario Outline: Generate an AIP with imported structural metadata
+    Given a "standard" transfer type located in "<sample_transfer_path>"
+    When the AIP is downloaded
+    Then the AIP METS can be accessed and parsed by mets-reader-writer
+    Then the provided structural map will be included in the AIP METs file
+
+    Examples: sample transfers
+      | sample_transfer_path                                             |
+      | SampleTransfers/StructMapTransferSamples/MinimalStructMapExample |
+      | SampleTransfers/StructMapTransferSamples/ComplexStructureExample |
+      | SampleTransfers/StructMapTransferSamples/SimpleBookExample       |
+      | SampleTransfers/StructMapTransferSamples/SingleObjectExample     |
