@@ -1375,3 +1375,172 @@ def step(context):
     assert imported_structmap is not None, error
 
     utils.assert_equal_lxml_elements(mets_logical_structmap, imported_structmap)
+
+
+@then("there are 2 DSpace-specific descriptive metadata sections for each object")
+def step(context):
+    expected_dmdsecs_count = 2
+    tree = etree.parse(context.current_transfer["aip_mets_location"])
+    original_files = utils.get_filesec_files(
+        tree, use="original", nsmap=context.mets_nsmap
+    )
+    assert original_files, format_no_files_error(context.current_transfer)
+    errors = []
+    for original_file in original_files:
+        dmdsec_ids = original_file.attrib.get("DMDID", "").split()
+        if len(dmdsec_ids) != expected_dmdsecs_count:
+            errors.append(
+                'File with ID="{}" references {} dmdSecs. Expected {}.'.format(
+                    original_file.attrib["ID"],
+                    len(dmdsec_ids),
+                    expected_dmdsecs_count,
+                )
+            )
+            continue
+        xpointer_dmdsec_id, dc_dmdsec_id = dmdsec_ids
+        pointer = tree.find(
+            f'//mets:dmdSec[@ID="{xpointer_dmdsec_id}"]/mets:mdRef',
+            namespaces=context.mets_nsmap,
+        )
+        if pointer is None:
+            errors.append(
+                f'Could not find Xpointer in dmdSec with ID="{xpointer_dmdsec_id}"'
+            )
+            continue
+        if not pointer.attrib.get("LABEL", "").startswith("mets.xml"):
+            errors.append(
+                'Expected LABEL attribute of Xpointer in dmdSec with ID="{}" to start with "mets.xml". '
+                "Got {} instead.".format(
+                    xpointer_dmdsec_id, pointer.attrib.get("LABEL")
+                )
+            )
+            continue
+        if not pointer.attrib.get("XPTR", "").startswith("xpointer(id("):
+            errors.append(
+                'Expected XPTR attribute of Xpointer in dmdSec with ID="{}" to start with "xpointer(id(". '
+                "Got {} instead.".format(xpointer_dmdsec_id, pointer.attrib.get("XPTR"))
+            )
+            continue
+        for attr, expected_value in [
+            ("MDTYPE", "OTHER"),
+            ("LOCTYPE", "OTHER"),
+            ("OTHERLOCTYPE", "SYSTEM"),
+        ]:
+            if pointer.attrib.get(attr, "") != expected_value:
+                errors.append(
+                    'Expected {} attribute of Xpointer in dmdSec with ID={} to be "". '
+                    "Got {} instead".format(
+                        attr, xpointer_dmdsec_id, pointer.attrib.get(attr)
+                    )
+                )
+        if errors:
+            continue
+        identifier = tree.find(
+            f'//mets:dmdSec[@ID="{dc_dmdsec_id}"]/mets:mdWrap[@MDTYPE="DC"]'
+            "/mets:xmlData/dcterms:dublincore/dc:identifier",
+            namespaces=context.mets_nsmap,
+        )
+        if identifier is None:
+            errors.append(
+                f'Could not find dc:identifier element in dmdSec with ID="{dc_dmdsec_id}"'
+            )
+        terms = tree.find(
+            f'//mets:dmdSec[@ID="{dc_dmdsec_id}"]/mets:mdWrap[@MDTYPE="DC"]'
+            "/mets:xmlData/dcterms:dublincore/dcterms:isPartOf",
+            namespaces=context.mets_nsmap,
+        )
+        if terms is None:
+            errors.append(
+                f'Could not find dcterms:isPartOf element in dmdSec with ID="{dc_dmdsec_id}"'
+            )
+
+    assert not errors, errors
+
+
+@then("there is a DSpace-specific rights metadata section for each object")
+def step(context):
+    tree = etree.parse(context.current_transfer["aip_mets_location"])
+    original_files = utils.get_filesec_files(
+        tree, use="original", nsmap=context.mets_nsmap
+    )
+    assert original_files, format_no_files_error(context.current_transfer)
+    errors = []
+    for original_file in original_files:
+        amdsec_ids = original_file.attrib.get("ADMID", "").split()
+        if not amdsec_ids:
+            errors.append(
+                'Could not find a amdSec associated to file with ID="{}"'.format(
+                    original_file.attrib["ID"],
+                )
+            )
+            continue
+        xpointer_dmdsec_id = amdsec_ids[0]
+        pointer = tree.find(
+            f'//mets:amdSec[@ID="{xpointer_dmdsec_id}"]/mets:rightsMD/mets:mdRef',
+            namespaces=context.mets_nsmap,
+        )
+        if pointer is None:
+            errors.append(
+                f'Could not find Xpointer in amdSec with ID="{xpointer_dmdsec_id}"'
+            )
+            continue
+        if not pointer.attrib.get("LABEL", "").startswith("mets.xml"):
+            errors.append(
+                'Expected LABEL attribute of Xpointer in amdSec with ID="{}" to start with "mets.xml". '
+                "Got {} instead.".format(
+                    xpointer_dmdsec_id, pointer.attrib.get("LABEL")
+                )
+            )
+            continue
+        if not pointer.attrib.get("XPTR", "").startswith("xpointer(id("):
+            errors.append(
+                'Expected XPTR attribute of Xpointer in amdSec with ID="{}" to start with "xpointer(id(". '
+                "Got {} instead.".format(xpointer_dmdsec_id, pointer.attrib.get("XPTR"))
+            )
+            continue
+        for attr, expected_value in [
+            ("MDTYPE", "OTHER"),
+            ("OTHERMDTYPE", "METSRIGHTS"),
+            ("LOCTYPE", "OTHER"),
+            ("OTHERLOCTYPE", "SYSTEM"),
+        ]:
+            if pointer.attrib.get(attr, "") != expected_value:
+                errors.append(
+                    'Expected {} attribute of Xpointer in amdSec with ID={} to be "". '
+                    "Got {} instead".format(
+                        attr, xpointer_dmdsec_id, pointer.attrib.get(attr)
+                    )
+                )
+
+    assert not errors, errors
+
+
+@then("the entries in the file section of the METS are sorted by file group")
+def step(context):
+    tree = etree.parse(context.current_transfer["aip_mets_location"])
+    file_groups = tree.findall(
+        "mets:fileSec/mets:fileGrp",
+        namespaces=context.mets_nsmap,
+    )
+    expected_order = [
+        "original",
+        "submissionDocumentation",
+        "preservation",
+        "service",
+        "access",
+        "license",
+        "text/ocr",
+        "metadata",
+        "derivative",
+    ]
+    uses = [file_group.attrib.get("USE") for file_group in file_groups]
+    error = (
+        "Expected order of the fileGrp elements in the fileSec to be {}. "
+        "Got {} instead.".format(expected_order, uses)
+    )
+    try:
+        uses_order_indexes = [expected_order.index(use) for use in uses]
+    except ValueError:
+        raise AssertionError(error)
+    else:
+        assert uses_order_indexes == sorted(uses_order_indexes), error
