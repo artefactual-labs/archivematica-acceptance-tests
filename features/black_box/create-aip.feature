@@ -49,6 +49,10 @@ Background: The storage service is configured with a transfer source that can se
     Then the "Identify DSpace mets files" job completes successfully
     And the "Identify DSpace text files" job completes successfully
     And the "Verify checksums in fileSec of DSpace METS files" job completes successfully
+    And the AIP METS can be accessed and parsed by mets-reader-writer
+    And there are 2 DSpace-specific descriptive metadata sections for each object
+    And there is a DSpace-specific rights metadata section for each object
+    And the entries in the file section of the METS are sorted by file group
 
   Scenario: Generate an AIP using a Zipped directory transfer workflow
     Given a "zipfile" transfer type located in "SampleTransfers/ZippedDirectoryTransfers/DemoTransferCSV.zip"
