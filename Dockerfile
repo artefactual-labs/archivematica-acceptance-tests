@@ -29,6 +29,10 @@ RUN apt-get -qqy update \
 		libxml2-dev \
 		libxslt-dev \
 		zlib1g-dev \
+		jq \
+		libnss3 \
+		libgbm1 \
+		libdrm2 \
 	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 
@@ -52,23 +56,26 @@ RUN groupadd --gid 333 archivematica \
 #
 
 ARG CHROME_VERSION="google-chrome-stable"
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-	&& echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
-	&& apt-get update -qqy \
-	&& apt-get -qqy install ${CHROME_VERSION:-google-chrome-stable} \
-	&& rm /etc/apt/sources.list.d/google-chrome.list \
-	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+RUN CHROME_STABLE_VERSION=$(wget -qO- https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels.Stable.version') \
+	&& CHROME_VERSION=$(if [ ${CHROME_VERSION:-google-chrome-stable} = "google-chrome-stable" ]; then echo $CHROME_STABLE_VERSION; else echo $CHROME_VERSION; fi) \
+	&& CHROME_DOWNLOAD_URL=$(wget -qO- https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json | jq -r --arg version "$CHROME_VERSION" '.versions[] | select(.version == $version) | .downloads.chrome[] | select(.platform == "linux64") | .url') \
+	&& echo "Using chrome version: "$CHROME_VERSION \
+	&& wget --no-verbose -O /tmp/chrome_linux64.zip $CHROME_DOWNLOAD_URL \
+	&& unzip /tmp/chrome_linux64.zip -d /opt/chrome-$CHROME_VERSION \
+	&& rm /tmp/chrome_linux64.zip \
+	&& chmod 755 /opt/chrome-$CHROME_VERSION/chrome-linux64/chrome \
+	&& sudo ln -fs /opt/chrome-$CHROME_VERSION/chrome-linux64/chrome /usr/bin/google-chrome
 
 ARG CHROME_DRIVER_VERSION="latest"
-RUN CD_VERSION=$(if [ ${CHROME_DRIVER_VERSION:-latest} = "latest" ]; then echo $(wget -qO- https://chromedriver.storage.googleapis.com/LATEST_RELEASE); else echo $CHROME_DRIVER_VERSION; fi) \
-	&& echo "Using chromedriver version: "$CD_VERSION \
-	&& wget --no-verbose -O /tmp/chromedriver_linux64.zip https://chromedriver.storage.googleapis.com/$CD_VERSION/chromedriver_linux64.zip \
-	&& rm -rf /opt/selenium/chromedriver \
-	&& unzip /tmp/chromedriver_linux64.zip -d /opt/selenium \
+RUN CHROMEDRIVER_STABLE_VERSION=$(wget -qO- https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels.Stable.version') \
+	&& CHROMEDRIVER_VERSION=$(if [ ${CHROME_DRIVER_VERSION:-latest} = "latest" ]; then echo $CHROMEDRIVER_STABLE_VERSION; else echo $CHROME_DRIVER_VERSION; fi) \
+	&& CHROMEDRIVER_DOWNLOAD_URL=$(wget -qO- https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json | jq -r --arg version "$CHROMEDRIVER_VERSION" '.versions[] | select(.version == $version) | .downloads.chromedriver[] | select(.platform == "linux64") | .url') \
+	&& echo "Using chromedriver version: "$CHROMEDRIVER_VERSION \
+	&& wget --no-verbose -O /tmp/chromedriver_linux64.zip $CHROMEDRIVER_DOWNLOAD_URL \
+	&& unzip /tmp/chromedriver_linux64.zip -d /opt/chromedriver-$CHROMEDRIVER_VERSION \
 	&& rm /tmp/chromedriver_linux64.zip \
-	&& mv /opt/selenium/chromedriver /opt/selenium/chromedriver-$CD_VERSION \
-	&& chmod 755 /opt/selenium/chromedriver-$CD_VERSION \
-	&& sudo ln -fs /opt/selenium/chromedriver-$CD_VERSION /usr/bin/chromedriver
+	&& chmod 755 /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver-linux64/chromedriver \
+	&& sudo ln -fs /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver-linux64/chromedriver /usr/bin/chromedriver
 
 #
 # Firefox
