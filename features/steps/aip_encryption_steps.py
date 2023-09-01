@@ -1,11 +1,13 @@
 """Steps for the AIP Encryption Feature."""
-
 import logging
 import os
 import tarfile
 
+from behave import given
+from behave import then
+from behave import use_step_matcher
+from behave import when
 from lxml import etree
-from behave import when, then, given, use_step_matcher
 
 from features.steps import utils
 
@@ -164,7 +166,7 @@ def step_impl(context):
                 "GnuPG Private Key": "Archivematica Storage Service GPG Key",
             }
         )["uuid"]
-    new_key_repr = "{} <{}>".format(new_key_name, new_key_email)
+    new_key_repr = f"{new_key_name} <{new_key_email}>"
     logger.info('Created a new GPG key "%s"', new_key_repr)
     context.am_user.browser.change_encrypted_space_key(
         standard_encr_space_uuid, new_key_repr
@@ -257,17 +259,15 @@ def step_impl(context):
     replica = not_the_aips[0]
     replica_uuid = replica["uuid"]
     assert replica["replica_of"] == the_aip["uuid"]
-    expected_replica_actions = set(["Pointer File", "Download", "Request Deletion"])
-    replica_actions = set([x.strip() for x in replica["actions"].split("|")])
+    expected_replica_actions = {"Pointer File", "Download", "Request Deletion"}
+    replica_actions = {x.strip() for x in replica["actions"].split("|")}
     assert (
         replica_actions == expected_replica_actions
     ), "We expected the replica actions to be {} but in fact they were {}".format(
         expected_replica_actions, replica_actions
     )
-    expected_aip_actions = set(
-        ["Pointer File", "Download", "Request Deletion", "Re-ingest"]
-    )
-    aip_actions = set([x.strip() for x in the_aip["actions"].split("|")])
+    expected_aip_actions = {"Pointer File", "Download", "Request Deletion", "Re-ingest"}
+    aip_actions = {x.strip() for x in the_aip["actions"].split("|")}
     assert (
         aip_actions == expected_aip_actions
     ), "We expected the AIP actions to be {} but in fact they were {}".format(
@@ -571,7 +571,7 @@ def step_impl(context, reason):
         assert context.scenario.delete_gpg_key_msg.startswith("GPG key")
         assert context.scenario.delete_gpg_key_msg.endswith(
             "cannot be deleted because at least one package (AIP, transfer) needs it in order to be decrypted."
-        ), "Reason is actually {}".format(context.scenario.delete_gpg_key_msg)
+        ), f"Reason is actually {context.scenario.delete_gpg_key_msg}"
 
 
 @then("the user succeeds in deleting the GPG key")

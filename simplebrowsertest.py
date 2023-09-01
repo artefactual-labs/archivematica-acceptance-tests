@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 
@@ -30,7 +29,7 @@ def get_firefox_driver():
 
 
 def run_test(driver_getter, name):
-    print("{}... ".format(name), end="")
+    print(f"{name}... ", end="")
     try:
         driver = driver_getter()
     except WebDriverException as err:

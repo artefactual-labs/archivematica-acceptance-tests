@@ -4,7 +4,6 @@ This module contains the ``ArchivematicaSSHAbility`` class, which encodes the
 ability of an Archivematica user to use SSH and scp to interact with
 Archivematica.
 """
-
 import logging
 import os
 import shlex
@@ -184,4 +183,4 @@ class ArchivematicaSSHAbility(base.Base):
             )
             return None
         needle = "No such file or directory"
-        assert needle in out, 'We expected "{}" to be in "{}".'.format(needle, out)
+        assert needle in out, f'We expected "{needle}" to be in "{out}".'

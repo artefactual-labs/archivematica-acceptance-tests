@@ -1,17 +1,14 @@
 """Archivematica Browser File Explorer Ability"""
-
 import logging
 import time
 
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import (
-    MoveTargetOutOfBoundsException,
-    TimeoutException,
-    WebDriverException,
-)
+from selenium.common.exceptions import MoveTargetOutOfBoundsException
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from . import constants as c
 from . import selenium_ability
@@ -89,7 +86,7 @@ class ArchivematicaBrowserFileExplorerAbility(
                 is_last = True
             folder_label_xpath = get_xpath_matches_folder_text(folder)
             if i == 0:
-                folder_label_xpath = "//{}".format(folder_label_xpath)
+                folder_label_xpath = f"//{folder_label_xpath}"
             xtrail.append(folder_label_xpath)
             # Now the XPath matches folder ONLY if it's in the directory it
             # should be, i.e., this is now an absolute XPath.
@@ -123,7 +120,7 @@ class ArchivematicaBrowserFileExplorerAbility(
         hover.perform()
         time.sleep(self.micro_wait)  # seems to be necessary (! jQuery animations?)
         span_elem = self.driver.find_element_by_css_selector(
-            "div#{} span.{}".format(folder_id, c.CLASS_ADD_TRANSFER_FOLDER)
+            f"div#{folder_id} span.{c.CLASS_ADD_TRANSFER_FOLDER}"
         )
         hover = ActionChains(self.driver).move_to_element(span_elem)
         hover.perform()
@@ -160,7 +157,7 @@ class ArchivematicaBrowserFileExplorerAbility(
                 ".transfer-tree-container"
             )
             self.driver.execute_script(
-                "arguments[0].scrollTop = {}".format(offset), container_el
+                f"arguments[0].scrollTop = {offset}", container_el
             )
             self.click_folder_label(folder_el, offset + 100)
 
@@ -190,7 +187,7 @@ class ArchivematicaBrowserFileExplorerAbility(
                 ".transfer-tree-container"
             )
             self.driver.execute_script(
-                "arguments[0].scrollTop = {}".format(offset), container_el
+                f"arguments[0].scrollTop = {offset}", container_el
             )
             self.click_folder(folder_label_xpath, is_file, offset + 100)
 
@@ -211,7 +208,7 @@ class ArchivematicaBrowserFileExplorerAbility(
         if is_file:
             class_ = "backbone-file-explorer-directory_entry_name"
         folder_id = folder_id.replace(".", r"\.")
-        selector = "div#{} span.{}".format(folder_id, class_)
+        selector = f"div#{folder_id} span.{class_}"
         span_elem = self.driver.find_element_by_css_selector(selector)
         hover = ActionChains(self.driver).move_to_element(span_elem)
         hover.perform()
@@ -223,7 +220,7 @@ class ArchivematicaBrowserFileExplorerAbility(
             return
         try:
             folder_contents_selector = (
-                "div#{} + div.backbone-file-explorer-level".format(folder_id)
+                f"div#{folder_id} + div.backbone-file-explorer-level"
             )
             block = WebDriverWait(self.driver, 10)
             block.until(
@@ -267,4 +264,4 @@ def folder_label2icon_xpath(folder_label_xpath):
 def folder_label2children_xpath(folder_label_xpath):
     """Given XPATH for TS folder label, return XPATH for its children
     <treeitem> element."""
-    return "{}/following-sibling::treeitem".format(folder_label_xpath)
+    return f"{folder_label_xpath}/following-sibling::treeitem"

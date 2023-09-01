@@ -1,13 +1,14 @@
 """Steps for the Performance Testing When Output Streams Not Captured
 Test/Feature.
 """
-
 import json
 import logging
 import os
 import time
 
-from behave import when, then, given
+from behave import given
+from behave import then
+from behave import when
 from lxml import etree
 
 from features.steps import utils
@@ -64,7 +65,7 @@ def step_impl(context, filename):
         ).decode("utf8"),
         "tasks": context.am_user.docker.get_tasks_from_sip_uuid(sip_uuid),
     }
-    filename = "{}-{}.json".format(filename, int(time.time()))
+    filename = f"{filename}-{int(time.time())}.json"
     path = os.path.join(context.am_user.permanent_path, filename)
     with open(path, "w") as fout:
         json.dump(data, fout, indent=4)
@@ -128,10 +129,10 @@ def step_impl(context, verb):
     path = context.scenario.performance_stats_path
     with open(path) as fi:
         stats = json.load(fi)
-    std_out_len_set = set([x["len_std_out"] for x in stats["tasks"]])
-    std_err_len_set = set(
-        [x["len_std_err"] for x in stats["tasks"] if x["exitCode"].strip() == "0"]
-    )
+    std_out_len_set = {x["len_std_out"] for x in stats["tasks"]}
+    std_err_len_set = {
+        x["len_std_err"] for x in stats["tasks"] if x["exitCode"].strip() == "0"
+    }
     if verb == "are":
         assert len(std_out_len_set) > 1
         assert len(std_err_len_set) > 1

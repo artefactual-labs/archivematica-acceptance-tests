@@ -1,10 +1,12 @@
 """General-purpose Steps."""
-
 import logging
 import os
 import time
 
-from behave import when, then, given, use_step_matcher
+from behave import given
+from behave import then
+from behave import use_step_matcher
+from behave import when
 
 from features.steps import utils
 
@@ -106,9 +108,7 @@ def step_impl(context):
 
 @given("a transfer is initiated on directory {transfer_path}")
 def step_impl(context, transfer_path):
-    context.execute_steps(
-        "When a transfer is initiated on directory {}".format(transfer_path)
-    )
+    context.execute_steps(f"When a transfer is initiated on directory {transfer_path}")
 
 
 @given(

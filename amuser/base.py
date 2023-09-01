@@ -1,6 +1,5 @@
 """Base class for ArchivematicaUser and other related classes."""
 # pylint: disable=too-many-instance-attributes
-
 import os
 import re
 import shutil
@@ -119,7 +118,7 @@ class Base:
 
     @staticmethod
     def unique_name(name):
-        return "{}_{}".format(name, utils.unixtimestamp())
+        return f"{name}_{utils.unixtimestamp()}"
 
     @property
     def permanent_path(self):

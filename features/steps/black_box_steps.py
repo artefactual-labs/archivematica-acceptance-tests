@@ -1,18 +1,17 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """Steps for the black_box features.
 
 These steps use the AM APIs to initiate transfers and validate the
 contents of their AIPs without relying on user interface interactions.
 """
-
-from __future__ import print_function, unicode_literals
 import os
 
-from behave import given, when, then, use_step_matcher
-from lxml import etree
 import metsrw
+from behave import given
+from behave import then
+from behave import use_step_matcher
+from behave import when
+from lxml import etree
 
 from features.steps import utils
 
@@ -315,7 +314,7 @@ def step_impl(context):
         file_uuid = filesec_file.attrib["ID"].split("file-")[-1]
         amdsec_id = filesec_file.attrib["ADMID"]
         amdsec = tree.find(
-            'mets:amdSec[@ID="{}"]'.format(amdsec_id), namespaces=context.mets_nsmap
+            f'mets:amdSec[@ID="{amdsec_id}"]', namespaces=context.mets_nsmap
         )
         object_uuid = amdsec.xpath(
             "mets:techMD/mets:mdWrap/mets:xmlData/premis:object/"
@@ -334,7 +333,7 @@ def step_impl(context):
     for filesec_file in filesec_files:
         amdsec_id = filesec_file.attrib["ADMID"]
         amdsec = tree.find(
-            'mets:amdSec[@ID="{}"]'.format(amdsec_id), namespaces=context.mets_nsmap
+            f'mets:amdSec[@ID="{amdsec_id}"]', namespaces=context.mets_nsmap
         )
         assert amdsec is not None
 
@@ -344,9 +343,11 @@ def step_impl(context):
     "user, the organization and the software as PREMIS agents"
 )
 def step_impl(context):
-    expected_agent_types = set(
-        ["Archivematica user pk", "repository code", "preservation system"]
-    )
+    expected_agent_types = {
+        "Archivematica user pk",
+        "repository code",
+        "preservation system",
+    }
     tree = etree.parse(context.current_transfer["aip_mets_location"])
     premis_events = tree.findall(
         'mets:amdSec/mets:digiprovMD/mets:mdWrap[@MDTYPE="PREMIS:EVENT"]/'
@@ -361,14 +362,12 @@ def step_impl(context):
         event_agents = event.findall(
             "premis:linkingAgentIdentifier", namespaces=context.mets_nsmap
         )
-        event_agent_types = set(
-            [
-                event_agent.findtext(
-                    "premis:linkingAgentIdentifierType", namespaces=context.mets_nsmap
-                )
-                for event_agent in event_agents
-            ]
-        )
+        event_agent_types = {
+            event_agent.findtext(
+                "premis:linkingAgentIdentifierType", namespaces=context.mets_nsmap
+            )
+            for event_agent in event_agents
+        }
         assert event_agent_types == expected_agent_types
 
 
@@ -456,7 +455,7 @@ def step_impl(context):
     assert original_files, format_original_files_error(context.current_transfer)
     for fsentry in original_files:
         techmds = mets.tree.findall(
-            'mets:amdSec[@ID="{}"]/mets:techMD'.format(fsentry.admids[0]),
+            f'mets:amdSec[@ID="{fsentry.admids[0]}"]/mets:techMD',
             namespaces=context.mets_nsmap,
         )
         techmds_status = sorted([techmd.attrib["STATUS"] for techmd in techmds])
@@ -781,19 +780,17 @@ def step_impl(context):
 def step_impl(context):
     mets = metsrw.METSDocument.fromfile(context.current_transfer["aip_mets_location"])
     # get the UUID of each 'original' file
-    original_file_uuids = set(
-        [fsentry.file_uuid for fsentry in mets.all_files() if fsentry.use == "original"]
-    )
+    original_file_uuids = {
+        fsentry.file_uuid for fsentry in mets.all_files() if fsentry.use == "original"
+    }
     assert original_file_uuids, format_original_files_error(context.current_transfer)
     # verify each file UUID has a matching entry in the objects directory of the DIP
-    dip_file_uuids = set(
-        [
-            f[:36]
-            for f in os.listdir(
-                os.path.join(context.current_transfer["extracted_dip_dir"], "objects")
-            )
-        ]
-    )
+    dip_file_uuids = {
+        f[:36]
+        for f in os.listdir(
+            os.path.join(context.current_transfer["extracted_dip_dir"], "objects")
+        )
+    }
     error = "The DIP at {} does not contain access copies for all the original files of the {} AIP".format(
         context.current_transfer["extracted_dip_dir"],
         context.current_transfer["sip_uuid"],
@@ -864,7 +861,7 @@ def step_impl(context):
             q_name = etree.QName(child.tag)
             ns = q_name.namespace
             localname = q_name.localname
-            csv_field = "{}.{}".format(namespaces_by_url[ns], localname)
+            csv_field = f"{namespaces_by_url[ns]}.{localname}"
             if row.get(csv_field) != child.text.strip():
                 errors.append(
                     content_error_template.format(expected_dmdsec_status[-1], csv_field)
@@ -1000,7 +997,7 @@ def step_impl(context):
         if row_errors:
             errors.extend(row_errors)
             continue
-        group_ids = set([dmdsec.group_id for dmdsec in dmdsecs_by_status.values()])
+        group_ids = {dmdsec.group_id for dmdsec in dmdsecs_by_status.values()}
         if len(group_ids) != 1:
             errors.append(
                 'Expected the {} dmdSecs for filename "{}" to have the same '

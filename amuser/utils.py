@@ -1,5 +1,4 @@
 """Utilities for AM User."""
-
 import logging
 import time
 

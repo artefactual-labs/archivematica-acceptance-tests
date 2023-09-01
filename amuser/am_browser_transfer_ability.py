@@ -1,14 +1,11 @@
 """Archivematica Transfer Tab Ability"""
-
 import logging
 import os
 import time
 
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.support.ui import Select
-from selenium.common.exceptions import (
-    NoSuchElementException,
-    StaleElementReferenceException,
-)
 
 from . import constants as c
 from . import selenium_ability
@@ -207,7 +204,7 @@ class ArchivematicaBrowserTransferAbility(
             self.login()
         self.driver.get(url)
         transfer_name_input_id = "transfer-browser-form"
-        self.wait_for_presence("#{}".format(transfer_name_input_id))
+        self.wait_for_presence(f"#{transfer_name_input_id}")
         assert "Archivematica Dashboard - Transfer" in self.driver.title
 
     def enter_transfer_name(self, transfer_name):

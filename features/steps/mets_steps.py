@@ -1,5 +1,4 @@
 """Steps for the METS-related functionality."""
-
 import json
 
 from behave import then
@@ -108,8 +107,6 @@ def step_impl(context):
     )
     assert dublincore_el
     for attr in context.am_user.browser.metadata_attrs:
-        dc_el = dublincore_el.find(
-            "dc:{}".format(attr), context.am_user.mets.mets_nsmap
-        )
+        dc_el = dublincore_el.find(f"dc:{attr}", context.am_user.mets.mets_nsmap)
         assert dc_el is not None
         assert dc_el.text == context.am_user.browser.dummy_val

@@ -1,9 +1,10 @@
 """Steps for the MediaConch-related Features."""
-
 import logging
 import os
 
-from behave import when, then, given
+from behave import given
+from behave import then
+from behave import when
 from lxml import etree
 
 from features.steps import utils
@@ -211,7 +212,7 @@ def step_impl(context):
     for format_ in formats:
         context.am_user.browser.ensure_fpr_rule_enabled(
             "Preservation",
-            "Video:{}:{}".format(format_, format_),
+            f"Video:{format_}:{format_}",
             "Transcoding to mkv with ffmpeg",
         )
 
@@ -376,7 +377,7 @@ def step_impl(context, policy_file):
         for x in [os.path.join(aip_policy_outputs_path, y) for y in contents]
         if os.path.isfile(x) and os.path.splitext(x)[1] == ".xml"
     ]
-    assert file_paths, "There are no files in dir {}!".format(aip_policy_outputs_path)
+    assert file_paths, f"There are no files in dir {aip_policy_outputs_path}!"
     for fp in file_paths:
         with open(fp) as f:
             doc = etree.parse(f)
@@ -406,7 +407,7 @@ def step_impl(context, policy_file):
         for x in [os.path.join(aip_policy_outputs_path, y) for y in contents]
         if os.path.isfile(x) and os.path.splitext(x)[1] == ".xml"
     ]
-    assert file_paths, "There are no files in dir {}!".format(aip_policy_outputs_path)
+    assert file_paths, f"There are no files in dir {aip_policy_outputs_path}!"
     for fp in file_paths:
         with open(fp) as f:
             doc = etree.parse(f)
