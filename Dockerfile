@@ -1,8 +1,8 @@
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
-RUN echo "deb http://archive.ubuntu.com/ubuntu bionic main universe\n" > /etc/apt/sources.list \
-	&& echo "deb http://archive.ubuntu.com/ubuntu bionic-updates main universe\n" >> /etc/apt/sources.list \
-	&& echo "deb http://security.ubuntu.com/ubuntu bionic-security main universe\n" >> /etc/apt/sources.list
+RUN echo "deb http://archive.ubuntu.com/ubuntu jammy main universe\n" > /etc/apt/sources.list \
+	&& echo "deb http://archive.ubuntu.com/ubuntu jammy-updates main multiverse\n" >> /etc/apt/sources.list \
+	&& echo "deb http://security.ubuntu.com/ubuntu jammy-security main universe\n" >> /etc/apt/sources.list
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
@@ -22,7 +22,6 @@ RUN apt-get -qqy update \
 		locales \
 		openssh-client \
 		p7zip-full \
-		python \
 		python3-pip \
 		python3-setuptools \
 		python3-dev \
@@ -33,6 +32,13 @@ RUN apt-get -qqy update \
 		libnss3 \
 		libgbm1 \
 		libdrm2 \
+		libglib2.0-0 \
+		libxcb1 \
+		libgtk-3-0 \
+		libx11-xcb1 \
+		libdbus-glib-1-2 \
+		libasound2 \
+		libxtst6 \
 	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 
