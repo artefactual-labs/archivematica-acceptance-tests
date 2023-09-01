@@ -105,10 +105,9 @@ RUN GK_VERSION=$(if [ ${GECKODRIVER_VERSION:-latest} = "latest" ]; then echo $(w
 	&& chmod 755 /opt/geckodriver-$GK_VERSION \
 	&& ln -fs /opt/geckodriver-$GK_VERSION /usr/bin/geckodriver
 
-COPY requirements /home/artefactual/acceptance-tests/requirements/
+COPY requirements-dev.txt /home/artefactual/acceptance-tests/requirements-dev.txt
 RUN pip3 install wheel \
-	&& pip3 install -r /home/artefactual/acceptance-tests/requirements/base.txt \
-	&& pip3 install -r /home/artefactual/acceptance-tests/requirements/test.txt
+	&& pip3 install -r /home/artefactual/acceptance-tests/requirements-dev.txt
 COPY . /home/artefactual/acceptance-tests
 WORKDIR /home/artefactual/acceptance-tests
 RUN chown -R artefactual:artefactual /home/artefactual
