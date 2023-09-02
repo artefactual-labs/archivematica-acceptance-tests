@@ -43,7 +43,7 @@ jobs:
         run: |
           docker run \
             --rm \
-            --security-opt="seccomp=etc/docker/seccomp/chrome.json" \
+            --security-opt="seccomp=unconfined" \
             archivematica-acceptance-tests \
             /home/artefactual/acceptance-tests/simplebrowsertest.py
   lint:
