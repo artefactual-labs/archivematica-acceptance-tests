@@ -4,7 +4,6 @@ This module contains the ``ArchivematicaDockerAbility`` class, which encodes the
 ability of an Archivematica user to use Docker to interact configure and deploy
 Archivematica.
 """
-
 import logging
 import os
 import shlex
@@ -98,7 +97,7 @@ class ArchivematicaDockerAbility(base.Base):
             raise
         return (
             subprocess.check_output(
-                shlex.split("docker-compose ps -q {}".format(docker_container_name)),
+                shlex.split(f"docker-compose ps -q {docker_container_name}"),
                 cwd=docker_compose_path,
             )
             .decode("utf8")

@@ -1,36 +1,28 @@
 #!/usr/bin/env python3
-
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 
 
 TEST_URL = "https://www.artefactual.com"
-TEST_TITLE = "Home - Artefactual"
+TEST_TITLE = "Home | Artefactual"
 
 
 def get_chrome_driver():
     options = webdriver.ChromeOptions()
-    options.add_argument("headless")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--whitelisted-ips")
-    driver = webdriver.Chrome(chrome_options=options)
-    driver.set_window_size(1700, 900)
+    options.add_argument("--headless")
+    driver = webdriver.Chrome(options=options)
     return driver
 
 
 def get_firefox_driver():
-    fp = webdriver.FirefoxProfile()
-    fp.set_preference("dom.max_chrome_script_run_time", 0)
-    fp.set_preference("dom.max_script_run_time", 0)
     options = webdriver.FirefoxOptions()
-    options.add_argument("-headless")
-    driver = webdriver.Firefox(firefox_profile=fp, firefox_options=options)
+    options.add_argument("--headless")
+    driver = webdriver.Firefox(options=options)
     return driver
 
 
 def run_test(driver_getter, name):
-    print("{}... ".format(name), end="")
+    print(f"{name}... ", end="")
     try:
         driver = driver_getter()
     except WebDriverException as err:

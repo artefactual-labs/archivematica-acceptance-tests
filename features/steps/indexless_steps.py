@@ -1,10 +1,11 @@
 """Steps for the Indexless ("No Elasticsearch") Feature."""
-
 import logging
 import os
 import re
 
-from behave import when, then, given
+from behave import given
+from behave import then
+from behave import when
 from lxml import etree
 
 from features.steps import utils
@@ -264,10 +265,10 @@ def step_impl(context):
     indexless_uuid = os.path.basename(indexless_aip_path.rstrip("/")).split("-", 1)[1]
     indexed_uuid = os.path.basename(indexed_aip_path.rstrip("/")).split("-", 1)[1]
     indexless_mets_path = os.path.join(
-        indexless_aip_path, "data", "METS.{}.xml".format(indexless_uuid)
+        indexless_aip_path, "data", f"METS.{indexless_uuid}.xml"
     )
     indexed_mets_path = os.path.join(
-        indexed_aip_path, "data", "METS.{}.xml".format(indexed_uuid)
+        indexed_aip_path, "data", f"METS.{indexed_uuid}.xml"
     )
     assert os.path.isfile(indexless_mets_path), "{} is not a file".format(
         indexless_mets_path
@@ -297,7 +298,7 @@ def step_impl(context, tab_name):
 def step_impl(context, tab_name):
     tab_name = tab_name.replace(" tab", "").strip().lower()
     msg1 = "Elasticsearch Indexing Disabled"
-    msg2 = "The {} tab is non-functional".format(tab_name)
+    msg2 = f"The {tab_name} tab is non-functional"
     page_text = context.am_user.browser.driver.find_element_by_tag_name("body").text
     assert msg1 in page_text
     assert msg2 in page_text

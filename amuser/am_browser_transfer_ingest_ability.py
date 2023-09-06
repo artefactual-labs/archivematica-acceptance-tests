@@ -1,19 +1,18 @@
 """Archivematica Transfer & Ingest Tabs Ability"""
-
 import logging
 import sys
 import time
 
-from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.ui import Select
 
-from . import utils
+from . import am_browser_file_explorer_ability as file_explorer_abl
+from . import am_browser_ingest_ability as ingest_abl
+from . import am_browser_jobs_tasks_ability as jobs_tasks_abl
+from . import am_browser_transfer_ability as transfer_abl
 from . import base
 from . import selenium_ability
-from . import am_browser_jobs_tasks_ability as jobs_tasks_abl
-from . import am_browser_file_explorer_ability as file_explorer_abl
-from . import am_browser_transfer_ability as transfer_abl
-from . import am_browser_ingest_ability as ingest_abl
+from . import utils
 
 
 logger = logging.getLogger("amuser.transferingest")
@@ -96,11 +95,11 @@ class ArchivematicaBrowserTransferIngestAbility(
                 Select(select_el).select_by_index(index)
             else:
                 raise ArchivematicaBrowserTransferIngestAbilityError(
-                    'Unable to select choice "{}"'.format(choice_text)
+                    f'Unable to select choice "{choice_text}"'
                 )
         else:
             raise ArchivematicaBrowserTransferIngestAbilityError(
-                "Unable to find decision point {}".format(decision_point)
+                f"Unable to find decision point {decision_point}"
             )
 
     def assert_no_option(
@@ -113,7 +112,7 @@ class ArchivematicaBrowserTransferIngestAbility(
         try:
             self.make_choice(choice_text, decision_point, uuid_val, unit_type=unit_type)
         except ArchivematicaBrowserTransferIngestAbilityError as exc:
-            assert 'Unable to select choice "{}"'.format(choice_text) == str(exc)
+            assert f'Unable to select choice "{choice_text}"' == str(exc)
         else:
             raise AssertionError(
                 'We were able to select choice "{}" at decision point "{}" even'
@@ -206,7 +205,7 @@ class ArchivematicaBrowserTransferIngestAbility(
         with name ``group_name`` of the transfer with UUID ``transfer_uuid``.
         """
         transfer_div_elem = None
-        transfer_dom_id = "sip-row-{}".format(transfer_uuid)
+        transfer_dom_id = f"sip-row-{transfer_uuid}"
         for elem in self.driver.find_elements_by_css_selector("div.sip"):
             try:
                 elem.find_element_by_id(transfer_dom_id)
@@ -217,9 +216,9 @@ class ArchivematicaBrowserTransferIngestAbility(
             logger.warning("Unable to find Transfer %s.", transfer_uuid)
             return None
         if self.vn == "1.6":
-            expected_name = "Micro-service: {}".format(group_name)
+            expected_name = f"Micro-service: {group_name}"
         else:
-            expected_name = "Microservice: {}".format(group_name)
+            expected_name = f"Microservice: {group_name}"
         result = None
         for ms_group_elem in transfer_div_elem.find_elements_by_css_selector(
             "div.microservicegroup"

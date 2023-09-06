@@ -16,22 +16,14 @@ jobs:
       - name: "Set up Python"
         uses: "actions/setup-python@v4"
         with:
-          python-version: "3.8"
-      - name: "Get pip cache dir"
-        id: "pip-cache"
-        run: |
-          echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
-      - name: "Cache pip packages"
-        uses: "actions/cache@v3"
-        with:
-          path: "${{ steps.pip-cache.outputs.dir }}"
-          key: "${{ runner.os }}-pip-${{ hashFiles('**/base.txt', '**/test.txt') }}"
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          python-version: "3.9"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements-dev.txt
       - name: "Install requirements"
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
       - name: "Run test"
         run: |
           ./simplebrowsertest.py
@@ -43,15 +35,17 @@ jobs:
         uses: "actions/checkout@v3"
       - name: "Build containers"
         run: |
-          docker build -t archivematica-acceptance-tests .
+          docker build -t archivematica-acceptance-tests --build-arg TARGET --build-arg PYTHON_VERSION .
         env:
           COMPOSE_DOCKER_CLI_BUILD: 1
           DOCKER_BUILDKIT: 1
+          TARGET: "archivematica-acceptance-tests"
+          PYTHON_VERSION: "3.9"
       - name: "Run test"
         run: |
           docker run \
             --rm \
-            --security-opt="seccomp=etc/docker/seccomp/chrome.json" \
+            --security-opt="seccomp=unconfined" \
             archivematica-acceptance-tests \
             /home/artefactual/acceptance-tests/simplebrowsertest.py
   lint:
@@ -63,7 +57,10 @@ jobs:
       - name: "Set up Python"
         uses: "actions/setup-python@v4"
         with:
-          python-version: "3.8"
+          python-version: "3.9"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements-dev.txt
       - name: "Install tox"
         run: |
           python -m pip install --upgrade pip

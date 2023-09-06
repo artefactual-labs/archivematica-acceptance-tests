@@ -5,26 +5,24 @@ the ability of an Archivematica user to use a browser to interact with
 Archivematica. This class provides an interface to Selenium for opening browser
 windows and interacting with Archivematica's GUIs.
 """
-
 import logging
 import time
 
 import requests
+from selenium.common.exceptions import ElementNotInteractableException
+from selenium.common.exceptions import ElementNotVisibleException
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import (
-    ElementNotInteractableException,
-    ElementNotVisibleException,
-    NoSuchElementException,
-)
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import WebDriverWait
 
-from . import constants as c
-from . import base
 from . import am_browser_auth_ability as auth_abl
-from . import am_browser_transfer_ingest_ability as tra_ing_abl
-from . import am_browser_ss_ability as ss_abl
 from . import am_browser_preservation_planning_ability as pres_plan_abl
+from . import am_browser_ss_ability as ss_abl
+from . import am_browser_transfer_ingest_ability as tra_ing_abl
+from . import base
+from . import constants as c
 
 
 logger = logging.getLogger("amuser.browser")
@@ -73,7 +71,7 @@ class ArchivematicaBrowserAbility(
             try:
                 self.driver.find_element_by_css_selector(selector)
             except NoSuchElementException as exc:
-                assert "Unable to locate element: {}".format(selector) in str(exc)
+                assert f"Unable to locate element: {selector}" in str(exc)
         assert self.driver.find_element_by_css_selector("div#sip-container")
 
     # ==========================================================================
@@ -150,9 +148,7 @@ class ArchivematicaBrowserAbility(
             s.cookies.update({cookie["name"]: cookie["value"]})
         while True:
             if attempt > max_attempts:
-                raise ArchivematicaBrowserAbilityError(
-                    "Unable to navigate to {}".format(url)
-                )
+                raise ArchivematicaBrowserAbilityError(f"Unable to navigate to {url}")
             r = s.get(url)
             if r.status_code == requests.codes.ok:
                 logger.info(
@@ -200,7 +196,7 @@ class ArchivematicaBrowserAbility(
         alert_text = self.driver.find_element_by_css_selector(
             "div.alert-success"
         ).text.strip()
-        assert alert_text.startswith("Package {} sent to pipeline".format(aip_uuid))
+        assert alert_text.startswith(f"Package {aip_uuid} sent to pipeline")
         assert alert_text.endswith("for re-ingest")
 
     # ==========================================================================

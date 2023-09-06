@@ -1,15 +1,14 @@
 """Archivematica Browser Storage Service Ability"""
-
 import logging
 import pprint
 import time
 
-from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.ui import Select
 
-from . import utils
 from . import base
 from . import selenium_ability
+from . import utils
 
 
 logger = logging.getLogger("amuser.ss")
@@ -156,7 +155,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         """
         self.navigate(self.get_locations_create_url(space_uuid))
         form_el = self.driver.find_element_by_css_selector(
-            'form[action="/spaces/{}/location_create/"]'.format(space_uuid)
+            f'form[action="/spaces/{space_uuid}/location_create/"]'
         )
         for p_el in form_el.find_elements_by_tag_name("p"):
             for el in p_el.find_elements_by_css_selector("*"):
@@ -426,7 +425,7 @@ class ArchivematicaBrowserStorageServiceAbility(
     def create_new_gpg_key(self):
         """Create a new GPG key with a unique name."""
         self.navigate(self.get_create_gpg_key_url())
-        new_key_name = "GPGKey {}".format(utils.unixtimestamp())
+        new_key_name = f"GPGKey {utils.unixtimestamp()}"
         new_key_email = "{}@example.com".format(new_key_name.lower().replace(" ", ""))
         self.driver.find_element_by_id("id_name_real").send_keys(new_key_name)
         self.driver.find_element_by_id("id_name_email").send_keys(new_key_email)

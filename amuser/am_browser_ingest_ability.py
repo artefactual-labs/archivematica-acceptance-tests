@@ -1,29 +1,23 @@
-# -*- coding: utf-8 -*-
-
 """Archivematica Ingest Tab Ability"""
-
-import os
 import logging
+import os
 import tempfile
 import time
 
-from lxml import etree
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import (
-    MoveTargetOutOfBoundsException,
-    NoSuchElementException,
-    TimeoutException,
-)
 import tenacity
-
 from amclient import AMClient
+from lxml import etree
+from selenium.common.exceptions import MoveTargetOutOfBoundsException
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from . import base
 from . import constants as c
-from . import utils
 from . import selenium_ability
+from . import utils
 
 
 class ArchivematicaBrowserMETSAbilityError(base.ArchivematicaUserError):
@@ -72,9 +66,9 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
         """Return METS once stored in an AIP."""
         if not sip_uuid:
             sip_uuid = self.get_sip_uuid(transfer_name)
-        absolute_transfer_name = "{}-{}".format(transfer_name, sip_uuid)
-        mets_name = "METS.{}.xml".format(sip_uuid)
-        mets_path = "{}/data/{}".format(absolute_transfer_name, mets_name)
+        absolute_transfer_name = f"{transfer_name}-{sip_uuid}"
+        mets_name = f"METS.{sip_uuid}.xml"
+        mets_path = f"{absolute_transfer_name}/data/{mets_name}"
         mets_tmp_dir = tempfile.mkdtemp()
         mets_tmp_file = os.path.join(mets_tmp_dir, mets_name)
         AMClient(
@@ -86,7 +80,7 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
             saveas_filename=mets_tmp_file,
         ).extract_file()
         mets = ""
-        with open(mets_tmp_file, "r") as mets_file:
+        with open(mets_tmp_file) as mets_file:
             mets = mets_file.read()
         os.unlink(mets_tmp_file)
         if parse_xml:
@@ -166,7 +160,7 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
             path = path[:-1]
         path_parts = path.split("/")
         if path_parts[-1].startswith("METS."):
-            path_parts[-1] = "METS__{}".format(path_parts[-1][5:])
+            path_parts[-1] = f"METS__{path_parts[-1][5:]}"
         for i, folder in enumerate(path_parts):
             is_last = False
             if i == len(path_parts) - 1:
@@ -185,13 +179,11 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
     def add_dummy_metadata(self, sip_uuid):
         self.navigate(self.get_ingest_url())
         self.driver.find_element_by_id(
-            "sip-row-{}".format(sip_uuid)
+            f"sip-row-{sip_uuid}"
         ).find_element_by_css_selector("a.btn_show_metadata").click()
         self.navigate(self.get_metadata_add_url(sip_uuid))
         for attr in self.metadata_attrs:
-            self.driver.find_element_by_id("id_{}".format(attr)).send_keys(
-                self.dummy_val
-            )
+            self.driver.find_element_by_id(f"id_{attr}").send_keys(self.dummy_val)
         try:
             self.driver.find_element_by_css_selector("input[value=Create]").click()
         except NoSuchElementException:

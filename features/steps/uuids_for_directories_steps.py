@@ -1,10 +1,10 @@
 """Steps for the UUIDs for the Direcotries Feature."""
-
 import logging
 import os
 import pprint
 
-from behave import then, given
+from behave import given
+from behave import then
 from lxml import etree
 
 from features.steps import utils
@@ -30,7 +30,7 @@ def step_impl(context, dir_path):
     record the directory structure in ``context``.
     """
     if dir_path.startswith("~/"):
-        dir_path = "/home/{}/{}".format(context.HOME, dir_path[2:])
+        dir_path = f"/home/{context.HOME}/{dir_path[2:]}"
 
     dir_is_zipped = bool(os.path.splitext(dir_path)[1])
     if dir_is_zipped:
@@ -168,7 +168,7 @@ def step_impl(context):
         struct_map_el = mets.find(xpath, ns)
         assert (
             struct_map_el is not None
-        ), "We expected to find a {}-type structMap but did not".format(type_)
+        ), f"We expected to find a {type_}-type structMap but did not"
         subpaths = utils.get_subpaths_from_struct_map(struct_map_el, ns)
         subpaths = [
             p.replace("/objects", "", 1)
@@ -220,9 +220,7 @@ def step_impl(context):
             ):
                 continue
             dirname = os.path.basename(dirpath)
-            mets_div_el = struct_map_el.find(
-                './/mets:div[@LABEL="{}"]'.format(dirname), ns
-            )
+            mets_div_el = struct_map_el.find(f'.//mets:div[@LABEL="{dirname}"]', ns)
             assert (
                 mets_div_el is not None
             ), "Could not find a <mets:div> for directory at {} in {}-type structmap".format(
@@ -234,7 +232,7 @@ def step_impl(context):
             ):
                 continue
             dmdid = mets_div_el.get("DMDID")
-            dmdSec_el = mets.find('.//mets:dmdSec[@ID="{}"]'.format(dmdid), ns)
+            dmdSec_el = mets.find(f'.//mets:dmdSec[@ID="{dmdid}"]', ns)
             assert (
                 dmdSec_el is not None
             ), "Could not find a <mets:dmdSec> for directory at {} in {}-type structmap".format(

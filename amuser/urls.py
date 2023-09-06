@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """URLS used across the AMAUAT suite plus getters to help retrieve those values
 consistently in tests.
 """

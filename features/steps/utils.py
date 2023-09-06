@@ -1,5 +1,4 @@
 """Utilities for Steps files."""
-
 import csv
 import datetime
 import logging
@@ -10,9 +9,9 @@ import tempfile
 import time
 import zipfile
 
-from amclient.amclient import AMClient
 import environment
 import tenacity
+from amclient.amclient import AMClient
 from environment import AM_API_CONFIG_KEY
 from environment import SS_API_CONFIG_KEY
 from lxml import etree
@@ -86,7 +85,7 @@ def aip_descr_to_ptr_attr(aip_description):
 
 
 def get_event_attr(event_type):
-    return "{}_event_uuid".format(event_type)
+    return f"{event_type}_event_uuid"
 
 
 def get_mets_from_scenario(context, api=False):
@@ -172,7 +171,7 @@ def assert_premis_properties(event, context, properties):
             elif relation == "regex":
                 assert re.search(
                     value, desc_el.text.strip()
-                ), "{} does not contain regex {}".format(desc_el.text.strip(), value)
+                ), f"{desc_el.text.strip()} does not contain regex {value}"
 
 
 def initiate_transfer(context, transfer_path, accession_no=None, transfer_type=None):
@@ -243,7 +242,7 @@ def remove_common_prefix(seq):
     strings.
     """
     try:
-        prefixes = set([x[0] for x in seq])
+        prefixes = {x[0] for x in seq}
     except IndexError:
         return seq
     if len(prefixes) == 1:
@@ -338,7 +337,7 @@ def call_api_endpoint(
     endpoint, endpoint_args=[], warning_message=None, error_message=None, max_attempts=3
 ):
     if warning_message is None:
-        warning_message = "Got invalid response from {}. Retrying".format(endpoint)
+        warning_message = f"Got invalid response from {endpoint}. Retrying"
     if error_message is None:
         error_message = (
             "Could not get a valid response from {}"
@@ -423,7 +422,7 @@ def start_transfer(
 ):
     """Start a transfer using the create_package endpoint and return its uuid"""
     if transfer_name is None:
-        transfer_name = "amauat-transfer_{}".format(int(time.time()))
+        transfer_name = f"amauat-transfer_{int(time.time())}"
     am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
     am.transfer_source = return_default_ts_location(api_clients_config)
     am.transfer_directory = transfer_path
@@ -517,7 +516,7 @@ def check_unit_status(api_clients_config, unit_uuid, unit="transfer"):
     am.transfer_uuid = unit_uuid
     am.sip_uuid = unit_uuid
     return call_api_endpoint(
-        endpoint=getattr(am, "get_{}_status".format(unit)),
+        endpoint=getattr(am, f"get_{unit}_status"),
         warning_message="Cannot check unit status",
         error_message="Cannot check unit status",
     )
@@ -542,12 +541,12 @@ def get_aip_file_location(extracted_aip_dir, relative_path):
 
 
 def get_aip_mets_location(extracted_aip_dir, sip_uuid):
-    path = os.path.join("data", "METS.{}.xml".format(sip_uuid))
+    path = os.path.join("data", f"METS.{sip_uuid}.xml")
     return get_aip_file_location(extracted_aip_dir, path)
 
 
 def get_dip_mets_location(extracted_dip_dir, sip_uuid):
-    return os.path.join(extracted_dip_dir, "METS.{}.xml".format(sip_uuid))
+    return os.path.join(extracted_dip_dir, f"METS.{sip_uuid}.xml")
 
 
 def _automation_tools_extract_package(
@@ -561,7 +560,7 @@ def _automation_tools_extract_package(
     :param str lookup_uuid: UUID to look for inside the extraction directory
     :returns: absolute path to the extracted package folder
     """
-    command = ["7z", "x", "-bd", "-y", "-o{0}".format(tmp_dir), package_file]
+    command = ["7z", "x", "-bd", "-y", f"-o{tmp_dir}", package_file]
     try:
         subprocess.check_output(command, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
@@ -611,7 +610,7 @@ def get_premis_events_by_type(entry, event_type):
 def get_transfer_dir_from_structmap(tree, transfer_name, sip_uuid, nsmap):
     structmap = tree.find('mets:structMap[@TYPE="physical"]', namespaces=nsmap)
     return structmap.find(
-        'mets:div[@LABEL="{}-{}"][@TYPE="Directory"]'.format(transfer_name, sip_uuid),
+        f'mets:div[@LABEL="{transfer_name}-{sip_uuid}"][@TYPE="Directory"]',
         namespaces=nsmap,
     )
 
@@ -670,8 +669,8 @@ def assert_structmap_item_path_exists(item, root_path, parent_path=""):
 def is_valid_download(path):
     errors = {
         "path": "Path returned is None",
-        "validate": "Cannot validate {} as file".format(path),
-        "size": "File {} has not downloaded correctly".format(path),
+        "validate": f"Cannot validate {path} as file",
+        "size": f"File {path} has not downloaded correctly",
     }
     assert path, errors["path"]
     assert os.path.isfile(path), errors["validate"]
@@ -694,16 +693,16 @@ def retrieve_rights_linking_object_identifiers(tree, nsmap):
         "mets:amdSec/mets:rightsMD/mets:mdWrap/mets:xmlData/premis:rightsStatement/premis:linkingObjectIdentifier/premis:linkingObjectIdentifierValue",
         namespaces=nsmap,
     )
-    return set([id_.text for id_ in rights_objects])
+    return {id_.text for id_ in rights_objects}
 
 
 def get_filesec_files(tree, use=None, nsmap={}):
     use_query = ""
     # an empty use parameter will retrieve all the files in the fileSec
     if use:
-        use_query = '="{}"'.format(use)
+        use_query = f'="{use}"'
     return tree.findall(
-        "mets:fileSec/mets:fileGrp[@USE{}]/mets:file".format(use_query),
+        f"mets:fileSec/mets:fileGrp[@USE{use_query}]/mets:file",
         namespaces=nsmap,
     )
 
@@ -718,7 +717,7 @@ def start_sample_transfer(
     transfer_path = os.path.join(environment.sample_data_path, sample_transfer_path)
     if not browse_default_ts_location(api_clients_config, transfer_path):
         raise environment.EnvironmentError(
-            "Location {} cannot be verified".format(transfer_path)
+            f"Location {transfer_path} cannot be verified"
         )
     try:
         start_result = start_transfer(
@@ -732,7 +731,7 @@ def start_sample_transfer(
         result["transfer_path"] = transfer_path
         return result
     except environment.EnvironmentError as err:
-        assert False, "Error starting transfer: {}".format(err)
+        assert False, f"Error starting transfer: {err}"
 
 
 def wait_for_transfer(api_clients_config, transfer_uuid):
@@ -830,7 +829,7 @@ def create_reingest(api_clients_config, transfer, reingest_type, processing_conf
             processing_config,
         )
     except environment.EnvironmentError as err:
-        assert False, "Error starting reingest: {}".format(err)
+        assert False, f"Error starting reingest: {err}"
     else:
         return {
             "reingest_uuid": reingest_uuid,
@@ -897,7 +896,7 @@ def assert_jobs_completed_successfully(
         job_link_uuid=job_link_uuid,
         job_microservice=job_microservice,
     )
-    assert len(jobs), "No jobs found for unit {}".format(unit_uuid)
+    assert len(jobs), f"No jobs found for unit {unit_uuid}"
     for job in jobs:
         job_error = "Job '{} ({})' of unit '{}' does not have a COMPLETE status".format(
             job["name"], job["uuid"], unit_uuid
@@ -929,7 +928,7 @@ def assert_jobs_fail(
         job_link_uuid=job_link_uuid,
         job_microservice=job_microservice,
     )
-    assert len(jobs), "No jobs found for unit {}".format(unit_uuid)
+    assert len(jobs), f"No jobs found for unit {unit_uuid}"
     for job in jobs:
         job_error = "Job '{} ({})' of unit '{}' does not have a FAILED status or one of its tasks has an invalid exit code ({})".format(
             job["name"], job["uuid"], unit_uuid, ", ".join(map(str, valid_exit_codes))
@@ -958,12 +957,12 @@ def assert_source_md_in_bagit_mets(mets_root, mets_nsmap):
     assert source_md_elem, "sourceMD cannot be found, sourceMD is None"
     assert (
         len(source_md_elem) is EXPECTED_SOURCE_MD_ELEMS
-    ), "sourceMD count is incorrect: {}".format(len(source_md_elem))
+    ), f"sourceMD count is incorrect: {len(source_md_elem)}"
     md_wrap_elems = source_md_elem[0].xpath("mets:mdWrap", namespaces=mets_nsmap)
     # Assert the metadata type is associated with BagIt.
     assert md_wrap_elems
     md_type = md_wrap_elems[0].attrib["OTHERMDTYPE"]
-    assert md_type == BAGITMDTYPE, "Metadata type is incorrect: {}".format(md_type)
+    assert md_type == BAGITMDTYPE, f"Metadata type is incorrect: {md_type}"
     # Assert there is a transfer metadata snippet, and it's not empty.
     transfer_md = md_wrap_elems[0].xpath(
         "mets:xmlData/transfer_metadata", namespaces=mets_nsmap
@@ -1034,7 +1033,7 @@ def get_metadata_csv_files(transfer_name, transfer_uuid, extracted_aip_dir):
             "objects",
             "metadata",
             "transfers",
-            "{}-{}".format(transfer_name, transfer_uuid),
+            f"{transfer_name}-{transfer_uuid}",
             filename,
         )
         if not os.path.exists(csv_path):
@@ -1077,7 +1076,7 @@ def get_source_metadata(transfer_name, transfer_uuid, extracted_aip_dir):
             "objects",
             "metadata",
             "transfers",
-            "{}-{}".format(transfer_name, transfer_uuid),
+            f"{transfer_name}-{transfer_uuid}",
             filename,
         )
         if not os.path.exists(csv_path):
@@ -1191,7 +1190,7 @@ def find_aip_by_transfer_metadata(
     # Set search term phrase
     browser.driver.find_elements_by_css_selector('input[title="search query"]')[
         -1
-    ].send_keys('"{}"'.format(search_phrase))
+    ].send_keys(f'"{search_phrase}"')
     Select(
         browser.driver.find_elements_by_css_selector('select[title="field name"]')[-1]
     ).select_by_visible_text("Transfer metadata")

@@ -1,9 +1,8 @@
 """Archivematica Browser Preservation Planning Ability"""
-
 import logging
 
-from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.ui import Select
 
 from . import selenium_ability
 
@@ -136,7 +135,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
                 lines.append(line)
                 lines += policy_lines
             elif line.strip() == "POLICY_NAME = ''":
-                lines.append("POLICY_NAME = '{}'".format(policy_file))
+                lines.append(f"POLICY_NAME = '{policy_file}'")
             else:
                 lines.append(line)
         return "\n".join(lines)
@@ -252,4 +251,4 @@ class ArchivematicaBrowserPreservationPlanningAbility(
 
     @staticmethod
     def get_policy_command_description(policy_file):
-        return "Check against policy {} using MediaConch".format(policy_file)
+        return f"Check against policy {policy_file} using MediaConch"

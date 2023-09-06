@@ -3,7 +3,6 @@
 This module contains the ``ArchivematicaMETSAbility`` class, which represents an
 Archivematica user's ability to interact with METS XML files.
 """
-
 import os
 
 from . import base
@@ -81,7 +80,7 @@ class ArchivematicaMETSAbility(base.Base):
                 elif idfr_type == "hdl":
                     assert utils.is_hdl(
                         idfr, entity["type"], accession_no
-                    ), "Identifier {} is not a hdl".format(idfr)
+                    ), f"Identifier {idfr} is not a hdl"
                 else:
                     purls.append(idfr)
             assert utils.all_urls_resolve(
@@ -108,15 +107,13 @@ class ArchivematicaMETSAbility(base.Base):
         assert objects_div_el is not None
         xpath = []
         for dir_ in empty_dir_rel_path.split("/"):
-            xpath.append("mets:div[@TYPE='Directory' and @LABEL='{}']".format(dir_))
+            xpath.append(f"mets:div[@TYPE='Directory' and @LABEL='{dir_}']")
         xpath = "/".join(xpath)
         empty_dir_div_el = objects_div_el.xpath(xpath, namespaces=ns)[0]
         assert empty_dir_div_el is not None
         dmdid = empty_dir_div_el.get("DMDID")
         assert dmdid is not None
-        dmd_sec_el = mets_doc.xpath(
-            "mets:dmdSec[@ID='{}']".format(dmdid), namespaces=ns
-        )[0]
+        dmd_sec_el = mets_doc.xpath(f"mets:dmdSec[@ID='{dmdid}']", namespaces=ns)[0]
         assert dmd_sec_el is not None
         identifiers = []
         for obj_idfr_el in dmd_sec_el.findall(
@@ -148,7 +145,7 @@ def _add_entity_identifiers(entity, doc, ns):
     if e_id is None:
         return entity
     elif e_type == "file":
-        amd_sec_el = doc.xpath("mets:amdSec[@ID='{}']".format(e_id), namespaces=ns)[0]
+        amd_sec_el = doc.xpath(f"mets:amdSec[@ID='{e_id}']", namespaces=ns)[0]
         obj_idfr_els = amd_sec_el.findall(
             ".//mets:mdWrap/"
             "mets:xmlData/"
@@ -164,7 +161,7 @@ def _add_entity_identifiers(entity, doc, ns):
                 )
             )
     else:
-        dmd_sec_el = doc.xpath("mets:dmdSec[@ID='{}']".format(e_id), namespaces=ns)[0]
+        dmd_sec_el = doc.xpath(f"mets:dmdSec[@ID='{e_id}']", namespaces=ns)[0]
         for obj_idfr_el in dmd_sec_el.findall(
             "mets:mdWrap/mets:xmlData/premis:object/premis:objectIdentifier", ns
         ):
@@ -212,9 +209,9 @@ def _get_mets_entities(doc, root_el=None, entities=None, path="", ns=None):
     for file_el in root_el.xpath("mets:div[@TYPE='Item']", namespaces=ns):
         file_name = file_el.get("LABEL")
         file_id = file_el.find("mets:fptr", ns).get("FILEID")
-        file_id = doc.xpath("//mets:file[@ID='{}']".format(file_id), namespaces=ns)[
-            0
-        ].get("ADMID")
+        file_id = doc.xpath(f"//mets:file[@ID='{file_id}']", namespaces=ns)[0].get(
+            "ADMID"
+        )
         entities.append(
             {
                 "type": "file",

@@ -1,5 +1,4 @@
 """Archivematica Browser Jobs & Tasks Ability"""
-
 import logging
 import sys
 import time
@@ -7,8 +6,8 @@ import time
 from selenium.common.exceptions import NoSuchElementException
 
 from . import constants as c
-from . import utils
 from . import selenium_ability
+from . import utils
 
 
 logger = logging.getLogger("amuser.jobstasks")
@@ -224,7 +223,7 @@ def process_task_header_row(row_elem, row_dict):
             line = line[1:]
         if line.endswith(")"):
             line = line[:-1]
-        attr, val = [x.strip() for x in line.split(":")]
+        attr, val = (x.strip() for x in line.split(":"))
         row_dict[attr.lower().replace(" ", "_")] = val
     return row_dict
 

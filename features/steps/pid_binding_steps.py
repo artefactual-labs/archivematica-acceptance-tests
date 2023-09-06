@@ -1,6 +1,6 @@
 """Steps for the Bind PIDs Feature."""
-
-from behave import then, given
+from behave import given
+from behave import then
 
 from features.steps import utils
 

@@ -1,8 +1,8 @@
 amclient
-behave>=1.0
+behave
 lxml
 metsrw
 pexpect
-requests<3.0
+requests
 tenacity
-selenium<4.0
+selenium<4

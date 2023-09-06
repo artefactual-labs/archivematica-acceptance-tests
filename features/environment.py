@@ -1,18 +1,17 @@
 import logging
 import os
 
-import amuser
-from amuser.constants import (
-    NIHILISTIC_WAIT,
-    APATHETIC_WAIT,
-    PESSIMISTIC_WAIT,
-    MEDIUM_WAIT,
-    OPTIMISTIC_WAIT,
-    QUICK_WAIT,
-    MICRO_WAIT,
-    METS_NSMAP,
-)
 import utils
+
+import amuser
+from amuser.constants import APATHETIC_WAIT
+from amuser.constants import MEDIUM_WAIT
+from amuser.constants import METS_NSMAP
+from amuser.constants import MICRO_WAIT
+from amuser.constants import NIHILISTIC_WAIT
+from amuser.constants import OPTIMISTIC_WAIT
+from amuser.constants import PESSIMISTIC_WAIT
+from amuser.constants import QUICK_WAIT
 
 
 class EnvironmentError(Exception):

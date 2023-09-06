@@ -1,5 +1,4 @@
 """Steps for the CCA DIP Feature."""
-
 import csv
 import logging
 import os
@@ -7,7 +6,9 @@ import subprocess
 import time
 import zipfile
 
-from behave import when, then, given
+from behave import given
+from behave import then
+from behave import when
 
 
 logger = logging.getLogger("amauat.steps.ccadip")
@@ -68,14 +69,14 @@ def step_impl(context):
     " original Transfer name appended with the AIP UUID and “_DIP”"
 )
 def step_impl(context):
-    dip_name = "{}_{}_DIP".format(context.transfer_name, context.aip_uuid)
+    dip_name = f"{context.transfer_name}_{context.aip_uuid}_DIP"
     context.dip_path = os.path.join(context.output_dir, dip_name)
     assert os.path.exists(context.dip_path)
 
 
 @then("the DIP METS XML file that describes the contents of the DIP")
 def step_impl(context):
-    mets_filename = "METS.{}.xml".format(context.aip_uuid)
+    mets_filename = f"METS.{context.aip_uuid}.xml"
     context.mets_path = os.path.join(context.dip_path, mets_filename)
     assert os.path.exists(context.mets_path)
 
@@ -86,9 +87,7 @@ def step_impl(context):
 )
 def step_impl(context):
     objects_path = os.path.join(context.dip_path, "objects")
-    context.zip_path = os.path.join(
-        objects_path, "{}.zip".format(context.transfer_name)
-    )
+    context.zip_path = os.path.join(objects_path, f"{context.transfer_name}.zip")
     assert os.path.exists(context.zip_path)
 
 
@@ -117,7 +116,7 @@ def step_impl(context):
             # Ignore main folder, METS, submissionDocumentation and directories
             if (
                 not filename
-                or filename == "METS.{}.xml".format(context.aip_uuid)
+                or filename == f"METS.{context.aip_uuid}.xml"
                 or filename.startswith("submissionDocumentation")
                 or filename.endswith("/")
             ):
@@ -143,14 +142,14 @@ def step_impl(context):
     "the DIP zip file includes a copy of the submissionDocumentation from the original Transfer"
 )
 def step_impl(context):
-    sub_folder = "{}/submissionDocumentation/".format(context.transfer_name)
+    sub_folder = f"{context.transfer_name}/submissionDocumentation/"
     with zipfile.ZipFile(context.zip_path, "r") as zip_file:
         assert sub_folder in zip_file.namelist()
 
 
 @then("a copy of the AIP METS file generated during ingest")
 def step_impl(context):
-    mets_filename = "{}/METS.{}.xml".format(context.transfer_name, context.aip_uuid)
+    mets_filename = f"{context.transfer_name}/METS.{context.aip_uuid}.xml"
     with zipfile.ZipFile(context.zip_path, "r") as zip_file:
         assert mets_filename in zip_file.namelist()
 

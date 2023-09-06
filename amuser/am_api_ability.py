@@ -3,7 +3,6 @@
 This module contains the ``ArchivematicaAPIAbility`` class, which represents a
 user's ability to use Archivematica's APIs to interact with Archivematica.
 """
-
 import logging
 import os
 import time
@@ -31,8 +30,8 @@ class ArchivematicaAPIAbility(base.Base):
                   ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
         """
         payload = {"username": self.ss_username, "api_key": ss_api_key}
-        url = "{}api/v2/file/{}/download/".format(self.ss_url, sip_uuid)
-        aip_name = "{}-{}.7z".format(transfer_name, sip_uuid)
+        url = f"{self.ss_url}api/v2/file/{sip_uuid}/download/"
+        aip_name = f"{transfer_name}-{sip_uuid}.7z"
         aip_path = os.path.join(self.tmp_path, aip_name)
         max_attempts = self.max_download_aip_attempts
         attempt = 0
@@ -62,9 +61,7 @@ class ArchivematicaAPIAbility(base.Base):
                     r.status_code,
                     r.text,
                 )
-                raise ArchivematicaAPIAbilityError(
-                    "Unable to download AIP {}".format(sip_uuid)
-                )
+                raise ArchivematicaAPIAbilityError(f"Unable to download AIP {sip_uuid}")
 
     def download_aip_pointer_file(self, sip_uuid, ss_api_key):
         """Use the AM SS API to download the completed AIP's pointer file.
@@ -72,8 +69,8 @@ class ArchivematicaAPIAbility(base.Base):
                   ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
         """
         payload = {"username": self.ss_username, "api_key": ss_api_key}
-        url = "{}api/v2/file/{}/pointer_file/".format(self.ss_url, sip_uuid)
-        pointer_file_name = "pointer.{}.xml".format(sip_uuid)
+        url = f"{self.ss_url}api/v2/file/{sip_uuid}/pointer_file/"
+        pointer_file_name = f"pointer.{sip_uuid}.xml"
         pointer_file_path = os.path.join(self.tmp_path, pointer_file_name)
         max_attempts = self.max_download_aip_attempts
         attempt = 0
@@ -105,7 +102,7 @@ class ArchivematicaAPIAbility(base.Base):
                     r.text,
                 )
                 raise ArchivematicaAPIAbilityError(
-                    "Unable to download AIP {} pointer file".format(sip_uuid)
+                    f"Unable to download AIP {sip_uuid} pointer file"
                 )
 
     def poll_until_aip_stored(
@@ -113,7 +110,7 @@ class ArchivematicaAPIAbility(base.Base):
     ):
         max_polls = max_polls or self.max_check_aip_stored_attempts
         payload = {"username": self.ss_username, "api_key": ss_api_key}
-        url = "{}api/v2/file/{}/".format(self.ss_url, sip_uuid)
+        url = f"{self.ss_url}api/v2/file/{sip_uuid}/"
         counter = 0
         while True:
             counter += 1

@@ -67,7 +67,7 @@ def varvn(varname, vn):
     """
     return globals().get(
         "{}_{}".format(varname, vn.replace(".", "_")),
-        globals().get(varname, "There is no var {}".format(varname)),
+        globals().get(varname, f"There is no var {varname}"),
     )
 
 
