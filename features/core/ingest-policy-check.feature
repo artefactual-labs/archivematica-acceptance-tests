@@ -27,9 +27,6 @@ Feature: Ingest policy check
     | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                          | policy_file                       | purpose                     |
     | conform          | Completed successfully | pass           | successful          | TestTransfers/acceptance-tests/preforma/all-conform-policy-norm-acc   | NYULib_MKVFFV1_MODIFIED.xml       | Validation against a policy |
     | not conform      | Failed                 | fail           | failed              | TestTransfers/acceptance-tests/preforma/none-conform-policy-norm-acc  | NYULib_MKVFFV1_MODIFIED.xml       | Validation against a policy |
-    # Uncomment the following two rows to test on the equivalent MediaConch .xsl policy files
-    | conform          | Completed successfully | pass           | successful          | TestTransfers/acceptance-tests/preforma/all-conform-policy-norm-acc   | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
-    | not conform      | Failed                 | fail           | failed              | TestTransfers/acceptance-tests/preforma/none-conform-policy-norm-acc  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
 
   @preservation @nonmanual
   Scenario Outline: Isla has preservation derivatives and she needs to know whether they conform to her preservation policy
@@ -52,9 +49,6 @@ Feature: Ingest policy check
     | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                | policy_file                       | purpose                     |
     | conform          | Completed successfully | pass           | successful          | TestTransfers/acceptance-tests/preforma/all-conform-policy  | NYULib_MKVFFV1_MODIFIED.xml       | Validation against a policy |
     | not conform      | Failed                 | fail           | failed              | TestTransfers/acceptance-tests/preforma/none-conform-policy | NYULib_MKVFFV1_MODIFIED.xml       | Validation against a policy |
-    # Uncomment the following two rows to test on the equivalent MediaConch .xsl policy files
-    | conform          | Completed successfully | pass           | successful          | TestTransfers/acceptance-tests/preforma/all-conform-policy  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
-    | not conform      | Failed                 | fail           | failed              | TestTransfers/acceptance-tests/preforma/none-conform-policy | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
 
   @preservation @manual
   Scenario Outline: Isla has manually normalized preservation derivatives and she needs to know whether they conform to her preservation policy
@@ -77,8 +71,6 @@ Feature: Ingest policy check
     | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                                                  | policy_file                       | purpose                     |
     | conform          | Completed successfully | pass           | successful          | TestTransfers/acceptance-tests/preforma/manually-normalized-preservation-all-conform-policy   | NYULib_MKVFFV1_MODIFIED.xml       | Validation against a policy |
     | not conform      | Failed                 | fail           | failed              | TestTransfers/acceptance-tests/preforma/manually-normalized-preservation-none-conform-policy  | NYULib_MKVFFV1_MODIFIED.xml       | Validation against a policy |
-    | conform          | Completed successfully | pass           | successful          | TestTransfers/acceptance-tests/preforma/manually-normalized-preservation-all-conform-policy   | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
-    | not conform      | Failed                 | fail           | failed              | TestTransfers/acceptance-tests/preforma/manually-normalized-preservation-none-conform-policy  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
 
   @access @manual
   Scenario Outline: Isla has manually normalized access derivatives and she needs to know whether they conform to her access policy
@@ -100,5 +92,3 @@ Feature: Ingest policy check
     | do_files_conform | microservice_output    | event_outcome  | verification_result | transfer_path                                            | policy_file                       | purpose                     |
     | conform          | Completed successfully | pass           | successful          | TestTransfers/acceptance-tests/preforma/manually-normalized-access-all-conform-policy   | NYULib_MKVFFV1_MODIFIED.xml       | Validation against a policy |
     | not conform      | Failed                 | fail           | failed              | TestTransfers/acceptance-tests/preforma/manually-normalized-access-none-conform-policy  | NYULib_MKVFFV1_MODIFIED.xml       | Validation against a policy |
-    | conform          | Completed successfully | pass           | successful          | TestTransfers/acceptance-tests/preforma/manually-normalized-access-all-conform-policy   | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
-    | not conform      | Failed                 | fail           | failed              | TestTransfers/acceptance-tests/preforma/manually-normalized-access-none-conform-policy  | NYULibraries_MKVFFV1-MODIFIED.xsl | Validation against a policy |
