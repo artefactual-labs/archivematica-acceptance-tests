@@ -36,8 +36,6 @@ idna==3.4
     # via
     #   -r requirements.txt
     #   requests
-importlib-metadata==6.8.0
-    # via build
 lxml==4.9.3
     # via
     #   -r requirements.txt
@@ -90,16 +88,9 @@ six==1.16.0
     #   parse-type
 tenacity==8.2.3
     # via -r requirements.txt
-tomli==2.0.1
-    # via
-    #   build
-    #   pip-tools
-    #   pyproject-api
-    #   pyproject-hooks
-    #   tox
 tox==4.11.3
     # via -r requirements-dev.in
-urllib3==1.26.17
+urllib3==1.26.18
     # via
     #   -r requirements.txt
     #   amclient
@@ -109,8 +100,6 @@ virtualenv==20.24.5
     # via tox
 wheel==0.41.2
     # via pip-tools
-zipp==3.17.0
-    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 pip==23.2.1
