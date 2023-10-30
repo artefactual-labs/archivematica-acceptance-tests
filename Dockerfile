@@ -108,6 +108,7 @@ RUN set -ex \
 		libxcb1 \
 		libxslt-dev \
 		libxtst6 \
+		make \
 		openssh-client \
 		p7zip-full \
 		tzdata \
