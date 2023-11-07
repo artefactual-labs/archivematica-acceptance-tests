@@ -4,13 +4,13 @@
 #
 #    pip-compile --allow-unsafe --output-file=requirements.txt requirements.in
 #
-amclient==1.2.3
+amclient @ git+https://github.com/artefactual-labs/amclient.git@6cd186021598b3b97c00ab033405314e9e287a42
     # via -r requirements.in
 behave==1.2.6
     # via -r requirements.in
 certifi==2023.7.22
     # via requests
-charset-normalizer==3.3.1
+charset-normalizer==3.3.2
     # via requests
 idna==3.4
     # via requests
@@ -18,7 +18,7 @@ lxml==4.9.3
     # via
     #   -r requirements.in
     #   metsrw
-metsrw==0.4.0
+metsrw @ git+https://github.com/artefactual-labs/mets-reader-writer.git@610065dd77291a675c55960044014d394899bc7a
     # via -r requirements.in
 parse==1.19.1
     # via
@@ -38,12 +38,11 @@ selenium==3.141.0
     # via -r requirements.in
 six==1.16.0
     # via
-    #   amclient
     #   behave
     #   parse-type
 tenacity==8.2.3
     # via -r requirements.in
-urllib3==1.26.18
+urllib3==2.0.7
     # via
     #   amclient
     #   requests
