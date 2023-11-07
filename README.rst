@@ -1,6 +1,5 @@
-.. image:: https://travis-ci.org/artefactual-labs/archivematica-acceptance-tests.svg?branch=master
-    :target: https://travis-ci.org/artefactual-labs/archivematica-acceptance-tests
-
+.. image:: https://github.com/artefactual-labs/archivematica-acceptance-tests/actions/workflows/test.yml/badge.svg
+    :target: https://github.com/artefactual-labs/archivematica-acceptance-tests/actions/workflows/test.yml
 
 Archivematica Automated User Acceptance Tests (AMAUAT)
 ================================================================================
