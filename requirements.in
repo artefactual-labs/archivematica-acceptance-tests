@@ -1,9 +1,9 @@
-git+https://github.com/artefactual-labs/amclient.git@6cd186021598b3b97c00ab033405314e9e287a42#egg=amclient
+amclient
 behave
 lxml
-git+https://github.com/artefactual-labs/mets-reader-writer.git@610065dd77291a675c55960044014d394899bc7a#egg=metsrw
+metsrw
 pexpect
 requests
-tenacity
 selenium<4
+tenacity
 urllib3<2
