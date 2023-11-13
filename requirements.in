@@ -4,5 +4,6 @@ lxml
 metsrw
 pexpect
 requests
-tenacity
 selenium<4
+tenacity
+urllib3<2
