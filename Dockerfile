@@ -40,7 +40,7 @@ RUN set -ex \
 	&& SELENIUM_CACHE=${SELENIUM_DIR}/cache \
 	&& SELENIUM_BIN=${SELENIUM_DIR}/bin \
 	&& mkdir -p $SELENIUM_CACHE $SELENIUM_BIN \
-	&& curl -o $SELENIUM_BIN/selenium-manager -L https://github.com/SeleniumHQ/selenium/raw/trunk/common/manager/linux/selenium-manager \
+	&& curl -o $SELENIUM_BIN/selenium-manager -L https://github.com/SeleniumHQ/selenium/raw/selenium-4.16.0/common/manager/linux/selenium-manager \
 	&& chmod +x $SELENIUM_BIN/selenium-manager \
 	&& CHROME_OUTPUT=$($SELENIUM_BIN/selenium-manager --cache-path $SELENIUM_CACHE --browser chrome --output JSON) \
 	&& FIREFOX_OUTPUT=$($SELENIUM_BIN/selenium-manager --cache-path $SELENIUM_CACHE --browser firefox --output JSON) \
