@@ -334,8 +334,14 @@ def is_invalid_api_response(response):
 
 
 def call_api_endpoint(
-    endpoint, endpoint_args=[], warning_message=None, error_message=None, max_attempts=3
+    endpoint,
+    endpoint_args=None,
+    warning_message=None,
+    error_message=None,
+    max_attempts=3,
 ):
+    if endpoint_args is None:
+        endpoint_args = []
     if warning_message is None:
         warning_message = f"Got invalid response from {endpoint}. Retrying"
     if error_message is None:
@@ -696,7 +702,9 @@ def retrieve_rights_linking_object_identifiers(tree, nsmap):
     return {id_.text for id_ in rights_objects}
 
 
-def get_filesec_files(tree, use=None, nsmap={}):
+def get_filesec_files(tree, use=None, nsmap=None):
+    if nsmap is None:
+        nsmap = {}
     use_query = ""
     # an empty use parameter will retrieve all the files in the fileSec
     if use:
@@ -731,7 +739,7 @@ def start_sample_transfer(
         result["transfer_path"] = transfer_path
         return result
     except environment.EnvironmentError as err:
-        assert False, f"Error starting transfer: {err}"
+        raise AssertionError(f"Error starting transfer: {err}")
 
 
 def wait_for_transfer(api_clients_config, transfer_uuid):
@@ -746,8 +754,8 @@ def wait_for_transfer(api_clients_config, transfer_uuid):
             status = resp.get("status")
         return resp
     except environment.EnvironmentError as err:
-        assert False, "Error checking transfer (uuid: {}) status: {}".format(
-            transfer_uuid, err
+        assert AssertionError(
+            f"Error checking transfer (uuid: {transfer_uuid}) status: {err}"
         )
 
 
@@ -763,9 +771,7 @@ def wait_for_ingest(api_clients_config, sip_uuid):
             status = resp.get("status")
         return resp
     except environment.EnvironmentError as err:
-        assert False, "Error checking ingest (uuid: {}) status: {}".format(
-            sip_uuid, err
-        )
+        assert AssertionError(f"Error checking ingest (uuid: {sip_uuid}) status: {err}")
 
 
 def get_transfer_result(api_clients_config, transfer_uuid):
@@ -829,7 +835,7 @@ def create_reingest(api_clients_config, transfer, reingest_type, processing_conf
             processing_config,
         )
     except environment.EnvironmentError as err:
-        assert False, f"Error starting reingest: {err}"
+        raise AssertionError(f"Error starting reingest: {err}")
     else:
         return {
             "reingest_uuid": reingest_uuid,
