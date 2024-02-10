@@ -8,15 +8,25 @@ on:
       - "stable/**"
 jobs:
   test-virtualenv:
-    name: "Test (virtualenv)"
+    name: "Test Python ${{ matrix.python-version }} (virtualenv)"
     runs-on: "ubuntu-22.04"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [
+          "3.8",
+          "3.9",
+          "3.10",
+          "3.11",
+          "3.12",
+        ]
     steps:
       - name: "Check out repository"
         uses: "actions/checkout@v4"
       - name: "Set up Python"
         uses: "actions/setup-python@v5"
         with:
-          python-version: "3.9"
+          python-version: "${{ matrix.python-version }}"
           cache: "pip"
           cache-dependency-path: |
             requirements.txt
@@ -29,19 +39,34 @@ jobs:
         run: |
           ./simplebrowsertest.py
   test-docker:
-    name: "Test (docker)"
+    name: "Test Python ${{ matrix.python-version }} (docker)"
     runs-on: "ubuntu-22.04"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [
+          "3.8",
+          "3.9",
+          "3.10",
+          "3.11",
+          "3.12",
+        ]
     steps:
       - name: "Check out repository"
         uses: "actions/checkout@v4"
-      - name: "Build containers"
-        run: |
-          docker build -t archivematica-acceptance-tests --build-arg TARGET --build-arg PYTHON_VERSION .
-        env:
-          COMPOSE_DOCKER_CLI_BUILD: 1
-          DOCKER_BUILDKIT: 1
-          TARGET: "archivematica-acceptance-tests"
-          PYTHON_VERSION: "3.9"
+      - name: "Set up buildx"
+        uses: "docker/setup-buildx-action@v3"
+      - name: "Build the archivematica-acceptance-tests image"
+        uses: "docker/build-push-action@v5"
+        with:
+          target: "archivematica-acceptance-tests"
+          build-args: |
+            PYTHON_VERSION=${{ matrix.python-version }}
+          tags: "archivematica-acceptance-tests:latest"
+          push: false
+          load: true
+          cache-from: "type=gha,scope=archivematica-acceptance-tests-${{ matrix.python-version }}"
+          cache-to: "type=gha,scope=archivematica-acceptance-tests-${{ matrix.python-version }},mode=max"
       - name: "Run test"
         run: |
           docker run \
