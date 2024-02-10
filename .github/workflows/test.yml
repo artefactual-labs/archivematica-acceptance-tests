@@ -14,7 +14,7 @@ jobs:
       - name: "Check out repository"
         uses: "actions/checkout@v4"
       - name: "Set up Python"
-        uses: "actions/setup-python@v4"
+        uses: "actions/setup-python@v5"
         with:
           python-version: "3.9"
           cache: "pip"
@@ -33,7 +33,7 @@ jobs:
     runs-on: "ubuntu-22.04"
     steps:
       - name: "Check out repository"
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v4"
       - name: "Build containers"
         run: |
           docker build -t archivematica-acceptance-tests --build-arg TARGET --build-arg PYTHON_VERSION .
@@ -56,7 +56,7 @@ jobs:
       - name: "Check out repository"
         uses: "actions/checkout@v4"
       - name: "Set up Python"
-        uses: "actions/setup-python@v4"
+        uses: "actions/setup-python@v5"
         with:
           python-version: "3.9"
           cache: "pip"
