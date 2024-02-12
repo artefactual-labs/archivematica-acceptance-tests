@@ -29,9 +29,9 @@ class ArchivematicaBrowserAuthenticationAbility(
             WebDriverWait(self.driver, self.pessimistic_wait).until(element_present)
         except TimeoutException:
             logger.warning("Timed out when waiting for login page to load")
-        username_elem = self.driver.find_element_by_id(username_input_id)
+        username_elem = self.driver.find_element(By.ID, username_input_id)
         username_elem.send_keys(self.am_username)
-        password_elem = self.driver.find_element_by_id(password_input_id)
+        password_elem = self.driver.find_element(By.ID, password_input_id)
         password_elem.send_keys(self.am_password)
         submit_button_elem = self.driver.find_element_by_tag_name("button")
         submit_button_elem.click()
@@ -46,9 +46,9 @@ class ArchivematicaBrowserAuthenticationAbility(
             WebDriverWait(self.driver, self.pessimistic_wait).until(element_present)
         except TimeoutException:
             logger.warning("Timed out when waiting for SS login page to load")
-        username_elem = self.driver.find_element_by_id(username_input_id)
+        username_elem = self.driver.find_element(By.ID, username_input_id)
         username_elem.send_keys(self.ss_username)
-        password_elem = self.driver.find_element_by_id(password_input_id)
+        password_elem = self.driver.find_element(By.ID, password_input_id)
         password_elem.send_keys(self.ss_password)
         submit_button_elem = self.driver.find_element_by_css_selector(
             "input[type=submit]"

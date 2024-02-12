@@ -4,6 +4,7 @@ import sys
 import time
 
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 
 from . import am_browser_file_explorer_ability as file_explorer_abl
@@ -208,7 +209,7 @@ class ArchivematicaBrowserTransferIngestAbility(
         transfer_dom_id = f"sip-row-{transfer_uuid}"
         for elem in self.driver.find_elements_by_css_selector("div.sip"):
             try:
-                elem.find_element_by_id(transfer_dom_id)
+                elem.find_element(By.ID, transfer_dom_id)
                 transfer_div_elem = elem
             except NoSuchElementException:
                 pass

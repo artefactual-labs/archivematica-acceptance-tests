@@ -2,6 +2,7 @@
 import logging
 
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 
 from . import selenium_ability
@@ -43,7 +44,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         self.wait_for_presence("input[type=submit]")
 
     def set_fpr_command(self, command_name):
-        command_select_el = self.driver.find_element_by_id("id_f-command")
+        command_select_el = self.driver.find_element(By.ID, "id_f-command")
         command_select_el.click()
         Select(command_select_el).select_by_visible_text(command_name)
 
@@ -74,7 +75,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         """
         policy_command_url = None
         policy_command_descriptions = []
-        commands_table_el = self.driver.find_element_by_id("DataTables_Table_0")
+        commands_table_el = self.driver.find_element(By.ID, "DataTables_Table_0")
         for row_el in commands_table_el.find_elements_by_tag_name("tr"):
             try:
                 anchor_el = row_el.find_element_by_tag_name("a")
@@ -149,19 +150,19 @@ class ArchivematicaBrowserPreservationPlanningAbility(
             description,
         )
         self.navigate(self.get_create_command_url())
-        for option in self.driver.find_element_by_id(
-            "id_tool"
+        for option in self.driver.find_element(
+            By.ID, "id_tool"
         ).find_elements_by_tag_name("option"):
             if "MediaConch" in option.text:
                 option.click()
                 break
-        self.driver.find_element_by_id("id_description").send_keys(description)
+        self.driver.find_element(By.ID, "id_description").send_keys(description)
         js_script = 'document.getElementById("id_command").value =' " `{}`;".format(
             policy_command
         )
         self.driver.execute_script(js_script)
-        self.driver.find_element_by_id("id_script_type").send_keys("Python")
-        self.driver.find_element_by_id("id_command_usage").send_keys("Validation")
+        self.driver.find_element(By.ID, "id_script_type").send_keys("Python")
+        self.driver.find_element(By.ID, "id_command_usage").send_keys("Validation")
         self.driver.find_element_by_css_selector("input[type=submit]").click()
         logger.info("Created the FPR policy check command")
 
@@ -184,13 +185,13 @@ class ArchivematicaBrowserPreservationPlanningAbility(
             return
         logger.info("Creating the needed FPR rule.")
         self.navigate(self.get_create_rule_url())
-        Select(self.driver.find_element_by_id("id_f-purpose")).select_by_visible_text(
+        Select(self.driver.find_element(By.ID, "id_f-purpose")).select_by_visible_text(
             purpose
         )
-        Select(self.driver.find_element_by_id("id_f-format")).select_by_visible_text(
+        Select(self.driver.find_element(By.ID, "id_f-format")).select_by_visible_text(
             format_
         )
-        Select(self.driver.find_element_by_id("id_f-command")).select_by_visible_text(
+        Select(self.driver.find_element(By.ID, "id_f-command")).select_by_visible_text(
             command_description
         )
         self.driver.find_element_by_css_selector("input[type=submit]").click()
@@ -202,7 +203,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         """
         self.navigate(self.get_rules_url())
         self.search_for_fpr_rule(purpose, format_, command_description)
-        info_el = self.driver.find_element_by_id("DataTables_Table_0_info")
+        info_el = self.driver.find_element(By.ID, "DataTables_Table_0_info")
         if info_el.text.strip().startswith("Showing 0 to 0 of 0 entries"):
             return False
         return True
@@ -221,7 +222,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         self.navigate(self.get_rules_url())
         self.search_for_fpr_rule(purpose, format_, command_description)
         self.wait_for_presence("#DataTables_Table_0_info")
-        info_el = self.driver.find_element_by_id("DataTables_Table_0_info")
+        info_el = self.driver.find_element(By.ID, "DataTables_Table_0_info")
         if info_el.text.strip().startswith("Showing 0 to 0 of 0 entries"):
             return
         disabled_rules = [

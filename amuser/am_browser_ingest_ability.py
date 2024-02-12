@@ -178,12 +178,12 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
 
     def add_dummy_metadata(self, sip_uuid):
         self.navigate(self.get_ingest_url())
-        self.driver.find_element_by_id(
-            f"sip-row-{sip_uuid}"
+        self.driver.find_element(
+            By.ID, f"sip-row-{sip_uuid}"
         ).find_element_by_css_selector("a.btn_show_metadata").click()
         self.navigate(self.get_metadata_add_url(sip_uuid))
         for attr in self.metadata_attrs:
-            self.driver.find_element_by_id(f"id_{attr}").send_keys(self.dummy_val)
+            self.driver.find_element(By.ID, f"id_{attr}").send_keys(self.dummy_val)
         try:
             self.driver.find_element_by_css_selector("input[value=Create]").click()
         except NoSuchElementException:

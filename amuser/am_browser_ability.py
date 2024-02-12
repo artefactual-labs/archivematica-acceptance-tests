@@ -47,8 +47,8 @@ class ArchivematicaBrowserAbility(
     def ss_api_key(self):
         if not self._ss_api_key:
             self.driver.get(self.get_ss_login_url())
-            self.driver.find_element_by_id("id_username").send_keys(self.ss_username)
-            self.driver.find_element_by_id("id_password").send_keys(self.ss_password)
+            self.driver.find_element(By.ID, "id_username").send_keys(self.ss_username)
+            self.driver.find_element(By.ID, "id_password").send_keys(self.ss_password)
             self.driver.find_element_by_css_selector(
                 c.varvn("SELECTOR_SS_LOGIN_BUTTON", self.vn)
             ).click()
@@ -95,9 +95,11 @@ class ArchivematicaBrowserAbility(
             Select(
                 self.driver.find_element_by_css_selector('select[title="query type"]')
             ).select_by_visible_text("Phrase")
-            self.driver.find_element_by_id("search_submit").click()
+            self.driver.find_element(By.ID, "search_submit").click()
             self.wait_for_presence("#archival-storage-entries_info")
-            summary_el = self.driver.find_element_by_id("archival-storage-entries_info")
+            summary_el = self.driver.find_element(
+                By.ID, "archival-storage-entries_info"
+            )
             if summary_el.text.strip() == "Showing 0 to 0 of 0 entries":
                 attempts += 1
                 if attempts > max_attempts:
@@ -118,13 +120,13 @@ class ArchivematicaBrowserAbility(
         self.wait_for_presence(delete_tab_selector, timeout=self.apathetic_wait)
         while True:
             try:
-                self.driver.find_element_by_id("id_delete-uuid").click()
+                self.driver.find_element(By.ID, "id_delete-uuid").click()
                 break
             except (ElementNotVisibleException, ElementNotInteractableException):
                 self.driver.find_element_by_css_selector(delete_tab_selector).click()
                 time.sleep(self.optimistic_wait)
-        self.driver.find_element_by_id("id_delete-uuid").send_keys(aip_uuid)
-        self.driver.find_element_by_id("id_delete-reason").send_keys("Cuz wanna")
+        self.driver.find_element(By.ID, "id_delete-uuid").send_keys(aip_uuid)
+        self.driver.find_element(By.ID, "id_delete-reason").send_keys("Cuz wanna")
         self.driver.find_element_by_css_selector(
             'button[name="submit-delete-form"]'
         ).click()
@@ -218,9 +220,9 @@ class ArchivematicaBrowserAbility(
             Select(
                 self.driver.find_element_by_css_selector('select[title="query type"]')
             ).select_by_visible_text("Phrase")
-            self.driver.find_element_by_id("search_submit").click()
+            self.driver.find_element(By.ID, "search_submit").click()
             self.wait_for_presence("#backlog-entries_info")
-            summary_el = self.driver.find_element_by_id("backlog-entries_info")
+            summary_el = self.driver.find_element(By.ID, "backlog-entries_info")
             if summary_el.text.strip() == "Showing 0 to 0 of 0 entries":
                 seconds += 1
                 if seconds > max_seconds:
@@ -269,7 +271,7 @@ class ArchivematicaBrowserAbility(
         self.navigate(self.get_handle_config_url())
         for key, val in kwargs.items():
             dom_id = "id_" + key
-            input_el = self.driver.find_element_by_id(dom_id)
+            input_el = self.driver.find_element(By.ID, dom_id)
             if input_el.tag_name == "select":
                 Select(input_el).select_by_visible_text(val)
             elif input_el.get_attribute("type") == "checkbox":
@@ -342,7 +344,7 @@ class ArchivematicaBrowserAbility(
         else:
             if not decision_id.startswith("id_"):
                 decision_id = "id_" + decision_id
-        decision_el = self.driver.find_element_by_id(decision_id)
+        decision_el = self.driver.find_element(By.ID, decision_id)
         options = []
         if decision_el.tag_name == "select":
             for option_el in decision_el.find_elements_by_tag_name("option"):
@@ -389,7 +391,7 @@ class ArchivematicaBrowserAbility(
         else:
             if not decision_id.startswith("id_"):
                 decision_id = "id_" + decision_id
-        decision_el = self.driver.find_element_by_id(decision_id)
+        decision_el = self.driver.find_element(By.ID, decision_id)
         if decision_el.tag_name == "select":
             decision_select = Select(decision_el)
             if choice_value_attr is not None:
@@ -520,7 +522,7 @@ class ArchivematicaBrowserAbility(
         ss_api_key = self.ss_api_key
         self.create_first_user()
         self.wait_for_presence("#id_storage_service_apikey", 100)
-        self.driver.find_element_by_id("id_storage_service_apikey").send_keys(
+        self.driver.find_element(By.ID, "id_storage_service_apikey").send_keys(
             ss_api_key
         )
         self.driver.find_element_by_css_selector(
@@ -531,16 +533,18 @@ class ArchivematicaBrowserAbility(
         """Create a test user via the /installer/welcome/ page interface."""
         self.driver.get(self.get_installer_welcome_url())
         self.wait_for_presence("#id_org_name")
-        self.driver.find_element_by_id("id_org_name").send_keys(c.DEFAULT_AM_USERNAME)
-        self.driver.find_element_by_id("id_org_identifier").send_keys(
+        self.driver.find_element(By.ID, "id_org_name").send_keys(c.DEFAULT_AM_USERNAME)
+        self.driver.find_element(By.ID, "id_org_identifier").send_keys(
             c.DEFAULT_AM_USERNAME
         )
-        self.driver.find_element_by_id("id_username").send_keys(c.DEFAULT_AM_USERNAME)
-        self.driver.find_element_by_id("id_first_name").send_keys(c.DEFAULT_AM_USERNAME)
-        self.driver.find_element_by_id("id_last_name").send_keys(c.DEFAULT_AM_USERNAME)
-        self.driver.find_element_by_id("id_email").send_keys("test@gmail.com")
-        self.driver.find_element_by_id("id_password1").send_keys(c.DEFAULT_AM_PASSWORD)
-        self.driver.find_element_by_id("id_password2").send_keys(c.DEFAULT_AM_PASSWORD)
+        self.driver.find_element(By.ID, "id_username").send_keys(c.DEFAULT_AM_USERNAME)
+        self.driver.find_element(By.ID, "id_first_name").send_keys(
+            c.DEFAULT_AM_USERNAME
+        )
+        self.driver.find_element(By.ID, "id_last_name").send_keys(c.DEFAULT_AM_USERNAME)
+        self.driver.find_element(By.ID, "id_email").send_keys("test@gmail.com")
+        self.driver.find_element(By.ID, "id_password1").send_keys(c.DEFAULT_AM_PASSWORD)
+        self.driver.find_element(By.ID, "id_password2").send_keys(c.DEFAULT_AM_PASSWORD)
         self.driver.find_element_by_tag_name("button").click()
         continue_button_selector = "input[value=Continue]"
         self.wait_for_presence(continue_button_selector, 100)

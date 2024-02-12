@@ -115,7 +115,7 @@ class ArchivematicaBrowserFileExplorerAbility(
         """
         block = WebDriverWait(self.driver, 10)
         block.until(EC.presence_of_element_located((By.ID, folder_id)))
-        folder_elem = self.driver.find_element_by_id(folder_id)
+        folder_elem = self.driver.find_element(By.ID, folder_id)
         hover = ActionChains(self.driver).move_to_element(folder_elem)
         hover.perform()
         time.sleep(self.micro_wait)  # seems to be necessary (! jQuery animations?)
@@ -200,7 +200,7 @@ class ArchivematicaBrowserFileExplorerAbility(
         """
         block = WebDriverWait(self.driver, 10)
         block.until(EC.presence_of_element_located((By.ID, folder_id)))
-        folder_elem = self.driver.find_element_by_id(folder_id)
+        folder_elem = self.driver.find_element(By.ID, folder_id)
         hover = ActionChains(self.driver).move_to_element(folder_elem)
         hover.perform()
         time.sleep(self.micro_wait)  # seems to be necessary (! jQuery animations?)

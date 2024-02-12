@@ -4,6 +4,7 @@ import pprint
 import time
 
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 
 from . import base
@@ -31,8 +32,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         SS GUI.
         """
         self.navigate(self.get_ss_package_delete_request_url())
-        self.driver.find_element_by_id(
-            "DataTables_Table_0_filter"
+        self.driver.find_element(
+            By.ID, "DataTables_Table_0_filter"
         ).find_element_by_tag_name("input").send_keys(aip_uuid)
         matching_rows = []
         for row_el in self.driver.find_elements_by_css_selector(
@@ -125,7 +126,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         form_el = self.driver.find_element_by_css_selector(
             'form[action="/spaces/create/"]'
         )
-        protocol_el = self.driver.find_element_by_id("protocol_form")
+        protocol_el = self.driver.find_element(By.ID, "protocol_form")
         for parent in (form_el, protocol_el):
             for p_el in parent.find_elements_by_tag_name("p"):
                 for el in p_el.find_elements_by_css_selector("*"):
@@ -134,7 +135,7 @@ class ArchivematicaBrowserStorageServiceAbility(
                         for key, val in attributes.items():
                             if key.lower() == label_text:
                                 input_id = el.get_attribute("for")
-                                input_el = self.driver.find_element_by_id(input_id)
+                                input_el = self.driver.find_element(By.ID, input_id)
                                 if input_el.tag_name == "select":
                                     Select(input_el).select_by_visible_text(val)
                                 else:
@@ -164,7 +165,7 @@ class ArchivematicaBrowserStorageServiceAbility(
                     for key, val in attributes.items():
                         if key.lower() == label_text:
                             input_id = el.get_attribute("for")
-                            input_el = self.driver.find_element_by_id(input_id)
+                            input_el = self.driver.find_element(By.ID, input_id)
                             if input_el.tag_name == "select":
                                 Select(input_el).select_by_visible_text(val)
                             else:
@@ -175,7 +176,7 @@ class ArchivematicaBrowserStorageServiceAbility(
                     # be changed for setups with multiple pipelines.
                     if label_text == "pipeline":
                         input_id = el.get_attribute("for")
-                        select_el = self.driver.find_element_by_id(input_id)
+                        select_el = self.driver.find_element(By.ID, input_id)
                         select = Select(select_el)
                         select.select_by_index(0)
         self.driver.find_element_by_css_selector("input[type=submit]").click()
@@ -329,7 +330,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         """
         self.navigate(self.get_import_gpg_key_url())
         with open(key_path) as filei:
-            self.driver.find_element_by_id("id_ascii_armor").send_keys(filei.read())
+            self.driver.find_element(By.ID, "id_ascii_armor").send_keys(filei.read())
         self.driver.find_element_by_css_selector("input[type=submit]").click()
         self.wait_for_presence("div.alert", 20)
         return self.driver.find_element_by_css_selector("div.alert").text.strip()
@@ -427,8 +428,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         self.navigate(self.get_create_gpg_key_url())
         new_key_name = f"GPGKey {utils.unixtimestamp()}"
         new_key_email = "{}@example.com".format(new_key_name.lower().replace(" ", ""))
-        self.driver.find_element_by_id("id_name_real").send_keys(new_key_name)
-        self.driver.find_element_by_id("id_name_email").send_keys(new_key_email)
+        self.driver.find_element(By.ID, "id_name_real").send_keys(new_key_name)
+        self.driver.find_element(By.ID, "id_name_email").send_keys(new_key_email)
         self.driver.find_element_by_css_selector("input[type=submit]").click()
         self.wait_for_presence("div.alert-success", self.nihilistic_wait)
         alert_text = self.driver.find_element_by_css_selector("div.alert-success").text
@@ -441,7 +442,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         any other key.
         """
         self.navigate(self.get_space_edit_url(space_uuid))
-        select = Select(self.driver.find_element_by_id("id_protocol-key"))
+        select = Select(self.driver.find_element(By.ID, "id_protocol-key"))
         if new_key_repr:
             select.select_by_visible_text(new_key_repr)
         else:

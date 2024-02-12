@@ -209,7 +209,7 @@ class ArchivematicaBrowserTransferAbility(
 
     def enter_transfer_name(self, transfer_name):
         """Enter a transfer name into the text input."""
-        # transfer_name_elem = self.driver.find_element_by_id('transfer-name')
+        # transfer_name_elem = self.driver.find_element(By.ID, 'transfer-name')
         transfer_name_elem = self.driver.find_element_by_css_selector(
             c.SELECTOR_INPUT_TRANSFER_NAME
         )
