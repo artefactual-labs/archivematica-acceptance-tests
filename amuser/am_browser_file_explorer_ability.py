@@ -97,7 +97,7 @@ class ArchivematicaBrowserFileExplorerAbility(
             if is_last:
                 logger.info('Clicking to select folder "%s"', folder)
                 # Click target (leaf) folder and then "Add" button.
-                folder_el = self.driver.find_element_by_xpath(folder_label_xpath)
+                folder_el = self.driver.find_element(By.XPATH, folder_label_xpath)
                 self.click_folder_label(folder_el)
                 time.sleep(self.pessimistic_wait)
                 self.click_add_button()
@@ -173,7 +173,7 @@ class ArchivematicaBrowserFileExplorerAbility(
             block = WebDriverWait(self.driver, 10)
             block.until(EC.presence_of_element_located((By.XPATH, folder_label_xpath)))
             folder_icon_xpath = folder_label2icon_xpath(folder_label_xpath)
-            folder_icon_el = self.driver.find_element_by_xpath(folder_icon_xpath)
+            folder_icon_el = self.driver.find_element(By.XPATH, folder_icon_xpath)
             folder_icon_el.click()
             folder_children_xpath = folder_label2children_xpath(folder_label_xpath)
             block = WebDriverWait(self.driver, 10)

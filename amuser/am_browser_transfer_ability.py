@@ -267,7 +267,7 @@ class ArchivematicaBrowserTransferAbility(
             else:
                 break
         try:
-            select_el = approve_transfer_option.find_element_by_xpath("..")
+            select_el = approve_transfer_option.find_element(By.XPATH, "..")
             select_inst = Select(select_el)
             select_inst.select_by_value(approve_option_uuid)
         except StaleElementReferenceException:

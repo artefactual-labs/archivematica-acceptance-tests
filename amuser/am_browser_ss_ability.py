@@ -194,8 +194,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         self.navigate(self.get_spaces_url())
         space_urls = []
         for div_el in self.driver.find_elements(By.CSS_SELECTOR, "div.space"):
-            space_detail_anchor = div_el.find_element_by_xpath(
-                'dl/dd/ul/li/a[text() = "View Details and Locations"]'
+            space_detail_anchor = div_el.find_element(
+                By.XPATH, 'dl/dd/ul/li/a[text() = "View Details and Locations"]'
             )
             space_urls.append(space_detail_anchor.get_attribute("href"))
         for space_url in space_urls:
@@ -224,7 +224,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         self.navigate(self.get_space_url(space_uuid))
         location_urls = {}
         for tr_el in self.driver.find_elements(By.CSS_SELECTOR, "tbody tr"):
-            loc_uuid_td_el = tr_el.find_element_by_xpath("td[position()=5]")
+            loc_uuid_td_el = tr_el.find_element(By.XPATH, "td[position()=5]")
             loc_uuid = loc_uuid_td_el.text.strip()
             location_urls[loc_uuid] = self.get_location_url(loc_uuid)
         for loc_uuid, loc_url in location_urls.items():
@@ -381,7 +381,7 @@ class ArchivematicaBrowserStorageServiceAbility(
             )
             raise
         else:
-            matches[0].find_element_by_xpath('td[3]/a[text() = "Delete"]').click()
+            matches[0].find_element(By.XPATH, 'td[3]/a[text() = "Delete"]').click()
         try:
             self.driver.find_element(By.CSS_SELECTOR, "input[value=Delete]").click()
             try:
