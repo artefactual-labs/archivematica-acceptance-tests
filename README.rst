@@ -335,4 +335,3 @@ waiting too long for an event that will never happen, you can modify these
 .. _`Manual`: https://www.archivematica.org/en/docs/archivematica-1.7/
 .. _`behavior-driven development (BDD)`: https://en.wikipedia.org/wiki/Behavior-driven_development
 .. _`Behave documentation`: http://behave.readthedocs.io/en/latest/
-

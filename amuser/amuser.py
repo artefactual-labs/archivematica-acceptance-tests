@@ -74,7 +74,7 @@ class ArchivematicaUser(base.Base):
         cwd = cwd or self.tmp_path
         aip_parent_dir_path = os.path.dirname(aip_path)
         try:
-            devnull = getattr(subprocess, "DEVNULL")
+            devnull = subprocess.DEVNULL
         except AttributeError:
             devnull = open(os.devnull, "wb")
         aip_dir_name = get_aip_dir_name_from_archive(aip_path)
