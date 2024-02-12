@@ -5,6 +5,7 @@ import time
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 
 from . import constants as c
@@ -92,7 +93,9 @@ class ArchivematicaBrowserTransferAbility(
         """Remove the topmost transfer: click on its "Remove" button and click
         "Confirm".
         """
-        remove_elem = top_transfer_elem.find_element_by_css_selector("a.btn_remove_sip")
+        remove_elem = top_transfer_elem.find_element(
+            By.CSS_SELECTOR, "a.btn_remove_sip"
+        )
         if remove_elem:
             remove_elem.click()
             dialog_selector = "div.ui-dialog"
@@ -140,11 +143,11 @@ class ArchivematicaBrowserTransferAbility(
         for transfer_div_elem in self.driver.find_elements_by_css_selector(
             c.SELECTOR_TRANSFER_DIV
         ):
-            transfer_name_div_elem = transfer_div_elem.find_element_by_css_selector(
-                transfer_name_div_selector
+            transfer_name_div_elem = transfer_div_elem.find_element(
+                By.CSS_SELECTOR, transfer_name_div_selector
             )
-            transfer_uuid_div_elem = transfer_div_elem.find_element_by_css_selector(
-                transfer_uuid_div_selector
+            transfer_uuid_div_elem = transfer_div_elem.find_element(
+                By.CSS_SELECTOR, transfer_uuid_div_selector
             )
             # Identify the transfer by its name. The complication here is that
             # AM detects a narrow browser window and hides the UUID in the
@@ -191,8 +194,8 @@ class ArchivematicaBrowserTransferAbility(
         return transfer_uuid, correct_transfer_div_elem, transfer_name
 
     def click_start_transfer_button(self):
-        start_transfer_button_elem = self.driver.find_element_by_css_selector(
-            c.SELECTOR_BUTTON_START_TRANSFER
+        start_transfer_button_elem = self.driver.find_element(
+            By.CSS_SELECTOR, c.SELECTOR_BUTTON_START_TRANSFER
         )
         start_transfer_button_elem.click()
 
@@ -210,29 +213,29 @@ class ArchivematicaBrowserTransferAbility(
     def enter_transfer_name(self, transfer_name):
         """Enter a transfer name into the text input."""
         # transfer_name_elem = self.driver.find_element(By.ID, 'transfer-name')
-        transfer_name_elem = self.driver.find_element_by_css_selector(
-            c.SELECTOR_INPUT_TRANSFER_NAME
+        transfer_name_elem = self.driver.find_element(
+            By.CSS_SELECTOR, c.SELECTOR_INPUT_TRANSFER_NAME
         )
         transfer_name_elem.send_keys(transfer_name)
 
     def set_transfer_type(self, transfer_type):
         """Select transfer type ``transfer_type`` in the <select> input."""
-        transfer_type_select_el = self.driver.find_element_by_css_selector(
-            c.SELECTOR_INPUT_TRANSFER_TYPE
+        transfer_type_select_el = self.driver.find_element(
+            By.CSS_SELECTOR, c.SELECTOR_INPUT_TRANSFER_TYPE
         )
         transfer_type_select = Select(transfer_type_select_el)
         transfer_type_select.select_by_visible_text(transfer_type)
 
     def enter_accession_no(self, accession_no):
-        accession_no_elem = self.driver.find_element_by_css_selector(
-            c.SELECTOR_INPUT_TRANSFER_ACCESSION
+        accession_no_elem = self.driver.find_element(
+            By.CSS_SELECTOR, c.SELECTOR_INPUT_TRANSFER_ACCESSION
         )
         accession_no_elem.send_keys(accession_no)
 
     def click_add_button(self):
         """Click "Add" button to add directories to transfer."""
-        self.driver.find_element_by_css_selector(
-            c.SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER
+        self.driver.find_element(
+            By.CSS_SELECTOR, c.SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER
         ).click()
 
     def approve_transfer(
@@ -251,10 +254,8 @@ class ArchivematicaBrowserTransferAbility(
         )
         while True:
             try:
-                approve_transfer_option = (
-                    transfer_div_elem.find_element_by_css_selector(
-                        approve_transfer_option_selector
-                    )
+                approve_transfer_option = transfer_div_elem.find_element(
+                    By.CSS_SELECTOR, approve_transfer_option_selector
                 )
             except NoSuchElementException:
                 logger.info(

@@ -72,15 +72,15 @@ class ArchivematicaBrowserTransferIngestAbility(
                 "div.job-detail-microservice span"
             ):
                 if utils.squash(span_elem.text) == utils.squash(decision_point):
-                    action_div_el = job_elem.find_element_by_css_selector(
-                        "div.job-detail-actions"
+                    action_div_el = job_elem.find_element(
+                        By.CSS_SELECTOR, "div.job-detail-actions"
                     )
                     break
             if action_div_el:
                 break
         if action_div_el:
             try:
-                select_el = action_div_el.find_element_by_css_selector("select")
+                select_el = action_div_el.find_element(By.CSS_SELECTOR, "select")
             except NoSuchElementException:
                 time.sleep(self.quick_wait)
                 return self.make_choice(
@@ -173,8 +173,8 @@ class ArchivematicaBrowserTransferIngestAbility(
                 "div.job-detail-microservice span"
             ):
                 if span_elem.text.strip() == ms_name:
-                    job_elem.find_element_by_css_selector(
-                        "div.job-detail-actions a.btn_show_tasks"
+                    job_elem.find_element(
+                        By.CSS_SELECTOR, "div.job-detail-actions a.btn_show_tasks"
                     ).click()
 
     def wait_for_transfer_micro_service_group(self, group_name, transfer_uuid):
@@ -224,8 +224,8 @@ class ArchivematicaBrowserTransferIngestAbility(
         for ms_group_elem in transfer_div_elem.find_elements_by_css_selector(
             "div.microservicegroup"
         ):
-            name_elem_text = ms_group_elem.find_element_by_css_selector(
-                "span.microservice-group-name"
+            name_elem_text = ms_group_elem.find_element(
+                By.CSS_SELECTOR, "span.microservice-group-name"
             ).text.strip()
             if name_elem_text == expected_name:
                 logger.info(

@@ -4,6 +4,7 @@ import sys
 import time
 
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
 
 from . import constants as c
 from . import selenium_ability
@@ -33,8 +34,8 @@ class ArchivematicaBrowserJobsTasksAbility(
                 "div.job-detail-microservice span"
             ):
                 if span_elem.text.strip() == ms_name:
-                    return job_elem.find_element_by_css_selector(
-                        "div.job-detail-currentstep span"
+                    return job_elem.find_element(
+                        By.CSS_SELECTOR, "div.job-detail-currentstep span"
                     ).text.strip()
         return None
 
@@ -56,7 +57,7 @@ class ArchivematicaBrowserJobsTasksAbility(
         self.wait_for_transfer_micro_service_group(group_name, transfer_uuid)
         is_visible = (
             self.get_transfer_micro_service_group_elem(group_name, transfer_uuid)
-            .find_element_by_css_selector("div.microservice-group + div")
+            .find_element(By.CSS_SELECTOR, "div.microservice-group + div")
             .is_displayed()
         )
         if not is_visible:
@@ -125,22 +126,22 @@ class ArchivematicaBrowserJobsTasksAbility(
         for task_art_elem in self.driver.find_elements_by_css_selector("article.task"):
             row_dict = {}
             try:
-                row_dict["stdout"] = task_art_elem.find_element_by_css_selector(
-                    ".panel-info pre"
+                row_dict["stdout"] = task_art_elem.find_element(
+                    By.CSS_SELECTOR, ".panel-info pre"
                 ).text.strip()
             except NoSuchElementException:
                 row_dict["stdout"] = ""
             try:
-                row_dict["stderr"] = task_art_elem.find_element_by_css_selector(
-                    ".panel-danger pre"
+                row_dict["stderr"] = task_art_elem.find_element(
+                    By.CSS_SELECTOR, ".panel-danger pre"
                 ).text.strip()
             except NoSuchElementException:
                 row_dict["stderr"] = ""
-            row_dict["command"] = task_art_elem.find_element_by_css_selector(
-                "h3.panel-title.panel-title-simple"
+            row_dict["command"] = task_art_elem.find_element(
+                By.CSS_SELECTOR, "h3.panel-title.panel-title-simple"
             ).text.strip()
-            arguments = task_art_elem.find_element_by_css_selector(
-                "div.panel-primary div.shell-output pre"
+            arguments = task_art_elem.find_element(
+                By.CSS_SELECTOR, "div.panel-primary div.shell-output pre"
             ).text.strip()
             row_dict["arguments"] = utils.parse_task_arguments_to_list(arguments)
             for dl_el in task_art_elem.find_elements_by_css_selector("div.row dl"):
@@ -151,7 +152,7 @@ class ArchivematicaBrowserJobsTasksAbility(
                         val = el.text.strip()
                         row_dict[attr] = val
             row_dict["task_uuid"] = (
-                task_art_elem.find_element_by_css_selector("div.task-heading h4")
+                task_art_elem.find_element(By.CSS_SELECTOR, "div.task-heading h4")
                 .text.strip()
                 .split()[1]
             )
@@ -187,8 +188,8 @@ class ArchivematicaBrowserJobsTasksAbility(
                 "div.job-detail-microservice span"
             ):
                 if utils.squash(span_elem.text) == utils.squash(ms_name):
-                    job_output = job_elem.find_element_by_css_selector(
-                        "div.job-detail-currentstep span"
+                    job_output = job_elem.find_element(
+                        By.CSS_SELECTOR, "div.job-detail-currentstep span"
                     ).text.strip()
                     if job_output in job_outputs:
                         return (span_elem.get_attribute("title").strip(), job_output)
@@ -262,12 +263,12 @@ def get_tasks_row_type(row_elem):
     if row_elem.get_attribute("class").strip():
         return "header"
     try:
-        row_elem.find_element_by_css_selector("td.stdout")
+        row_elem.find_element(By.CSS_SELECTOR, "td.stdout")
         return "stdout"
     except NoSuchElementException:
         pass
     try:
-        row_elem.find_element_by_css_selector("td.stderror")
+        row_elem.find_element(By.CSS_SELECTOR, "td.stderror")
         return "stderr"
     except NoSuchElementException:
         pass

@@ -26,8 +26,8 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         self.navigate(self.get_normalization_rules_url())
 
     def search_rules(self, search_term):
-        search_input_el = self.driver.find_element_by_css_selector(
-            "#DataTables_Table_0_filter input"
+        search_input_el = self.driver.find_element(
+            By.CSS_SELECTOR, "#DataTables_Table_0_filter input"
         )
         search_input_el.send_keys(search_term)
 
@@ -49,8 +49,8 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         Select(command_select_el).select_by_visible_text(command_name)
 
     def save_fpr_command(self):
-        command_select_el = self.driver.find_element_by_css_selector(
-            "input[type=submit]"
+        command_select_el = self.driver.find_element(
+            By.CSS_SELECTOR, "input[type=submit]"
         )
         command_select_el.click()
         self.wait_for_presence("#DataTables_Table_0")
@@ -163,7 +163,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         self.driver.execute_script(js_script)
         self.driver.find_element(By.ID, "id_script_type").send_keys("Python")
         self.driver.find_element(By.ID, "id_command_usage").send_keys("Validation")
-        self.driver.find_element_by_css_selector("input[type=submit]").click()
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
         logger.info("Created the FPR policy check command")
 
     def ensure_fpr_rule(self, purpose, format_, command_description):
@@ -194,7 +194,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         Select(self.driver.find_element(By.ID, "id_f-command")).select_by_visible_text(
             command_description
         )
-        self.driver.find_element_by_css_selector("input[type=submit]").click()
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
         logger.info("Created the needed FPR rule.")
 
     def fpr_rule_already_exists(self, purpose, format_, command_description):
@@ -230,7 +230,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
             for row in self.driver.find_elements_by_css_selector(
                 "#DataTables_Table_0 tbody tr"
             )
-            if row.find_element_by_css_selector("td:nth-child(5)").text == "No"
+            if row.find_element(By.CSS_SELECTOR, "td:nth-child(5)").text == "No"
         ]
         if not disabled_rules:
             logger.info(
@@ -247,8 +247,8 @@ class ArchivematicaBrowserPreservationPlanningAbility(
             )
         )
         rule = disabled_rules[0]
-        rule.find_element_by_css_selector("td:nth-child(6) a:nth-child(3)").click()
-        self.driver.find_element_by_css_selector("input[value=Enable]").click()
+        rule.find_element(By.CSS_SELECTOR, "td:nth-child(6) a:nth-child(3)").click()
+        self.driver.find_element(By.CSS_SELECTOR, "input[value=Enable]").click()
 
     @staticmethod
     def get_policy_command_description(policy_file):

@@ -31,11 +31,11 @@ class ArchivematicaBrowserFileExplorerAbility(
         link.
         """
         # Click the "Browse" button, if necessary.
-        if not self.driver.find_element_by_css_selector(
-            c.SELECTOR_DIV_TRANSFER_SOURCE_BROWSE
+        if not self.driver.find_element(
+            By.CSS_SELECTOR, c.SELECTOR_DIV_TRANSFER_SOURCE_BROWSE
         ).is_displayed():
-            browse_button_elem = self.driver.find_element_by_css_selector(
-                c.SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES
+            browse_button_elem = self.driver.find_element(
+                By.CSS_SELECTOR, c.SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES
             )
             browse_button_elem.click()
         # Wait for the File Explorer modal dialog to open.
@@ -119,8 +119,8 @@ class ArchivematicaBrowserFileExplorerAbility(
         hover = ActionChains(self.driver).move_to_element(folder_elem)
         hover.perform()
         time.sleep(self.micro_wait)  # seems to be necessary (! jQuery animations?)
-        span_elem = self.driver.find_element_by_css_selector(
-            f"div#{folder_id} span.{c.CLASS_ADD_TRANSFER_FOLDER}"
+        span_elem = self.driver.find_element(
+            By.CSS_SELECTOR, f"div#{folder_id} span.{c.CLASS_ADD_TRANSFER_FOLDER}"
         )
         hover = ActionChains(self.driver).move_to_element(span_elem)
         hover.perform()
@@ -145,16 +145,16 @@ class ArchivematicaBrowserFileExplorerAbility(
             if counter > 10:
                 return
             folder_el.click()
-            if not self.driver.find_element_by_css_selector(
-                c.SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER
+            if not self.driver.find_element(
+                By.CSS_SELECTOR, c.SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER
             ).is_enabled():
                 logger.info("The Add button has not become clickable.")
                 raise WebDriverException("ADD is not clickable")
             logger.info("The Add button has become clickable.")
         except WebDriverException:
             counter += 1
-            container_el = self.driver.find_element_by_css_selector(
-                ".transfer-tree-container"
+            container_el = self.driver.find_element(
+                By.CSS_SELECTOR, ".transfer-tree-container"
             )
             self.driver.execute_script(
                 f"arguments[0].scrollTop = {offset}", container_el
@@ -183,8 +183,8 @@ class ArchivematicaBrowserFileExplorerAbility(
             # TODO: when clicking a file in the new interface (if ever this is
             # required), we may need different behaviour.
         except WebDriverException:
-            container_el = self.driver.find_element_by_css_selector(
-                ".transfer-tree-container"
+            container_el = self.driver.find_element(
+                By.CSS_SELECTOR, ".transfer-tree-container"
             )
             self.driver.execute_script(
                 f"arguments[0].scrollTop = {offset}", container_el
@@ -209,7 +209,7 @@ class ArchivematicaBrowserFileExplorerAbility(
             class_ = "backbone-file-explorer-directory_entry_name"
         folder_id = folder_id.replace(".", r"\.")
         selector = f"div#{folder_id} span.{class_}"
-        span_elem = self.driver.find_element_by_css_selector(selector)
+        span_elem = self.driver.find_element(By.CSS_SELECTOR, selector)
         hover = ActionChains(self.driver).move_to_element(span_elem)
         hover.perform()
         span_elem.click()

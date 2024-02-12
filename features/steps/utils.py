@@ -1180,19 +1180,19 @@ def find_aip_by_transfer_metadata(
     browser.navigate(browser.get_archival_storage_url(), reload=True)
     # Set AIP UUID phrase to avoid clashes with other AMAUAT runs that
     # used the same sample transfer paths
-    browser.driver.find_element_by_css_selector(
-        'input[title="search query"]'
+    browser.driver.find_element(
+        By.CSS_SELECTOR, 'input[title="search query"]'
     ).send_keys(aip_uuid)
     Select(
-        browser.driver.find_element_by_css_selector('select[title="field name"]')
+        browser.driver.find_element(By.CSS_SELECTOR, 'select[title="field name"]')
     ).select_by_visible_text("AIP UUID")
     Select(
-        browser.driver.find_element_by_css_selector('select[title="query type"]')
+        browser.driver.find_element(By.CSS_SELECTOR, 'select[title="query type"]')
     ).select_by_visible_text("Phrase")
     # Add new boolean criteria
     browser.driver.find_element_by_link_text("Add new").click()
     Select(
-        browser.driver.find_element_by_css_selector("select.search_op_selector")
+        browser.driver.find_element(By.CSS_SELECTOR, "select.search_op_selector")
     ).select_by_visible_text("and")
     # Set search term phrase
     browser.driver.find_elements_by_css_selector('input[title="search query"]')[

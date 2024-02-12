@@ -50,7 +50,7 @@ class ArchivematicaBrowserAuthenticationAbility(
         username_elem.send_keys(self.ss_username)
         password_elem = self.driver.find_element(By.ID, password_input_id)
         password_elem.send_keys(self.ss_password)
-        submit_button_elem = self.driver.find_element_by_css_selector(
-            "input[type=submit]"
+        submit_button_elem = self.driver.find_element(
+            By.CSS_SELECTOR, "input[type=submit]"
         )
         submit_button_elem.click()

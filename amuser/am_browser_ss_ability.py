@@ -47,9 +47,9 @@ class ArchivematicaBrowserStorageServiceAbility(
                 " {}".format(len(matching_rows), aip_uuid)
             )
         matching_rows[0].find_element_by_tag_name("textarea").send_keys("Cuz wanna")
-        matching_rows[0].find_element_by_css_selector('input[name="approve"]').click()
-        assert self.driver.find_element_by_css_selector(
-            "div.alert-success"
+        matching_rows[0].find_element(By.CSS_SELECTOR, 'input[name="approve"]').click()
+        assert self.driver.find_element(
+            By.CSS_SELECTOR, "div.alert-success"
         ).text.strip() == ("Request approved: Package deleted successfully.")
 
     def search_for_aip_in_storage_service(self, aip_uuid):
@@ -60,7 +60,9 @@ class ArchivematicaBrowserStorageServiceAbility(
         attempts = 0
         self.navigate(self.get_packages_url())
         self.wait_for_presence('#DataTables_Table_0_filter input[type="text"]')
-        self.driver.find_element_by_css_selector("input[type=text]").send_keys(aip_uuid)
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=text]").send_keys(
+            aip_uuid
+        )
         while True:
             # DataTables_Table_0
             row_els = self.driver.find_elements_by_css_selector(
@@ -123,8 +125,8 @@ class ArchivematicaBrowserStorageServiceAbility(
             # Visiting this URL creates a default GPG key when there is none
             self.navigate(self.get_gpg_keys_url())
         self.navigate(self.get_spaces_create_url())
-        form_el = self.driver.find_element_by_css_selector(
-            'form[action="/spaces/create/"]'
+        form_el = self.driver.find_element(
+            By.CSS_SELECTOR, 'form[action="/spaces/create/"]'
         )
         protocol_el = self.driver.find_element(By.ID, "protocol_form")
         for parent in (form_el, protocol_el):
@@ -140,10 +142,10 @@ class ArchivematicaBrowserStorageServiceAbility(
                                     Select(input_el).select_by_visible_text(val)
                                 else:
                                     input_el.send_keys(val)
-        self.driver.find_element_by_css_selector("input[type=submit]").click()
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
         self.wait_for_presence("div.alert-success", self.nihilistic_wait)
         assert (
-            self.driver.find_element_by_css_selector("div.alert-success").text.strip()
+            self.driver.find_element(By.CSS_SELECTOR, "div.alert-success").text.strip()
             == "Space saved."
         )
         header = self.driver.find_element_by_tag_name("h1").text.strip()
@@ -155,8 +157,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         attributes ``attributes``.
         """
         self.navigate(self.get_locations_create_url(space_uuid))
-        form_el = self.driver.find_element_by_css_selector(
-            f'form[action="/spaces/{space_uuid}/location_create/"]'
+        form_el = self.driver.find_element(
+            By.CSS_SELECTOR, f'form[action="/spaces/{space_uuid}/location_create/"]'
         )
         for p_el in form_el.find_elements_by_tag_name("p"):
             for el in p_el.find_elements_by_css_selector("*"):
@@ -179,7 +181,7 @@ class ArchivematicaBrowserStorageServiceAbility(
                         select_el = self.driver.find_element(By.ID, input_id)
                         select = Select(select_el)
                         select.select_by_index(0)
-        self.driver.find_element_by_css_selector("input[type=submit]").click()
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
         header = self.driver.find_element_by_tag_name("h1").text.strip()
         location_uuid = header.split()[0].replace('"', "").replace(":", "")
         return location_uuid
@@ -203,7 +205,7 @@ class ArchivematicaBrowserStorageServiceAbility(
                 space_uuid = space_uuid[:-1]
             space_uuid = space_uuid.split("/")[-1]
             space = {"uuid": space_uuid}
-            space_div_el = self.driver.find_element_by_css_selector("div.space dl")
+            space_div_el = self.driver.find_element(By.CSS_SELECTOR, "div.space dl")
             last_key = None
             for el in space_div_el.find_elements_by_css_selector("dt, dd"):
                 text = el.text.strip()
@@ -228,7 +230,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         for loc_uuid, loc_url in location_urls.items():
             self.navigate(loc_url)
             location = {"uuid": loc_uuid}
-            loc_div_el = self.driver.find_element_by_css_selector("div.location dl")
+            loc_div_el = self.driver.find_element(By.CSS_SELECTOR, "div.location dl")
             last_key = None
             for el in loc_div_el.find_elements_by_css_selector("dt, dd"):
                 text = el.text.strip()
@@ -269,7 +271,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         standard Archivematica Directory" is THE default AIP Storage location.
         """
         self.navigate(self.get_locations_url())
-        search_el = self.driver.find_element_by_css_selector("input[type=text]")
+        search_el = self.driver.find_element(By.CSS_SELECTOR, "input[type=text]")
         search_el.send_keys("Store AIP in standard Archivematica Directory")
         row_els = self.driver.find_elements_by_css_selector(
             "#DataTables_Table_0 > tbody > tr"
@@ -304,8 +306,8 @@ class ArchivematicaBrowserStorageServiceAbility(
             )
         edit_a_el.click()
         self.wait_for_presence("select#id_replicators")
-        replicators_select_el = self.driver.find_element_by_css_selector(
-            "select#id_replicators"
+        replicators_select_el = self.driver.find_element(
+            By.CSS_SELECTOR, "select#id_replicators"
         )
         replicators_select = Select(replicators_select_el)
         found_replicator = False
@@ -320,7 +322,7 @@ class ArchivematicaBrowserStorageServiceAbility(
                 " for the default AIP Storage"
                 " location".format(replicator_location_uuid)
             )
-        self.driver.find_element_by_css_selector("input[type=submit]").click()
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
 
     def import_gpg_key(self, key_path):
         """Navigate to the GPG key import page and attempt to import the GPG
@@ -331,9 +333,9 @@ class ArchivematicaBrowserStorageServiceAbility(
         self.navigate(self.get_import_gpg_key_url())
         with open(key_path) as filei:
             self.driver.find_element(By.ID, "id_ascii_armor").send_keys(filei.read())
-        self.driver.find_element_by_css_selector("input[type=submit]").click()
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
         self.wait_for_presence("div.alert", 20)
-        return self.driver.find_element_by_css_selector("div.alert").text.strip()
+        return self.driver.find_element(By.CSS_SELECTOR, "div.alert").text.strip()
 
     def get_gpg_key_search_matches(self, search_string):
         """Navigate to the GPG keys page and return the fingerprints of all
@@ -341,7 +343,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         """
         fingerprints = []
         self.navigate(self.get_gpg_keys_url())
-        self.driver.find_element_by_css_selector("input[type=text]").send_keys(
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=text]").send_keys(
             search_string
         )
         for row_el in self.driver.find_elements_by_css_selector(
@@ -362,7 +364,9 @@ class ArchivematicaBrowserStorageServiceAbility(
         string.
         """
         self.navigate(self.get_gpg_keys_url())
-        self.driver.find_element_by_css_selector("input[type=text]").send_keys(key_name)
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=text]").send_keys(
+            key_name
+        )
         matches = self.driver.find_elements_by_css_selector(
             "table#DataTables_Table_0 tbody tr"
         )
@@ -379,12 +383,12 @@ class ArchivematicaBrowserStorageServiceAbility(
         else:
             matches[0].find_element_by_xpath('td[3]/a[text() = "Delete"]').click()
         try:
-            self.driver.find_element_by_css_selector("input[value=Delete]").click()
+            self.driver.find_element(By.CSS_SELECTOR, "input[value=Delete]").click()
             try:
                 return (
                     True,
-                    self.driver.find_element_by_css_selector(
-                        "div.alert-success"
+                    self.driver.find_element(
+                        By.CSS_SELECTOR, "div.alert-success"
                     ).text.strip(),
                 )
             except NoSuchElementException:
@@ -392,14 +396,14 @@ class ArchivematicaBrowserStorageServiceAbility(
         except NoSuchElementException:
             return (
                 False,
-                self.driver.find_element_by_css_selector(
-                    "div.alert-error"
+                self.driver.find_element(
+                    By.CSS_SELECTOR, "div.alert-error"
                 ).text.strip(),
             )
 
     def disable_default_transfer_backlog(self):
         self.navigate(self.get_locations_url())
-        search_el = self.driver.find_element_by_css_selector("input[type=text]")
+        search_el = self.driver.find_element(By.CSS_SELECTOR, "input[type=text]")
         search_el.send_keys("Default transfer backlog")
         row_els = self.driver.find_elements_by_css_selector(
             "#DataTables_Table_0 > tbody > tr"
@@ -430,9 +434,9 @@ class ArchivematicaBrowserStorageServiceAbility(
         new_key_email = "{}@example.com".format(new_key_name.lower().replace(" ", ""))
         self.driver.find_element(By.ID, "id_name_real").send_keys(new_key_name)
         self.driver.find_element(By.ID, "id_name_email").send_keys(new_key_email)
-        self.driver.find_element_by_css_selector("input[type=submit]").click()
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
         self.wait_for_presence("div.alert-success", self.nihilistic_wait)
-        alert_text = self.driver.find_element_by_css_selector("div.alert-success").text
+        alert_text = self.driver.find_element(By.CSS_SELECTOR, "div.alert-success").text
         new_key_fingerprint = alert_text.split()[2]
         return new_key_name, new_key_email, new_key_fingerprint
 
@@ -451,10 +455,10 @@ class ArchivematicaBrowserStorageServiceAbility(
                 if option.text != currently_selected:
                     select.select_by_visible_text(option.text)
                     break
-        self.driver.find_element_by_css_selector("input[type=submit]").click()
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
         # Nihilistic wait is the only value working on Docker at present... and
         # may still need to be longer. Wait needed to accumulate GPG entropy.
         self.wait_for_presence("div.alert-success", self.nihilistic_wait)
-        assert self.driver.find_element_by_css_selector(
-            "div.alert-success"
+        assert self.driver.find_element(
+            By.CSS_SELECTOR, "div.alert-success"
         ).text.strip() == ("Space saved.")
