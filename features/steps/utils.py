@@ -1190,7 +1190,7 @@ def find_aip_by_transfer_metadata(
         browser.driver.find_element(By.CSS_SELECTOR, 'select[title="query type"]')
     ).select_by_visible_text("Phrase")
     # Add new boolean criteria
-    browser.driver.find_element_by_link_text("Add new").click()
+    browser.driver.find_element(By.LINK_TEXT, "Add new").click()
     Select(
         browser.driver.find_element(By.CSS_SELECTOR, "select.search_op_selector")
     ).select_by_visible_text("and")
