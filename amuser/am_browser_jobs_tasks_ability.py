@@ -218,7 +218,7 @@ class ArchivematicaBrowserJobsTasksAbility(
 
 def process_task_header_row(row_elem, row_dict):
     """Parse the text in the first tasks <tr>, the one "File UUID:"."""
-    for line in row_elem.find_element_by_tag_name("td").text.strip().split("\n"):
+    for line in row_elem.find_element(By.TAG_NAME, "td").text.strip().split("\n"):
         line = line.strip()
         if line.startswith("("):
             line = line[1:]
@@ -233,7 +233,7 @@ def process_task_command_row(row_elem, row_dict):
     """Parse the text in the second tasks <tr>, the one specifying command
     and arguments.
     """
-    command_text = row_elem.find_element_by_tag_name("td").text.strip().split(":")[1]
+    command_text = row_elem.find_element(By.TAG_NAME, "td").text.strip().split(":")[1]
     command, *arguments = command_text.split()
     row_dict["command"] = command
     arguments = " ".join(arguments)
@@ -243,13 +243,13 @@ def process_task_command_row(row_elem, row_dict):
 
 def process_task_stdout_row(row_elem, row_dict):
     """Parse out the tasks's stdout from the <table>."""
-    row_dict["stdout"] = row_elem.find_element_by_tag_name("pre").text.strip()
+    row_dict["stdout"] = row_elem.find_element(By.TAG_NAME, "pre").text.strip()
     return row_dict
 
 
 def process_task_stderr_row(row_elem, row_dict):
     """Parse out the tasks's stderr from the <table>."""
-    row_dict["stderr"] = row_elem.find_element_by_tag_name("pre").text.strip()
+    row_dict["stderr"] = row_elem.find_element(By.TAG_NAME, "pre").text.strip()
     return row_dict
 
 

@@ -32,21 +32,21 @@ class ArchivematicaBrowserStorageServiceAbility(
         SS GUI.
         """
         self.navigate(self.get_ss_package_delete_request_url())
-        self.driver.find_element(
-            By.ID, "DataTables_Table_0_filter"
-        ).find_element_by_tag_name("input").send_keys(aip_uuid)
+        self.driver.find_element(By.ID, "DataTables_Table_0_filter").find_element(
+            By.TAG_NAME, "input"
+        ).send_keys(aip_uuid)
         matching_rows = []
         for row_el in self.driver.find_elements(
             By.CSS_SELECTOR, "table#DataTables_Table_0 tbody tr"
         ):
-            if len(row_el.find_elements_by_tag_name("td")) == 7:
+            if len(row_el.find_elements(By.TAG_NAME, "td")) == 7:
                 matching_rows.append(row_el)
         if len(matching_rows) != 1:
             raise ArchivematicaBrowserStorageServiceAbilityError(
                 "More than one delete request row {} matches AIP"
                 " {}".format(len(matching_rows), aip_uuid)
             )
-        matching_rows[0].find_element_by_tag_name("textarea").send_keys("Cuz wanna")
+        matching_rows[0].find_element(By.TAG_NAME, "textarea").send_keys("Cuz wanna")
         matching_rows[0].find_element(By.CSS_SELECTOR, 'input[name="approve"]').click()
         assert self.driver.find_element(
             By.CSS_SELECTOR, "div.alert-success"
@@ -72,11 +72,11 @@ class ArchivematicaBrowserStorageServiceAbility(
             header = row_els[0]
             keys = [
                 th_el.text.strip().lower().replace(" ", "_")
-                for th_el in header.find_elements_by_tag_name("th")
+                for th_el in header.find_elements(By.TAG_NAME, "th")
             ]
             for row_el in row_els[1:]:
                 row_dict = {}
-                for index, td_el in enumerate(row_el.find_elements_by_tag_name("td")):
+                for index, td_el in enumerate(row_el.find_elements(By.TAG_NAME, "td")):
                     row_dict[keys[index]] = td_el.text.strip()
                 result.append(row_dict)
             # check if rows have been retrieved from the server yet
@@ -130,7 +130,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         )
         protocol_el = self.driver.find_element(By.ID, "protocol_form")
         for parent in (form_el, protocol_el):
-            for p_el in parent.find_elements_by_tag_name("p"):
+            for p_el in parent.find_elements(By.TAG_NAME, "p"):
                 for el in p_el.find_elements(By.CSS_SELECTOR, "*"):
                     if el.tag_name == "label":
                         label_text = el.text.strip().lower().replace(":", "")
@@ -148,7 +148,7 @@ class ArchivematicaBrowserStorageServiceAbility(
             self.driver.find_element(By.CSS_SELECTOR, "div.alert-success").text.strip()
             == "Space saved."
         )
-        header = self.driver.find_element_by_tag_name("h1").text.strip()
+        header = self.driver.find_element(By.TAG_NAME, "h1").text.strip()
         space_uuid = header.split()[0].replace('"', "").replace(":", "")
         return space_uuid
 
@@ -160,7 +160,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         form_el = self.driver.find_element(
             By.CSS_SELECTOR, f'form[action="/spaces/{space_uuid}/location_create/"]'
         )
-        for p_el in form_el.find_elements_by_tag_name("p"):
+        for p_el in form_el.find_elements(By.TAG_NAME, "p"):
             for el in p_el.find_elements(By.CSS_SELECTOR, "*"):
                 if el.tag_name == "label":
                     label_text = el.text.strip().lower().replace(":", "")
@@ -182,7 +182,7 @@ class ArchivematicaBrowserStorageServiceAbility(
                         select = Select(select_el)
                         select.select_by_index(0)
         self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
-        header = self.driver.find_element_by_tag_name("h1").text.strip()
+        header = self.driver.find_element(By.TAG_NAME, "h1").text.strip()
         location_uuid = header.split()[0].replace('"', "").replace(":", "")
         return location_uuid
 
@@ -351,7 +351,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         ):
             try:
                 fingerprints.append(
-                    row_el.find_elements_by_tag_name("td")[1].text.strip()
+                    row_el.find_elements(By.TAG_NAME, "td")[1].text.strip()
                 )
             except IndexError:
                 pass

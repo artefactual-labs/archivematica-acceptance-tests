@@ -55,14 +55,16 @@ class ArchivematicaBrowserAbility(
             self.driver.get(self.get_default_ss_user_edit_url())
             block = WebDriverWait(self.driver, 20)
             block.until(EC.presence_of_element_located((By.CSS_SELECTOR, "code")))
-            self._ss_api_key = self.driver.find_element_by_tag_name("code").text.strip()
+            self._ss_api_key = self.driver.find_element(
+                By.TAG_NAME, "code"
+            ).text.strip()
         return self._ss_api_key
 
     def get_displayed_tabs(self):
         ret = []
         for li_el in self.driver.find_element(
             By.CSS_SELECTOR, "ul.navbar-nav"
-        ).find_elements_by_tag_name("li"):
+        ).find_elements(By.TAG_NAME, "li"):
             ret.append(li_el.text.strip().split("\n")[0])
         return list(filter(None, ret))
 
@@ -349,7 +351,7 @@ class ArchivematicaBrowserAbility(
         decision_el = self.driver.find_element(By.ID, decision_id)
         options = []
         if decision_el.tag_name == "select":
-            for option_el in decision_el.find_elements_by_tag_name("option"):
+            for option_el in decision_el.find_elements(By.TAG_NAME, "option"):
                 options.append(option_el.text.strip())
         return options
 
@@ -547,7 +549,7 @@ class ArchivematicaBrowserAbility(
         self.driver.find_element(By.ID, "id_email").send_keys("test@gmail.com")
         self.driver.find_element(By.ID, "id_password1").send_keys(c.DEFAULT_AM_PASSWORD)
         self.driver.find_element(By.ID, "id_password2").send_keys(c.DEFAULT_AM_PASSWORD)
-        self.driver.find_element_by_tag_name("button").click()
+        self.driver.find_element(By.TAG_NAME, "button").click()
         continue_button_selector = "input[value=Continue]"
         self.wait_for_presence(continue_button_selector, 100)
         continue_button_el = self.driver.find_element(

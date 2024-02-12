@@ -88,7 +88,7 @@ class ArchivematicaBrowserTransferIngestAbility(
                 )
             index = None
             for i, option_el in enumerate(
-                select_el.find_elements_by_tag_name("option")
+                select_el.find_elements(By.TAG_NAME, "option")
             ):
                 if utils.squash(choice_text) in utils.squash(option_el.text):
                     index = i

@@ -35,7 +35,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         """Click the "replace" link of the first rule in the FPR rules table
         visible on the page.
         """
-        for a_el in self.driver.find_elements_by_tag_name("a"):
+        for a_el in self.driver.find_elements(By.TAG_NAME, "a"):
             if a_el.text.strip() == "Replace":
                 a_el.click()
                 break
@@ -76,9 +76,9 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         policy_command_url = None
         policy_command_descriptions = []
         commands_table_el = self.driver.find_element(By.ID, "DataTables_Table_0")
-        for row_el in commands_table_el.find_elements_by_tag_name("tr"):
+        for row_el in commands_table_el.find_elements(By.TAG_NAME, "tr"):
             try:
-                anchor_el = row_el.find_element_by_tag_name("a")
+                anchor_el = row_el.find_element(By.TAG_NAME, "a")
             except NoSuchElementException:
                 pass
             else:
@@ -119,11 +119,11 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         # Get the text of the command.
         policy_command = None
         next_el = False
-        for el in self.driver.find_element_by_tag_name("dl").find_elements(
+        for el in self.driver.find_element(By.TAG_NAME, "dl").find_elements(
             By.CSS_SELECTOR, "*"
         ):
             if next_el:
-                policy_command = el.find_element_by_tag_name("pre").text.strip()
+                policy_command = el.find_element(By.TAG_NAME, "pre").text.strip()
                 break
             if el.text.strip() == "Command":
                 next_el = True
@@ -150,9 +150,9 @@ class ArchivematicaBrowserPreservationPlanningAbility(
             description,
         )
         self.navigate(self.get_create_command_url())
-        for option in self.driver.find_element(
-            By.ID, "id_tool"
-        ).find_elements_by_tag_name("option"):
+        for option in self.driver.find_element(By.ID, "id_tool").find_elements(
+            By.TAG_NAME, "option"
+        ):
             if "MediaConch" in option.text:
                 option.click()
                 break

@@ -167,7 +167,7 @@ class ArchivematicaBrowserTransferAbility(
                     transfer_name_in_dom,
                 )
                 transfer_name = transfer_name_in_dom
-                abbr_elem = transfer_name_div_elem.find_element_by_tag_name("abbr")
+                abbr_elem = transfer_name_div_elem.find_element(By.TAG_NAME, "abbr")
                 if abbr_elem and abbr_elem.is_displayed():
                     transfer_uuid = abbr_elem.get_attribute("title").strip()
                 else:
