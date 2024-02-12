@@ -100,16 +100,16 @@ class ArchivematicaBrowserTransferAbility(
             remove_elem.click()
             dialog_selector = "div.ui-dialog"
             self.wait_for_presence(dialog_selector)
-            remove_sip_confirm_dialog_elems = self.driver.find_elements_by_css_selector(
-                "div.ui-dialog"
+            remove_sip_confirm_dialog_elems = self.driver.find_elements(
+                By.CSS_SELECTOR, "div.ui-dialog"
             )
             for dialog_elem in remove_sip_confirm_dialog_elems:
                 if dialog_elem.is_displayed():
                     remove_sip_confirm_dialog_elem = dialog_elem
                     break
-            for (
-                button_elem
-            ) in remove_sip_confirm_dialog_elem.find_elements_by_css_selector("button"):
+            for button_elem in remove_sip_confirm_dialog_elem.find_elements(
+                By.CSS_SELECTOR, "button"
+            ):
                 if button_elem.text.strip() == "Confirm":
                     button_elem.click()
             self.wait_for_invisibility(dialog_selector)
@@ -121,8 +121,8 @@ class ArchivematicaBrowserTransferAbility(
 
     def get_top_transfer(self):
         """Get the topmost transfer ('.sip') <div> in the transfers tab."""
-        transfer_elems = self.driver.find_elements_by_css_selector(
-            c.SELECTOR_TRANSFER_DIV
+        transfer_elems = self.driver.find_elements(
+            By.CSS_SELECTOR, c.SELECTOR_TRANSFER_DIV
         )
         if transfer_elems:
             return transfer_elems[0]
@@ -140,8 +140,8 @@ class ArchivematicaBrowserTransferAbility(
         transfer_uuid_div_selector = "div.sip-detail-uuid"
         self.wait_for_presence(transfer_name_div_selector)
         transfer_uuid = correct_transfer_div_elem = None
-        for transfer_div_elem in self.driver.find_elements_by_css_selector(
-            c.SELECTOR_TRANSFER_DIV
+        for transfer_div_elem in self.driver.find_elements(
+            By.CSS_SELECTOR, c.SELECTOR_TRANSFER_DIV
         ):
             transfer_name_div_elem = transfer_div_elem.find_element(
                 By.CSS_SELECTOR, transfer_name_div_selector

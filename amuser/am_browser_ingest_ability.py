@@ -216,11 +216,11 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
             td_el.text.strip().lower().replace(" ", "_")
             for td_el in table_el.find_element(
                 By.CSS_SELECTOR, "thead tr"
-            ).find_elements_by_css_selector("th")
+            ).find_elements(By.CSS_SELECTOR, "th")
         ]
-        for tr_el in table_el.find_elements_by_css_selector("tbody tr"):
+        for tr_el in table_el.find_elements(By.CSS_SELECTOR, "tbody tr"):
             row = {}
-            for index, td_el in enumerate(tr_el.find_elements_by_css_selector("td")):
+            for index, td_el in enumerate(tr_el.find_elements(By.CSS_SELECTOR, "td")):
                 row[keys[index]] = td_el.text
             report.append(row)
         return report

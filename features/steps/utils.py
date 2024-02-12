@@ -1195,14 +1195,14 @@ def find_aip_by_transfer_metadata(
         browser.driver.find_element(By.CSS_SELECTOR, "select.search_op_selector")
     ).select_by_visible_text("and")
     # Set search term phrase
-    browser.driver.find_elements_by_css_selector('input[title="search query"]')[
+    browser.driver.find_elements(By.CSS_SELECTOR, 'input[title="search query"]')[
         -1
     ].send_keys(f'"{search_phrase}"')
     Select(
-        browser.driver.find_elements_by_css_selector('select[title="field name"]')[-1]
+        browser.driver.find_elements(By.CSS_SELECTOR, 'select[title="field name"]')[-1]
     ).select_by_visible_text("Transfer metadata")
     Select(
-        browser.driver.find_elements_by_css_selector('select[title="query type"]')[-1]
+        browser.driver.find_elements(By.CSS_SELECTOR, 'select[title="query type"]')[-1]
     ).select_by_visible_text("Phrase")
     # Submit search and wait for expected result
     browser.driver.find_element(By.ID, "search_submit").click()

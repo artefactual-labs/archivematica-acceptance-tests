@@ -29,9 +29,9 @@ class ArchivematicaBrowserJobsTasksAbility(
         ms_group_elem = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid
         )
-        for job_elem in ms_group_elem.find_elements_by_css_selector("div.job"):
-            for span_elem in job_elem.find_elements_by_css_selector(
-                "div.job-detail-microservice span"
+        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
+            for span_elem in job_elem.find_elements(
+                By.CSS_SELECTOR, "div.job-detail-microservice span"
             ):
                 if span_elem.text.strip() == ms_name:
                     return job_elem.find_element(
@@ -123,7 +123,7 @@ class ArchivematicaBrowserJobsTasksAbility(
             self.login()
         self.driver.get(tasks_url)
         self.wait_for_presence("article.task")
-        for task_art_elem in self.driver.find_elements_by_css_selector("article.task"):
+        for task_art_elem in self.driver.find_elements(By.CSS_SELECTOR, "article.task"):
             row_dict = {}
             try:
                 row_dict["stdout"] = task_art_elem.find_element(
@@ -144,8 +144,8 @@ class ArchivematicaBrowserJobsTasksAbility(
                 By.CSS_SELECTOR, "div.panel-primary div.shell-output pre"
             ).text.strip()
             row_dict["arguments"] = utils.parse_task_arguments_to_list(arguments)
-            for dl_el in task_art_elem.find_elements_by_css_selector("div.row dl"):
-                for el in dl_el.find_elements_by_css_selector("*"):
+            for dl_el in task_art_elem.find_elements(By.CSS_SELECTOR, "div.row dl"):
+                for el in dl_el.find_elements(By.CSS_SELECTOR, "*"):
                     if el.tag_name == "dt":
                         attr = el.text.strip().lower().replace(" ", "_")
                     else:
@@ -158,7 +158,7 @@ class ArchivematicaBrowserJobsTasksAbility(
             )
             table_dict["tasks"][row_dict["task_uuid"]] = row_dict
         next_tasks_url = None
-        for link_button in self.driver.find_elements_by_css_selector("a.btn"):
+        for link_button in self.driver.find_elements(By.CSS_SELECTOR, "a.btn"):
             if link_button.text.strip() == "Next page":
                 next_tasks_url = "{}{}".format(
                     self.am_url, link_button.get_attribute("href")
@@ -183,9 +183,9 @@ class ArchivematicaBrowserJobsTasksAbility(
         ms_group_elem = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid
         )
-        for job_elem in ms_group_elem.find_elements_by_css_selector("div.job"):
-            for span_elem in job_elem.find_elements_by_css_selector(
-                "div.job-detail-microservice span"
+        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
+            for span_elem in job_elem.find_elements(
+                By.CSS_SELECTOR, "div.job-detail-microservice span"
             ):
                 if utils.squash(span_elem.text) == utils.squash(ms_name):
                     job_output = job_elem.find_element(

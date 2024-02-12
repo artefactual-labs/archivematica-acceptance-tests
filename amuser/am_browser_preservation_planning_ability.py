@@ -119,9 +119,9 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         # Get the text of the command.
         policy_command = None
         next_el = False
-        for el in self.driver.find_element_by_tag_name(
-            "dl"
-        ).find_elements_by_css_selector("*"):
+        for el in self.driver.find_element_by_tag_name("dl").find_elements(
+            By.CSS_SELECTOR, "*"
+        ):
             if next_el:
                 policy_command = el.find_element_by_tag_name("pre").text.strip()
                 break
@@ -227,8 +227,8 @@ class ArchivematicaBrowserPreservationPlanningAbility(
             return
         disabled_rules = [
             row
-            for row in self.driver.find_elements_by_css_selector(
-                "#DataTables_Table_0 tbody tr"
+            for row in self.driver.find_elements(
+                By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr"
             )
             if row.find_element(By.CSS_SELECTOR, "td:nth-child(5)").text == "No"
         ]

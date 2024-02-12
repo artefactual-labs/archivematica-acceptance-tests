@@ -36,8 +36,8 @@ class ArchivematicaBrowserStorageServiceAbility(
             By.ID, "DataTables_Table_0_filter"
         ).find_element_by_tag_name("input").send_keys(aip_uuid)
         matching_rows = []
-        for row_el in self.driver.find_elements_by_css_selector(
-            "table#DataTables_Table_0 tbody tr"
+        for row_el in self.driver.find_elements(
+            By.CSS_SELECTOR, "table#DataTables_Table_0 tbody tr"
         ):
             if len(row_el.find_elements_by_tag_name("td")) == 7:
                 matching_rows.append(row_el)
@@ -65,8 +65,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         )
         while True:
             # DataTables_Table_0
-            row_els = self.driver.find_elements_by_css_selector(
-                "#DataTables_Table_0 tr"
+            row_els = self.driver.find_elements(
+                By.CSS_SELECTOR, "#DataTables_Table_0 tr"
             )
             result = []
             header = row_els[0]
@@ -131,7 +131,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         protocol_el = self.driver.find_element(By.ID, "protocol_form")
         for parent in (form_el, protocol_el):
             for p_el in parent.find_elements_by_tag_name("p"):
-                for el in p_el.find_elements_by_css_selector("*"):
+                for el in p_el.find_elements(By.CSS_SELECTOR, "*"):
                     if el.tag_name == "label":
                         label_text = el.text.strip().lower().replace(":", "")
                         for key, val in attributes.items():
@@ -161,7 +161,7 @@ class ArchivematicaBrowserStorageServiceAbility(
             By.CSS_SELECTOR, f'form[action="/spaces/{space_uuid}/location_create/"]'
         )
         for p_el in form_el.find_elements_by_tag_name("p"):
-            for el in p_el.find_elements_by_css_selector("*"):
+            for el in p_el.find_elements(By.CSS_SELECTOR, "*"):
                 if el.tag_name == "label":
                     label_text = el.text.strip().lower().replace(":", "")
                     for key, val in attributes.items():
@@ -193,7 +193,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         existing_spaces = []
         self.navigate(self.get_spaces_url())
         space_urls = []
-        for div_el in self.driver.find_elements_by_css_selector("div.space"):
+        for div_el in self.driver.find_elements(By.CSS_SELECTOR, "div.space"):
             space_detail_anchor = div_el.find_element_by_xpath(
                 'dl/dd/ul/li/a[text() = "View Details and Locations"]'
             )
@@ -207,7 +207,7 @@ class ArchivematicaBrowserStorageServiceAbility(
             space = {"uuid": space_uuid}
             space_div_el = self.driver.find_element(By.CSS_SELECTOR, "div.space dl")
             last_key = None
-            for el in space_div_el.find_elements_by_css_selector("dt, dd"):
+            for el in space_div_el.find_elements(By.CSS_SELECTOR, "dt, dd"):
                 text = el.text.strip()
                 if el.tag_name == "dt":
                     last_key = text.lower()
@@ -223,7 +223,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         existing_locations = []
         self.navigate(self.get_space_url(space_uuid))
         location_urls = {}
-        for tr_el in self.driver.find_elements_by_css_selector("tbody tr"):
+        for tr_el in self.driver.find_elements(By.CSS_SELECTOR, "tbody tr"):
             loc_uuid_td_el = tr_el.find_element_by_xpath("td[position()=5]")
             loc_uuid = loc_uuid_td_el.text.strip()
             location_urls[loc_uuid] = self.get_location_url(loc_uuid)
@@ -232,7 +232,7 @@ class ArchivematicaBrowserStorageServiceAbility(
             location = {"uuid": loc_uuid}
             loc_div_el = self.driver.find_element(By.CSS_SELECTOR, "div.location dl")
             last_key = None
-            for el in loc_div_el.find_elements_by_css_selector("dt, dd"):
+            for el in loc_div_el.find_elements(By.CSS_SELECTOR, "dt, dd"):
                 text = el.text.strip()
                 if el.tag_name == "dt":
                     last_key = text.lower()
@@ -273,8 +273,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         self.navigate(self.get_locations_url())
         search_el = self.driver.find_element(By.CSS_SELECTOR, "input[type=text]")
         search_el.send_keys("Store AIP in standard Archivematica Directory")
-        row_els = self.driver.find_elements_by_css_selector(
-            "#DataTables_Table_0 > tbody > tr"
+        row_els = self.driver.find_elements(
+            By.CSS_SELECTOR, "#DataTables_Table_0 > tbody > tr"
         )
         if not row_els:
             raise ArchivematicaBrowserStorageServiceAbilityError(
@@ -284,7 +284,7 @@ class ArchivematicaBrowserStorageServiceAbility(
             new_row_els = []
             for row_el in row_els:
                 row_text = []
-                for td_el in row_el.find_elements_by_css_selector("td"):
+                for td_el in row_el.find_elements(By.CSS_SELECTOR, "td"):
                     row_text.append(td_el.text.strip().lower())
                 if "encrypted" not in "".join(row_text):
                     new_row_els.append(row_el)
@@ -294,9 +294,9 @@ class ArchivematicaBrowserStorageServiceAbility(
                 raise ArchivematicaBrowserStorageServiceAbilityError(
                     "Unable to find a unique default AIP storage location"
                 )
-        cell_el = row_els[0].find_elements_by_css_selector("td")[9]
+        cell_el = row_els[0].find_elements(By.CSS_SELECTOR, "td")[9]
         edit_a_el = None
-        for a_el in cell_el.find_elements_by_css_selector("a"):
+        for a_el in cell_el.find_elements(By.CSS_SELECTOR, "a"):
             if a_el.text.strip() == "Edit":
                 edit_a_el = a_el
         if not edit_a_el:
@@ -346,8 +346,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         self.driver.find_element(By.CSS_SELECTOR, "input[type=text]").send_keys(
             search_string
         )
-        for row_el in self.driver.find_elements_by_css_selector(
-            "table#DataTables_Table_0 tbody tr"
+        for row_el in self.driver.find_elements(
+            By.CSS_SELECTOR, "table#DataTables_Table_0 tbody tr"
         ):
             try:
                 fingerprints.append(
@@ -367,8 +367,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         self.driver.find_element(By.CSS_SELECTOR, "input[type=text]").send_keys(
             key_name
         )
-        matches = self.driver.find_elements_by_css_selector(
-            "table#DataTables_Table_0 tbody tr"
+        matches = self.driver.find_elements(
+            By.CSS_SELECTOR, "table#DataTables_Table_0 tbody tr"
         )
         try:
             assert len(matches) == 1
@@ -405,16 +405,16 @@ class ArchivematicaBrowserStorageServiceAbility(
         self.navigate(self.get_locations_url())
         search_el = self.driver.find_element(By.CSS_SELECTOR, "input[type=text]")
         search_el.send_keys("Default transfer backlog")
-        row_els = self.driver.find_elements_by_css_selector(
-            "#DataTables_Table_0 > tbody > tr"
+        row_els = self.driver.find_elements(
+            By.CSS_SELECTOR, "#DataTables_Table_0 > tbody > tr"
         )
         if len(row_els) != 1:
             raise ArchivematicaBrowserStorageServiceAbilityError(
                 "Unable to find a unique default transfer backlog location"
             )
-        cell_el = row_els[0].find_elements_by_css_selector("td")[9]
+        cell_el = row_els[0].find_elements(By.CSS_SELECTOR, "td")[9]
         disable_a_el = enable_a_el = None
-        for a_el in cell_el.find_elements_by_css_selector("a"):
+        for a_el in cell_el.find_elements(By.CSS_SELECTOR, "a"):
             if a_el.text.strip() == "Disable":
                 disable_a_el = a_el
             if a_el.text.strip() == "Enable":

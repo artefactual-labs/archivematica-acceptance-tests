@@ -67,9 +67,9 @@ class ArchivematicaBrowserTransferIngestAbility(
         )
         ms_group_elem = self.get_transfer_micro_service_group_elem(group_name, uuid_val)
         action_div_el = None
-        for job_elem in ms_group_elem.find_elements_by_css_selector("div.job"):
-            for span_elem in job_elem.find_elements_by_css_selector(
-                "div.job-detail-microservice span"
+        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
+            for span_elem in job_elem.find_elements(
+                By.CSS_SELECTOR, "div.job-detail-microservice span"
             ):
                 if utils.squash(span_elem.text) == utils.squash(decision_point):
                     action_div_el = job_elem.find_element(
@@ -132,9 +132,9 @@ class ArchivematicaBrowserTransferIngestAbility(
         ms_group_elem = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid
         )
-        for job_elem in ms_group_elem.find_elements_by_css_selector("div.job"):
-            for span_elem in job_elem.find_elements_by_css_selector(
-                "div.job-detail-microservice span"
+        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
+            for span_elem in job_elem.find_elements(
+                By.CSS_SELECTOR, "div.job-detail-microservice span"
             ):
                 if utils.squash(span_elem.text) == utils.squash(ms_name):
                     return
@@ -168,9 +168,9 @@ class ArchivematicaBrowserTransferIngestAbility(
         ms_group_elem = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid
         )
-        for job_elem in ms_group_elem.find_elements_by_css_selector("div.job"):
-            for span_elem in job_elem.find_elements_by_css_selector(
-                "div.job-detail-microservice span"
+        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
+            for span_elem in job_elem.find_elements(
+                By.CSS_SELECTOR, "div.job-detail-microservice span"
             ):
                 if span_elem.text.strip() == ms_name:
                     job_elem.find_element(
@@ -207,7 +207,7 @@ class ArchivematicaBrowserTransferIngestAbility(
         """
         transfer_div_elem = None
         transfer_dom_id = f"sip-row-{transfer_uuid}"
-        for elem in self.driver.find_elements_by_css_selector("div.sip"):
+        for elem in self.driver.find_elements(By.CSS_SELECTOR, "div.sip"):
             try:
                 elem.find_element(By.ID, transfer_dom_id)
                 transfer_div_elem = elem
@@ -221,8 +221,8 @@ class ArchivematicaBrowserTransferIngestAbility(
         else:
             expected_name = f"Microservice: {group_name}"
         result = None
-        for ms_group_elem in transfer_div_elem.find_elements_by_css_selector(
-            "div.microservicegroup"
+        for ms_group_elem in transfer_div_elem.find_elements(
+            By.CSS_SELECTOR, "div.microservicegroup"
         ):
             name_elem_text = ms_group_elem.find_element(
                 By.CSS_SELECTOR, "span.microservice-group-name"
