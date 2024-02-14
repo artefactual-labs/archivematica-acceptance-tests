@@ -2,6 +2,7 @@
 import logging
 
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 
 from . import selenium_ability
@@ -25,8 +26,8 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         self.navigate(self.get_normalization_rules_url())
 
     def search_rules(self, search_term):
-        search_input_el = self.driver.find_element_by_css_selector(
-            "#DataTables_Table_0_filter input"
+        search_input_el = self.driver.find_element(
+            By.CSS_SELECTOR, "#DataTables_Table_0_filter input"
         )
         search_input_el.send_keys(search_term)
 
@@ -34,7 +35,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         """Click the "replace" link of the first rule in the FPR rules table
         visible on the page.
         """
-        for a_el in self.driver.find_elements_by_tag_name("a"):
+        for a_el in self.driver.find_elements(By.TAG_NAME, "a"):
             if a_el.text.strip() == "Replace":
                 a_el.click()
                 break
@@ -43,13 +44,13 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         self.wait_for_presence("input[type=submit]")
 
     def set_fpr_command(self, command_name):
-        command_select_el = self.driver.find_element_by_id("id_f-command")
+        command_select_el = self.driver.find_element(By.ID, "id_f-command")
         command_select_el.click()
         Select(command_select_el).select_by_visible_text(command_name)
 
     def save_fpr_command(self):
-        command_select_el = self.driver.find_element_by_css_selector(
-            "input[type=submit]"
+        command_select_el = self.driver.find_element(
+            By.CSS_SELECTOR, "input[type=submit]"
         )
         command_select_el.click()
         self.wait_for_presence("#DataTables_Table_0")
@@ -74,10 +75,10 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         """
         policy_command_url = None
         policy_command_descriptions = []
-        commands_table_el = self.driver.find_element_by_id("DataTables_Table_0")
-        for row_el in commands_table_el.find_elements_by_tag_name("tr"):
+        commands_table_el = self.driver.find_element(By.ID, "DataTables_Table_0")
+        for row_el in commands_table_el.find_elements(By.TAG_NAME, "tr"):
             try:
-                anchor_el = row_el.find_element_by_tag_name("a")
+                anchor_el = row_el.find_element(By.TAG_NAME, "a")
             except NoSuchElementException:
                 pass
             else:
@@ -118,11 +119,11 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         # Get the text of the command.
         policy_command = None
         next_el = False
-        for el in self.driver.find_element_by_tag_name(
-            "dl"
-        ).find_elements_by_css_selector("*"):
+        for el in self.driver.find_element(By.TAG_NAME, "dl").find_elements(
+            By.CSS_SELECTOR, "*"
+        ):
             if next_el:
-                policy_command = el.find_element_by_tag_name("pre").text.strip()
+                policy_command = el.find_element(By.TAG_NAME, "pre").text.strip()
                 break
             if el.text.strip() == "Command":
                 next_el = True
@@ -149,20 +150,20 @@ class ArchivematicaBrowserPreservationPlanningAbility(
             description,
         )
         self.navigate(self.get_create_command_url())
-        for option in self.driver.find_element_by_id(
-            "id_tool"
-        ).find_elements_by_tag_name("option"):
+        for option in self.driver.find_element(By.ID, "id_tool").find_elements(
+            By.TAG_NAME, "option"
+        ):
             if "MediaConch" in option.text:
                 option.click()
                 break
-        self.driver.find_element_by_id("id_description").send_keys(description)
+        self.driver.find_element(By.ID, "id_description").send_keys(description)
         js_script = 'document.getElementById("id_command").value =' " `{}`;".format(
             policy_command
         )
         self.driver.execute_script(js_script)
-        self.driver.find_element_by_id("id_script_type").send_keys("Python")
-        self.driver.find_element_by_id("id_command_usage").send_keys("Validation")
-        self.driver.find_element_by_css_selector("input[type=submit]").click()
+        self.driver.find_element(By.ID, "id_script_type").send_keys("Python")
+        self.driver.find_element(By.ID, "id_command_usage").send_keys("Validation")
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
         logger.info("Created the FPR policy check command")
 
     def ensure_fpr_rule(self, purpose, format_, command_description):
@@ -184,16 +185,16 @@ class ArchivematicaBrowserPreservationPlanningAbility(
             return
         logger.info("Creating the needed FPR rule.")
         self.navigate(self.get_create_rule_url())
-        Select(self.driver.find_element_by_id("id_f-purpose")).select_by_visible_text(
+        Select(self.driver.find_element(By.ID, "id_f-purpose")).select_by_visible_text(
             purpose
         )
-        Select(self.driver.find_element_by_id("id_f-format")).select_by_visible_text(
+        Select(self.driver.find_element(By.ID, "id_f-format")).select_by_visible_text(
             format_
         )
-        Select(self.driver.find_element_by_id("id_f-command")).select_by_visible_text(
+        Select(self.driver.find_element(By.ID, "id_f-command")).select_by_visible_text(
             command_description
         )
-        self.driver.find_element_by_css_selector("input[type=submit]").click()
+        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
         logger.info("Created the needed FPR rule.")
 
     def fpr_rule_already_exists(self, purpose, format_, command_description):
@@ -202,7 +203,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         """
         self.navigate(self.get_rules_url())
         self.search_for_fpr_rule(purpose, format_, command_description)
-        info_el = self.driver.find_element_by_id("DataTables_Table_0_info")
+        info_el = self.driver.find_element(By.ID, "DataTables_Table_0_info")
         if info_el.text.strip().startswith("Showing 0 to 0 of 0 entries"):
             return False
         return True
@@ -221,15 +222,15 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         self.navigate(self.get_rules_url())
         self.search_for_fpr_rule(purpose, format_, command_description)
         self.wait_for_presence("#DataTables_Table_0_info")
-        info_el = self.driver.find_element_by_id("DataTables_Table_0_info")
+        info_el = self.driver.find_element(By.ID, "DataTables_Table_0_info")
         if info_el.text.strip().startswith("Showing 0 to 0 of 0 entries"):
             return
         disabled_rules = [
             row
-            for row in self.driver.find_elements_by_css_selector(
-                "#DataTables_Table_0 tbody tr"
+            for row in self.driver.find_elements(
+                By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr"
             )
-            if row.find_element_by_css_selector("td:nth-child(5)").text == "No"
+            if row.find_element(By.CSS_SELECTOR, "td:nth-child(5)").text == "No"
         ]
         if not disabled_rules:
             logger.info(
@@ -246,8 +247,8 @@ class ArchivematicaBrowserPreservationPlanningAbility(
             )
         )
         rule = disabled_rules[0]
-        rule.find_element_by_css_selector("td:nth-child(6) a:nth-child(3)").click()
-        self.driver.find_element_by_css_selector("input[value=Enable]").click()
+        rule.find_element(By.CSS_SELECTOR, "td:nth-child(6) a:nth-child(3)").click()
+        self.driver.find_element(By.CSS_SELECTOR, "input[value=Enable]").click()
 
     @staticmethod
     def get_policy_command_description(policy_file):

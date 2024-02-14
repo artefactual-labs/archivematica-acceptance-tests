@@ -8,7 +8,6 @@ from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -40,23 +39,14 @@ class ArchivematicaSeleniumAbility(base.Base):
         if self.driver_name == "Chrome":
             options = webdriver.ChromeOptions()
             if headless:
-                options.add_argument("headless")
-            driver = webdriver.Chrome(chrome_options=options)
+                options.add_argument("--headless=new")
+            driver = webdriver.Chrome(options=options)
             driver.set_window_size(1700, 900)
         elif self.driver_name == "Firefox":
-            fp = webdriver.FirefoxProfile()
-            fp.set_preference("dom.max_chrome_script_run_time", 0)
-            fp.set_preference("dom.max_script_run_time", 0)
             options = webdriver.FirefoxOptions()
             if headless:
                 options.add_argument("-headless")
-            capabilities = DesiredCapabilities.FIREFOX.copy()
-            capabilities["moz:webdriverClick"] = False
-            driver = webdriver.Firefox(
-                firefox_profile=fp,
-                firefox_options=options,
-                desired_capabilities=capabilities,
-            )
+            driver = webdriver.Firefox(options=options)
         else:
             driver = getattr(webdriver, self.driver_name)()
         driver.set_script_timeout(self.apathetic_wait)

@@ -15,6 +15,7 @@ from amclient.amclient import AMClient
 from environment import AM_API_CONFIG_KEY
 from environment import SS_API_CONFIG_KEY
 from lxml import etree
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 
 logger = logging.getLogger("amauat.steps.utils")
@@ -1179,34 +1180,34 @@ def find_aip_by_transfer_metadata(
     browser.navigate(browser.get_archival_storage_url(), reload=True)
     # Set AIP UUID phrase to avoid clashes with other AMAUAT runs that
     # used the same sample transfer paths
-    browser.driver.find_element_by_css_selector(
-        'input[title="search query"]'
+    browser.driver.find_element(
+        By.CSS_SELECTOR, 'input[title="search query"]'
     ).send_keys(aip_uuid)
     Select(
-        browser.driver.find_element_by_css_selector('select[title="field name"]')
+        browser.driver.find_element(By.CSS_SELECTOR, 'select[title="field name"]')
     ).select_by_visible_text("AIP UUID")
     Select(
-        browser.driver.find_element_by_css_selector('select[title="query type"]')
+        browser.driver.find_element(By.CSS_SELECTOR, 'select[title="query type"]')
     ).select_by_visible_text("Phrase")
     # Add new boolean criteria
-    browser.driver.find_element_by_link_text("Add new").click()
+    browser.driver.find_element(By.LINK_TEXT, "Add new").click()
     Select(
-        browser.driver.find_element_by_css_selector("select.search_op_selector")
+        browser.driver.find_element(By.CSS_SELECTOR, "select.search_op_selector")
     ).select_by_visible_text("and")
     # Set search term phrase
-    browser.driver.find_elements_by_css_selector('input[title="search query"]')[
+    browser.driver.find_elements(By.CSS_SELECTOR, 'input[title="search query"]')[
         -1
     ].send_keys(f'"{search_phrase}"')
     Select(
-        browser.driver.find_elements_by_css_selector('select[title="field name"]')[-1]
+        browser.driver.find_elements(By.CSS_SELECTOR, 'select[title="field name"]')[-1]
     ).select_by_visible_text("Transfer metadata")
     Select(
-        browser.driver.find_elements_by_css_selector('select[title="query type"]')[-1]
+        browser.driver.find_elements(By.CSS_SELECTOR, 'select[title="query type"]')[-1]
     ).select_by_visible_text("Phrase")
     # Submit search and wait for expected result
-    browser.driver.find_element_by_id("search_submit").click()
+    browser.driver.find_element(By.ID, "search_submit").click()
     browser.wait_for_presence("#archival-storage-entries tbody tr")
-    summary_el = browser.driver.find_element_by_id("archival-storage-entries_info")
+    summary_el = browser.driver.find_element(By.ID, "archival-storage-entries_info")
     summary_text = summary_el.text.strip()
     result = summary_text == expected_summary_message
     # This assertion allows tenacity to retry the call on error

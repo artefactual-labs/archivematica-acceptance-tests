@@ -178,18 +178,18 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
 
     def add_dummy_metadata(self, sip_uuid):
         self.navigate(self.get_ingest_url())
-        self.driver.find_element_by_id(
-            f"sip-row-{sip_uuid}"
-        ).find_element_by_css_selector("a.btn_show_metadata").click()
+        self.driver.find_element(By.ID, f"sip-row-{sip_uuid}").find_element(
+            By.CSS_SELECTOR, "a.btn_show_metadata"
+        ).click()
         self.navigate(self.get_metadata_add_url(sip_uuid))
         for attr in self.metadata_attrs:
-            self.driver.find_element_by_id(f"id_{attr}").send_keys(self.dummy_val)
+            self.driver.find_element(By.ID, f"id_{attr}").send_keys(self.dummy_val)
         try:
-            self.driver.find_element_by_css_selector("input[value=Create]").click()
+            self.driver.find_element(By.CSS_SELECTOR, "input[value=Create]").click()
         except NoSuchElementException:
             # Should be a "Create" button but sometimes during development the
             # metadata already exists so it is a "Save" button.
-            self.driver.find_element_by_css_selector("input[value=Save]").click()
+            self.driver.find_element(By.CSS_SELECTOR, "input[value=Save]").click()
 
     def parse_normalization_report(self, sip_uuid):
         """Wait for the "Approve normalization" job to appear and then open the
@@ -211,16 +211,16 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
             self.login()
         self.driver.get(nrmlztn_rprt_url)
         self.wait_for_presence("table")
-        table_el = self.driver.find_element_by_css_selector("table")
+        table_el = self.driver.find_element(By.CSS_SELECTOR, "table")
         keys = [
             td_el.text.strip().lower().replace(" ", "_")
-            for td_el in table_el.find_element_by_css_selector(
-                "thead tr"
-            ).find_elements_by_css_selector("th")
+            for td_el in table_el.find_element(
+                By.CSS_SELECTOR, "thead tr"
+            ).find_elements(By.CSS_SELECTOR, "th")
         ]
-        for tr_el in table_el.find_elements_by_css_selector("tbody tr"):
+        for tr_el in table_el.find_elements(By.CSS_SELECTOR, "tbody tr"):
             row = {}
-            for index, td_el in enumerate(tr_el.find_elements_by_css_selector("td")):
+            for index, td_el in enumerate(tr_el.find_elements(By.CSS_SELECTOR, "td")):
                 row[keys[index]] = td_el.text
             report.append(row)
         return report

@@ -4,6 +4,7 @@ import sys
 import time
 
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
 
 from . import constants as c
 from . import selenium_ability
@@ -28,13 +29,13 @@ class ArchivematicaBrowserJobsTasksAbility(
         ms_group_elem = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid
         )
-        for job_elem in ms_group_elem.find_elements_by_css_selector("div.job"):
-            for span_elem in job_elem.find_elements_by_css_selector(
-                "div.job-detail-microservice span"
+        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
+            for span_elem in job_elem.find_elements(
+                By.CSS_SELECTOR, "div.job-detail-microservice span"
             ):
                 if span_elem.text.strip() == ms_name:
-                    return job_elem.find_element_by_css_selector(
-                        "div.job-detail-currentstep span"
+                    return job_elem.find_element(
+                        By.CSS_SELECTOR, "div.job-detail-currentstep span"
                     ).text.strip()
         return None
 
@@ -56,7 +57,7 @@ class ArchivematicaBrowserJobsTasksAbility(
         self.wait_for_transfer_micro_service_group(group_name, transfer_uuid)
         is_visible = (
             self.get_transfer_micro_service_group_elem(group_name, transfer_uuid)
-            .find_element_by_css_selector("div.microservice-group + div")
+            .find_element(By.CSS_SELECTOR, "div.microservice-group + div")
             .is_displayed()
         )
         if not is_visible:
@@ -122,42 +123,42 @@ class ArchivematicaBrowserJobsTasksAbility(
             self.login()
         self.driver.get(tasks_url)
         self.wait_for_presence("article.task")
-        for task_art_elem in self.driver.find_elements_by_css_selector("article.task"):
+        for task_art_elem in self.driver.find_elements(By.CSS_SELECTOR, "article.task"):
             row_dict = {}
             try:
-                row_dict["stdout"] = task_art_elem.find_element_by_css_selector(
-                    ".panel-info pre"
+                row_dict["stdout"] = task_art_elem.find_element(
+                    By.CSS_SELECTOR, ".panel-info pre"
                 ).text.strip()
             except NoSuchElementException:
                 row_dict["stdout"] = ""
             try:
-                row_dict["stderr"] = task_art_elem.find_element_by_css_selector(
-                    ".panel-danger pre"
+                row_dict["stderr"] = task_art_elem.find_element(
+                    By.CSS_SELECTOR, ".panel-danger pre"
                 ).text.strip()
             except NoSuchElementException:
                 row_dict["stderr"] = ""
-            row_dict["command"] = task_art_elem.find_element_by_css_selector(
-                "h3.panel-title.panel-title-simple"
+            row_dict["command"] = task_art_elem.find_element(
+                By.CSS_SELECTOR, "h3.panel-title.panel-title-simple"
             ).text.strip()
-            arguments = task_art_elem.find_element_by_css_selector(
-                "div.panel-primary div.shell-output pre"
+            arguments = task_art_elem.find_element(
+                By.CSS_SELECTOR, "div.panel-primary div.shell-output pre"
             ).text.strip()
             row_dict["arguments"] = utils.parse_task_arguments_to_list(arguments)
-            for dl_el in task_art_elem.find_elements_by_css_selector("div.row dl"):
-                for el in dl_el.find_elements_by_css_selector("*"):
+            for dl_el in task_art_elem.find_elements(By.CSS_SELECTOR, "div.row dl"):
+                for el in dl_el.find_elements(By.CSS_SELECTOR, "*"):
                     if el.tag_name == "dt":
                         attr = el.text.strip().lower().replace(" ", "_")
                     else:
                         val = el.text.strip()
                         row_dict[attr] = val
             row_dict["task_uuid"] = (
-                task_art_elem.find_element_by_css_selector("div.task-heading h4")
+                task_art_elem.find_element(By.CSS_SELECTOR, "div.task-heading h4")
                 .text.strip()
                 .split()[1]
             )
             table_dict["tasks"][row_dict["task_uuid"]] = row_dict
         next_tasks_url = None
-        for link_button in self.driver.find_elements_by_css_selector("a.btn"):
+        for link_button in self.driver.find_elements(By.CSS_SELECTOR, "a.btn"):
             if link_button.text.strip() == "Next page":
                 next_tasks_url = "{}{}".format(
                     self.am_url, link_button.get_attribute("href")
@@ -182,13 +183,13 @@ class ArchivematicaBrowserJobsTasksAbility(
         ms_group_elem = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid
         )
-        for job_elem in ms_group_elem.find_elements_by_css_selector("div.job"):
-            for span_elem in job_elem.find_elements_by_css_selector(
-                "div.job-detail-microservice span"
+        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
+            for span_elem in job_elem.find_elements(
+                By.CSS_SELECTOR, "div.job-detail-microservice span"
             ):
                 if utils.squash(span_elem.text) == utils.squash(ms_name):
-                    job_output = job_elem.find_element_by_css_selector(
-                        "div.job-detail-currentstep span"
+                    job_output = job_elem.find_element(
+                        By.CSS_SELECTOR, "div.job-detail-currentstep span"
                     ).text.strip()
                     if job_output in job_outputs:
                         return (span_elem.get_attribute("title").strip(), job_output)
@@ -217,7 +218,7 @@ class ArchivematicaBrowserJobsTasksAbility(
 
 def process_task_header_row(row_elem, row_dict):
     """Parse the text in the first tasks <tr>, the one "File UUID:"."""
-    for line in row_elem.find_element_by_tag_name("td").text.strip().split("\n"):
+    for line in row_elem.find_element(By.TAG_NAME, "td").text.strip().split("\n"):
         line = line.strip()
         if line.startswith("("):
             line = line[1:]
@@ -232,7 +233,7 @@ def process_task_command_row(row_elem, row_dict):
     """Parse the text in the second tasks <tr>, the one specifying command
     and arguments.
     """
-    command_text = row_elem.find_element_by_tag_name("td").text.strip().split(":")[1]
+    command_text = row_elem.find_element(By.TAG_NAME, "td").text.strip().split(":")[1]
     command, *arguments = command_text.split()
     row_dict["command"] = command
     arguments = " ".join(arguments)
@@ -242,13 +243,13 @@ def process_task_command_row(row_elem, row_dict):
 
 def process_task_stdout_row(row_elem, row_dict):
     """Parse out the tasks's stdout from the <table>."""
-    row_dict["stdout"] = row_elem.find_element_by_tag_name("pre").text.strip()
+    row_dict["stdout"] = row_elem.find_element(By.TAG_NAME, "pre").text.strip()
     return row_dict
 
 
 def process_task_stderr_row(row_elem, row_dict):
     """Parse out the tasks's stderr from the <table>."""
-    row_dict["stderr"] = row_elem.find_element_by_tag_name("pre").text.strip()
+    row_dict["stderr"] = row_elem.find_element(By.TAG_NAME, "pre").text.strip()
     return row_dict
 
 
@@ -262,12 +263,12 @@ def get_tasks_row_type(row_elem):
     if row_elem.get_attribute("class").strip():
         return "header"
     try:
-        row_elem.find_element_by_css_selector("td.stdout")
+        row_elem.find_element(By.CSS_SELECTOR, "td.stdout")
         return "stdout"
     except NoSuchElementException:
         pass
     try:
-        row_elem.find_element_by_css_selector("td.stderror")
+        row_elem.find_element(By.CSS_SELECTOR, "td.stderror")
         return "stderr"
     except NoSuchElementException:
         pass
