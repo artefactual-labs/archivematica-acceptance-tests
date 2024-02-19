@@ -79,7 +79,7 @@ def step_impl(context):
         'And the processing config decision "Bind PIDs" is set to "No"\n'
         'And the processing config decision "Store AIP" is set to "Yes"\n'
         'And the processing config decision "Store AIP location" is set to "Store AIP in standard Archivematica Directory"\n'
-        'And the processing config decision "Store DIP" is set to "Do not store"\n'
+        'And the processing config decision "Store DIP" is set to "Reject DIP"\n'
         'And the processing config decision "Document empty directories" is set to "No"\n'
         'And the processing config decision "Generate thumbnails" is set to "No"\n'
         'And the processing config decision "Upload DIP" is set to "Do not upload DIP"\n'
