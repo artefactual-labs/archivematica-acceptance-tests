@@ -28,7 +28,7 @@ idna==3.6
     # via
     #   requests
     #   trio
-lxml==5.1.0
+lxml==5.2.1
     # via
     #   -r requirements.in
     #   metsrw
@@ -52,7 +52,7 @@ requests==2.31.0
     # via
     #   -r requirements.in
     #   amclient
-selenium==4.18.1
+selenium==4.19.0
     # via -r requirements.in
 six==1.16.0
     # via
@@ -64,7 +64,7 @@ sortedcontainers==2.4.0
     # via trio
 tenacity==8.2.3
     # via -r requirements.in
-trio==0.24.0
+trio==0.25.0
     # via
     #   selenium
     #   trio-websocket
