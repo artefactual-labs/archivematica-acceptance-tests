@@ -132,6 +132,7 @@ class ArchivematicaBrowserAbility(
         self.driver.find_element(
             By.CSS_SELECTOR, 'button[name="submit-delete-form"]'
         ).click()
+        self.wait_for_visibility("div.alert-info")
         alert_text = self.driver.find_element(
             By.CSS_SELECTOR, "div.alert-info"
         ).text.strip()
