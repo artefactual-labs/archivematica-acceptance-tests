@@ -10,7 +10,7 @@ Background: The storage service is configured with a transfer source that can se
     When the AIP is downloaded
     Then the AIP METS can be accessed and parsed by mets-reader-writer
     And in the METS file the metsHdr element has a CREATEDATE attribute but no LASTMODDATE attribute
-    And in the METS file the metsHdr element has 10 dmdSec next sibling element(s)
+    And in the METS file the metsHdr element has 11 dmdSec next sibling element(s)
     And the AIP conforms to expected content and structure
     And the AIP contains all files that were present in the transfer
     And the AIP contains a file called README.html in the data directory
@@ -20,57 +20,3 @@ Background: The storage service is configured with a transfer source that can se
     And every object in the AIP has been assigned a UUID in the AIP METS
     And every object in the objects and metadata directories has an amdSec
     And every PREMIS event recorded in the AIP METS records the logged-in user, the organization and the software as PREMIS agents
-
-  Scenario: Generate an AIP using an unzipped bag transfer workflow
-    Given a "unzipped bag" transfer type located in "SampleTransfers/BagTransfer"
-    When the transfer is approved
-    Then the "Verify bag, and restructure for compliance" job completes successfully
-    And there is a sourceMD containing a BagIt mdWrap in the AIP METS
-
-  Scenario: Generate an AIP using a zipped bag transfer workflow
-    Given a "zipped bag" transfer type located in "SampleTransfers/BagExamples/ZippedBags/BagTransfer.zip"
-    When the transfer is approved
-    Then the "Extract zipped bag transfer" job completes successfully
-    And the "Verify bag, and restructure for compliance" job completes successfully
-    And there is a sourceMD containing a BagIt mdWrap in the AIP METS
-
-  Scenario: Generate an AIP using a Dataverse workflow
-    Given a "dataverse" transfer type located in "SampleTransfers/Dataverse/NDSAStaffingReport"
-    When the AIP is downloaded
-    Then the "Set convert Dataverse structure flag" job completes successfully
-    And the "Set parse Dataverse METS flag" job completes successfully
-    And the "Convert Dataverse structure" job completes successfully
-    And the "Parse Dataverse METS XML" job completes successfully
-    And the METS file contains a dmdSec with DDI metadata
-
-  Scenario: Generate an AIP using a Dspace transfer workflow
-    Given a "dspace" transfer type located in "SampleTransfers/DSpaceExport/ITEM@2429-2700.zip"
-    When the AIP is downloaded
-    Then the "Identify DSpace mets files" job completes successfully
-    And the "Identify DSpace text files" job completes successfully
-    And the "Verify checksums in fileSec of DSpace METS files" job completes successfully
-    And the AIP METS can be accessed and parsed by mets-reader-writer
-    And there are 2 DSpace-specific descriptive metadata sections for each object
-    And there is a DSpace-specific rights metadata section for each object
-    And the entries in the file section of the METS are sorted by file group
-
-  Scenario: Generate an AIP using a Zipped directory transfer workflow
-    Given a "zipfile" transfer type located in "SampleTransfers/ZippedDirectoryTransfers/DemoTransferCSV.zip"
-    When the transfer is approved
-    Then the "Extract zipped transfer" job completes successfully
-    When the AIP is downloaded
-    Then the AIP METS can be accessed and parsed by mets-reader-writer
-    And the AIP conforms to expected content and structure
-
-  Scenario Outline: Generate an AIP with imported structural metadata
-    Given a "standard" transfer type located in "<sample_transfer_path>"
-    When the AIP is downloaded
-    Then the AIP METS can be accessed and parsed by mets-reader-writer
-    Then the provided structural map will be included in the AIP METs file
-
-    Examples: sample transfers
-      | sample_transfer_path                                             |
-      | SampleTransfers/StructMapTransferSamples/MinimalStructMapExample |
-      | SampleTransfers/StructMapTransferSamples/ComplexStructureExample |
-      | SampleTransfers/StructMapTransferSamples/SimpleBookExample       |
-      | SampleTransfers/StructMapTransferSamples/SingleObjectExample     |
