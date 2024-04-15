@@ -39,7 +39,7 @@ exceptiongroup==1.2.0
     #   -r requirements.txt
     #   trio
     #   trio-websocket
-filelock==3.13.3
+filelock==3.13.4
     # via
     #   tox
     #   virtualenv
@@ -47,7 +47,7 @@ h11==0.14.0
     # via
     #   -r requirements.txt
     #   wsproto
-idna==3.6
+idna==3.7
     # via
     #   -r requirements.txt
     #   requests
@@ -141,7 +141,7 @@ trio-websocket==0.11.1
     # via
     #   -r requirements.txt
     #   selenium
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   -r requirements.txt
     #   selenium
