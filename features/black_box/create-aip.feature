@@ -43,8 +43,8 @@ Background: The storage service is configured with a transfer source that can se
     And the "Parse Dataverse METS XML" job completes successfully
     And the METS file contains a dmdSec with DDI metadata
 
-  Scenario: Generate an AIP using a Dspace transfer workflow
-    Given a "dspace" transfer type located in "SampleTransfers/DSpaceExport/ITEM@2429-2700.zip"
+  Scenario Outline: Generate an AIP using a Dspace transfer workflow
+    Given a "dspace" transfer type located in "<sample_transfer_path>"
     When the AIP is downloaded
     Then the "Identify DSpace mets files" job completes successfully
     And the "Identify DSpace text files" job completes successfully
@@ -53,6 +53,11 @@ Background: The storage service is configured with a transfer source that can se
     And there are 2 DSpace-specific descriptive metadata sections for each object
     And there is a DSpace-specific rights metadata section for each object
     And the entries in the file section of the METS are sorted by file group
+
+    Examples: sample transfers
+      | sample_transfer_path                            |
+      | SampleTransfers/DSpaceExport/ITEM@2429-2700.zip |
+      | SampleTransfers/DSpaceExport                    |
 
   Scenario: Generate an AIP using a Zipped directory transfer workflow
     Given a "zipfile" transfer type located in "SampleTransfers/ZippedDirectoryTransfers/DemoTransferCSV.zip"
