@@ -18,7 +18,7 @@ certifi==2024.2.2
     #   selenium
 charset-normalizer==3.3.2
     # via requests
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via
     #   trio
     #   trio-websocket
@@ -52,7 +52,7 @@ requests==2.31.0
     # via
     #   -r requirements.in
     #   amclient
-selenium==4.19.0
+selenium==4.20.0
     # via -r requirements.in
 six==1.16.0
     # via
@@ -62,7 +62,7 @@ sniffio==1.3.1
     # via trio
 sortedcontainers==2.4.0
     # via trio
-tenacity==8.2.3
+tenacity==8.3.0
     # via -r requirements.in
 trio==0.25.0
     # via

@@ -34,12 +34,12 @@ colorama==0.4.6
     # via tox
 distlib==0.3.8
     # via virtualenv
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via
     #   -r requirements.txt
     #   trio
     #   trio-websocket
-filelock==3.13.4
+filelock==3.14.0
     # via
     #   tox
     #   virtualenv
@@ -82,11 +82,11 @@ pexpect==4.9.0
     # via -r requirements.txt
 pip-tools==7.4.1
     # via -r requirements-dev.in
-platformdirs==4.2.0
+platformdirs==4.2.1
     # via
     #   tox
     #   virtualenv
-pluggy==1.4.0
+pluggy==1.5.0
     # via tox
 ptyprocess==0.7.0
     # via
@@ -94,7 +94,7 @@ ptyprocess==0.7.0
     #   pexpect
 pyproject-api==1.6.1
     # via tox
-pyproject-hooks==1.0.0
+pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
@@ -106,7 +106,7 @@ requests==2.31.0
     # via
     #   -r requirements.txt
     #   amclient
-selenium==4.19.0
+selenium==4.20.0
     # via -r requirements.txt
 six==1.16.0
     # via
@@ -121,16 +121,15 @@ sortedcontainers==2.4.0
     # via
     #   -r requirements.txt
     #   trio
-tenacity==8.2.3
+tenacity==8.3.0
     # via -r requirements.txt
 tomli==2.0.1
     # via
     #   build
     #   pip-tools
     #   pyproject-api
-    #   pyproject-hooks
     #   tox
-tox==4.14.2
+tox==4.15.0
     # via -r requirements-dev.in
 trio==0.25.0
     # via
@@ -151,7 +150,7 @@ urllib3[socks]==2.2.1
     #   amclient
     #   requests
     #   selenium
-virtualenv==20.25.1
+virtualenv==20.26.1
     # via tox
 wheel==0.43.0
     # via pip-tools
@@ -165,5 +164,5 @@ zipp==3.18.1
 # The following packages are considered to be unsafe in a requirements file:
 pip==24.0
     # via pip-tools
-setuptools==69.2.0
+setuptools==69.5.1
     # via pip-tools
