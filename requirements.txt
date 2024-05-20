@@ -28,7 +28,7 @@ idna==3.7
     # via
     #   requests
     #   trio
-lxml==5.2.1
+lxml==5.2.2
     # via
     #   -r requirements.in
     #   metsrw
@@ -48,11 +48,11 @@ ptyprocess==0.7.0
     # via pexpect
 pysocks==1.7.1
     # via urllib3
-requests==2.31.0
+requests==2.32.1
     # via
     #   -r requirements.in
     #   amclient
-selenium==4.20.0
+selenium==4.21.0
     # via -r requirements.in
 six==1.16.0
     # via
@@ -64,7 +64,7 @@ sortedcontainers==2.4.0
     # via trio
 tenacity==8.3.0
     # via -r requirements.in
-trio==0.25.0
+trio==0.25.1
     # via
     #   selenium
     #   trio-websocket
