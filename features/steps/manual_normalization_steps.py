@@ -32,18 +32,18 @@ def step_impl(context):
         ' derivatives" is set to "No"\n'
         'And the processing config decision "Perform policy checks on'
         ' originals" is set to "No"\n'
-        'And the processing config decision "Select file format identification'
-        ' command (Transfer)" is set to "Identify using Fido"\n'
+        'And the processing config decision "Perform file format'
+        ' identification (Transfer)" is set to "Yes"\n'
         'And the processing config decision "Create SIP(s)" is set to "Create'
         ' single SIP and continue processing"\n'
         'And the processing config decision "Normalize" is set to "Normalize'
         ' for preservation"\n'
         'And the processing config decision "Approve normalization" is set to'
         ' "Yes"\n'
-        'And the processing config decision "Select file format identification'
-        ' command (Submission documentation & metadata)" is set to'
-        ' "Identify using Fido"\n'
+        'And the processing config decision "Perform file format identification'
+        ' (Submission documentation & metadata)" is set to "Yes"\n'
         'And the processing config decision "Bind PIDs" is set to "No"\n'
+        'And the processing config decision "Store AIP" is set to "Yes"\n'
         'And the processing config decision "Store AIP location" is set to'
         ' "Store AIP in standard Archivematica Directory"\n'
         'And the processing config decision "Upload DIP" is set to'
@@ -72,7 +72,7 @@ def step_impl(context, transfer_path):
 @then("all preservation tasks recognize the manually normalized derivatives")
 def step_impl(context):
     skipping_msg = (
-        "is file group usage manualNormalization instead of original  - skipping"
+        "is file group usage manualNormalization instead of  original  - skipping"
     )
     already_nmlzd_msg = "was already manually normalized into"
     for task in context.scenario.job["tasks"].values():

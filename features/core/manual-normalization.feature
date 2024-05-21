@@ -34,5 +34,6 @@ Feature: Archivematica recognizes manually normalized files
     Then the "Generate METS.xml document|Generate AIP METS" micro-service output is "Completed successfully" during ingest
 
     Examples: Transfer paths
-    | transfer_path                                                                  |
-    | ~/archivematica-sampledata/TestTransfers/acceptance-tests/manual-normalization |
+    | transfer_path                                       |
+    | TestTransfers/acceptance-tests/manual-normalization |
+    | TestTransfers/manualNormalization                   |
