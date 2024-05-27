@@ -1,6 +1,7 @@
 """Steps for the Performance Testing When Output Streams Not Captured
 Test/Feature.
 """
+
 import json
 import logging
 import os
@@ -12,7 +13,6 @@ from behave import when
 from lxml import etree
 
 from features.steps import utils
-
 
 logger = logging.getLogger("amauat.steps.performancenocapture")
 
@@ -118,9 +118,9 @@ def step_impl(context, without_outputs_fname, with_outputs_fname):
     logger.info("Total runtime for without output tasks: %f", wo_o_sum_tasks)
     logger.info("Total runtime for with output tasks: %f", w_o_sum_tasks)
     assert wo_o_sum_tasks < w_o_sum_tasks, (
-        'We expected the runtime {} of the "without output" AIP to be less'
-        ' than the runtime {} of the "with output" AIP but our expectation was'
-        " not met.".format(wo_o_sum_tasks, w_o_sum_tasks)
+        f'We expected the runtime {wo_o_sum_tasks} of the "without output" AIP to be less'
+        f' than the runtime {w_o_sum_tasks} of the "with output" AIP but our expectation was'
+        " not met."
     )
 
 

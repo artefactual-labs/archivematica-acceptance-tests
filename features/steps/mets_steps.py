@@ -1,4 +1,5 @@
 """Steps for the METS-related functionality."""
+
 import json
 
 from behave import then
@@ -32,14 +33,9 @@ def step_impl(context, count, event_type, properties):
             utils.assert_premis_event(event_type, premis_evt_el, context)
             utils.assert_premis_properties(premis_evt_el, context, properties)
     assert len(events) == int(count), (
-        "We expected to find {count} events of type {event_type} matching"
-        " properties `{properties}` but in fact we only found"
-        " {events_count}.".format(
-            count=count,
-            event_type=event_type,
-            properties=str(properties),
-            events_count=len(events),
-        )
+        f"We expected to find {count} events of type {event_type} matching"
+        f" properties `{str(properties)}` but in fact we only found"
+        f" {len(events)}."
     )
 
 
@@ -78,7 +74,7 @@ def step_impl(context, conj_quant):
         assert mets_hdr_el.get("LASTMODDATE") is not None, (
             "<mets:metsHdr>"
             " element is lacking a LASTMODDATE attribute:"
-            " {}".format(mets_hdr_el.attrib)
+            f" {mets_hdr_el.attrib}"
         )
         # TODO: assert that value is ISO datetime
 
@@ -93,8 +89,8 @@ def step_impl(context, quant):
         ), f"Expected {int(quant)} dmdSec element(s), got {len(mets_dmd_sec_els)}"
     except ValueError:
         raise utils.ArchivematicaStepsError(
-            "Unable to recognize the quantifier {} when checking for dmdSec"
-            " elements in the METS file".format(quant)
+            f"Unable to recognize the quantifier {quant} when checking for dmdSec"
+            " elements in the METS file"
         )
 
 

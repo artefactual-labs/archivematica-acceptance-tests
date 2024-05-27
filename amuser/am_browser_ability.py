@@ -5,6 +5,7 @@ the ability of an Archivematica user to use a browser to interact with
 Archivematica. This class provides an interface to Selenium for opening browser
 windows and interacting with Archivematica's GUIs.
 """
+
 import logging
 import time
 
@@ -23,7 +24,6 @@ from . import am_browser_ss_ability as ss_abl
 from . import am_browser_transfer_ingest_ability as tra_ing_abl
 from . import base
 from . import constants as c
-
 
 logger = logging.getLogger("amuser.browser")
 
@@ -183,8 +183,8 @@ class ArchivematicaBrowserAbility(
         }.get(reingest_type)
         if not type_selector:
             raise ArchivematicaBrowserAbilityError(
-                "Unable to initiate a reingest of type {} on AIP"
-                " {}".format(reingest_type, aip_uuid)
+                f"Unable to initiate a reingest of type {reingest_type} on AIP"
+                f" {aip_uuid}"
             )
         while True:
             type_input_el = self.driver.find_element(By.CSS_SELECTOR, type_selector)

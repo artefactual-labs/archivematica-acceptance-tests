@@ -1,9 +1,9 @@
 """Steps for the Manual Normalization Feature."""
+
 import logging
 
 from behave import given
 from behave import then
-
 
 logger = logging.getLogger("amauat.steps.manualnormalization")
 

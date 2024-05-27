@@ -1,4 +1,5 @@
 """Archivematica Authentication Ability"""
+
 import logging
 
 from selenium.common.exceptions import TimeoutException
@@ -7,7 +8,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from . import selenium_ability
-
 
 logger = logging.getLogger("amuser.authentication")
 

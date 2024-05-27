@@ -1,9 +1,9 @@
 """Infinite AIPs Steps."""
+
 import logging
 import os
 
 from behave import when
-
 
 logger = logging.getLogger("amauat.steps.infiniteaips")
 

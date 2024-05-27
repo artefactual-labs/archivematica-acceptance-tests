@@ -1,4 +1,5 @@
 """Steps for the CCA DIP Feature."""
+
 import csv
 import logging
 import os
@@ -9,7 +10,6 @@ import zipfile
 from behave import given
 from behave import then
 from behave import when
-
 
 logger = logging.getLogger("amauat.steps.ccadip")
 

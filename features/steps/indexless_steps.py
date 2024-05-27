@@ -1,4 +1,5 @@
 """Steps for the Indexless ("No Elasticsearch") Feature."""
+
 import logging
 import os
 import re
@@ -10,7 +11,6 @@ from lxml import etree
 from selenium.webdriver.common.by import By
 
 from features.steps import utils
-
 
 logger = logging.getLogger("amauat.steps.indexless")
 
@@ -271,12 +271,8 @@ def step_impl(context):
     indexed_mets_path = os.path.join(
         indexed_aip_path, "data", f"METS.{indexed_uuid}.xml"
     )
-    assert os.path.isfile(indexless_mets_path), "{} is not a file".format(
-        indexless_mets_path
-    )
-    assert os.path.isfile(indexed_mets_path), "{} is not a file".format(
-        indexless_mets_path
-    )
+    assert os.path.isfile(indexless_mets_path), f"{indexless_mets_path} is not a file"
+    assert os.path.isfile(indexed_mets_path), f"{indexless_mets_path} is not a file"
     with open(indexless_mets_path) as filei:
         indexless_mets = etree.parse(filei)
     with open(indexed_mets_path) as filei:
@@ -289,9 +285,9 @@ def step_impl(context, tab_name):
     displayed_tabs = [t.lower() for t in context.am_user.browser.get_displayed_tabs()]
     tab_name = tab_name.replace(" tab", "").strip().lower()
     assert displayed_tabs
-    assert "transfer" in displayed_tabs, '"transfer" is not in {}'.format(
-        str(displayed_tabs)
-    )  # sanity check
+    assert (
+        "transfer" in displayed_tabs
+    ), f'"transfer" is not in {str(displayed_tabs)}'  # sanity check
     assert tab_name not in displayed_tabs
 
 
@@ -348,8 +344,8 @@ def _assert_mets_files_equivalent(indexless_mets, indexed_mets, mets_ability):
             [e for e in indexed_pevents if e["event_type"] == event_type]
         )
         assert indexless_event_count == indexed_event_count, (
-            "The indexless METS file has {} PREMIS events while the indexed"
-            " METS file has {}".format(indexless_event_count, indexed_event_count)
+            f"The indexless METS file has {indexless_event_count} PREMIS events while the indexed"
+            f" METS file has {indexed_event_count}"
         )
 
 

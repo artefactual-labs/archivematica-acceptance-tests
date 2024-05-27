@@ -3,10 +3,10 @@
 This module contains the ``ArchivematicaLocalFSAbility`` class, which encodes
 the ability to transfer files when they're locally available.
 """
+
 import logging
 
 from . import base
-
 
 logger = logging.getLogger("amuser.localfs")
 

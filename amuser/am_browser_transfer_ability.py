@@ -1,4 +1,5 @@
 """Archivematica Transfer Tab Ability"""
+
 import logging
 import os
 import time
@@ -10,7 +11,6 @@ from selenium.webdriver.support.ui import Select
 
 from . import constants as c
 from . import selenium_ability
-
 
 logger = logging.getLogger("amuser.transfer")
 
@@ -249,9 +249,7 @@ class ArchivematicaBrowserTransferAbility(
         re-click the micro-service <div> to make the hidden <select> visible
         again.
         """
-        approve_transfer_option_selector = "option[value='{}']".format(
-            approve_option_uuid
-        )
+        approve_transfer_option_selector = f"option[value='{approve_option_uuid}']"
         while True:
             try:
                 approve_transfer_option = transfer_div_elem.find_element(

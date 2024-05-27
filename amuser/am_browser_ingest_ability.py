@@ -1,4 +1,5 @@
 """Archivematica Ingest Tab Ability"""
+
 import logging
 import os
 import tempfile
@@ -105,7 +106,7 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
             self.am_url, sip_uuid
         )
         self.navigate(aip_preview_url)
-        mets_path = "storeAIP/{0}-{1}/METS.{1}.xml".format(transfer_name, sip_uuid)
+        mets_path = f"storeAIP/{transfer_name}-{sip_uuid}/METS.{sip_uuid}.xml"
         handles_before = self.driver.window_handles
         self.navigate_to_aip_directory_and_click(mets_path)
         self.wait_for_new_window(handles_before)
@@ -116,10 +117,8 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
         while self.driver.current_url.strip() == "about:blank":
             if attempts > self.max_check_mets_loaded_attempts:
                 msg = (
-                    "Exceeded maximum allowable attempts ({}) for checking"
-                    " if the METS file has loaded.".format(
-                        self.max_check_mets_loaded_attempts
-                    )
+                    f"Exceeded maximum allowable attempts ({self.max_check_mets_loaded_attempts}) for checking"
+                    " if the METS file has loaded."
                 )
                 logger.warning(msg)
                 raise ArchivematicaBrowserMETSAbilityError(msg)

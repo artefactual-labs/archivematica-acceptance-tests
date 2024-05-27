@@ -2,7 +2,6 @@
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 
-
 TEST_URL = "https://www.artefactual.com"
 TEST_TITLE = "Home | Artefactual"
 

@@ -1,4 +1,5 @@
 """Base class for ArchivematicaUser and other related classes."""
+
 # pylint: disable=too-many-instance-attributes
 import os
 import re

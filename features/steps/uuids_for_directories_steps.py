@@ -1,4 +1,5 @@
 """Steps for the UUIDs for the Direcotries Feature."""
+
 import logging
 import os
 import pprint
@@ -8,7 +9,6 @@ from behave import then
 from lxml import etree
 
 from features.steps import utils
-
 
 logger = logging.getLogger("amauat.steps.uuidsdirectories")
 
@@ -49,15 +49,15 @@ def step_impl(context, dir_path):
             local_path = context.am_user.localfs.read_server_file(dir_path)
     if local_path is None:
         msg = (
-            "Unable to copy item {} from the server to the local file"
-            " system.".format(dir_path)
+            f"Unable to copy item {dir_path} from the server to the local file"
+            " system."
         )
         logger.warning(msg)
         raise Exception(msg)
     elif local_path is False:
         msg = (
-            "Unable to copy item {} from the server to the local file"
-            " system. Attempt to copy the file/dir failed.".format(dir_path)
+            f"Unable to copy item {dir_path} from the server to the local file"
+            " system. Attempt to copy the file/dir failed."
         )
         logger.warning(msg)
         raise Exception(msg)
@@ -180,16 +180,16 @@ def step_impl(context):
             ):
                 continue
             assert dirpath in subpaths, (
-                "Expected directory path\n{}\nis not in METS {}-type structmap"
-                " paths\n{}".format(dirpath, type_, pprint.pformat(subpaths))
+                f"Expected directory path\n{dirpath}\nis not in METS {type_}-type structmap"
+                f" paths\n{pprint.pformat(subpaths)}"
             )
         if type_ == "physical":
             for filepath in context.scenario.remote_dir_files:
                 if os.path.basename(filepath) == ".gitignore":
                     continue
                 assert filepath in subpaths, (
-                    "Expected file path\n{}\nis not in METS {}-type structmap"
-                    " paths\n{}".format(filepath, type_, pprint.pformat(subpaths))
+                    f"Expected file path\n{filepath}\nis not in METS {type_}-type structmap"
+                    f" paths\n{pprint.pformat(subpaths)}"
                 )
 
 
@@ -223,9 +223,7 @@ def step_impl(context):
             mets_div_el = struct_map_el.find(f'.//mets:div[@LABEL="{dirname}"]', ns)
             assert (
                 mets_div_el is not None
-            ), "Could not find a <mets:div> for directory at {} in {}-type structmap".format(
-                dirpath, type_
-            )
+            ), f"Could not find a <mets:div> for directory at {dirpath} in {type_}-type structmap"
             if (
                 type_ == "logical"
                 and dirpath not in context.scenario.remote_dir_empty_subfolders
@@ -235,9 +233,7 @@ def step_impl(context):
             dmdSec_el = mets.find(f'.//mets:dmdSec[@ID="{dmdid}"]', ns)
             assert (
                 dmdSec_el is not None
-            ), "Could not find a <mets:dmdSec> for directory at {} in {}-type structmap".format(
-                dirpath, type_
-            )
+            ), f"Could not find a <mets:dmdSec> for directory at {dirpath} in {type_}-type structmap"
             try:
                 id_type = dmdSec_el.find(
                     ".//premis:objectIdentifierType", ns
