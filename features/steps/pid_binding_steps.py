@@ -1,4 +1,5 @@
 """Steps for the Bind PIDs Feature."""
+
 from behave import given
 from behave import then
 
@@ -68,7 +69,7 @@ def step_impl(context):
             "resolve_url_template_file_original": (
                 base_resolve_url + "/original/{{ naming_authority }}/{{ pid }}"
             ),
-            "pid_request_body_template": """<?xml version='1.0' encoding='UTF-8'?>
+            "pid_request_body_template": f"""<?xml version='1.0' encoding='UTF-8'?>
         <soapenv:Envelope
             xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'
             xmlns:pid='{pid_xml_namespace}'>
@@ -89,9 +90,7 @@ def step_impl(context):
                     </pid:handle>
                 </pid:UpsertPidRequest>
             </soapenv:Body>
-        </soapenv:Envelope>""".format(
-                pid_xml_namespace=pid_xml_namespace
-            ),
+        </soapenv:Envelope>""",
         }
     )
 

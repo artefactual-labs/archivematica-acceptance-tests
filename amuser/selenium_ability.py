@@ -1,4 +1,5 @@
 """Selenium Ability"""
+
 import logging
 import os
 
@@ -12,7 +13,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from . import base
-
 
 logger = logging.getLogger("amuser.selenium")
 

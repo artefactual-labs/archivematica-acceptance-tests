@@ -4,6 +4,7 @@
 These steps use the AM APIs to initiate transfers and validate the
 contents of their AIPs without relying on user interface interactions.
 """
+
 import os
 
 import metsrw
@@ -14,7 +15,6 @@ from behave import when
 from lxml import etree
 
 from features.steps import utils
-
 
 # map the event types as written in the feature file
 # to what AM outputs in the METS
@@ -394,9 +394,7 @@ def assert_event_count(context, event_count, event_type):
         events = utils.get_premis_events_by_type(
             fsentry, PREMIS_EVENT_TYPES[event_type]
         )
-        error = "Expected {} {} event(s) in the METS for file {}".format(
-            event_count, event_type, fsentry.path
-        )
+        error = f"Expected {event_count} {event_type} event(s) in the METS for file {fsentry.path}"
         assert len(events) == event_count, error
 
 
@@ -461,7 +459,7 @@ def step_impl(context):
         techmds_status = sorted([techmd.attrib["STATUS"] for techmd in techmds])
         error = (
             "Expected two techMD elements (current and superseded) for"
-            " file {}. Got {} instead".format(fsentry.path, techmds_status)
+            f" file {fsentry.path}. Got {techmds_status} instead"
         )
         assert techmds_status == ["current", "superseded"], error
 
@@ -506,8 +504,8 @@ def step_impl(context):
     assert original_files, format_original_files_error(context.current_transfer)
     for fsentry in original_files:
         if utils.get_premis_events_by_type(fsentry, "normalization"):
-            error = "Expected normalized file {} to be deleted after reingest".format(
-                fsentry.path
+            error = (
+                f"Expected normalized file {fsentry.path} to be deleted after reingest"
             )
             assert fsentry.file_uuid in deleted_file_uuids, error
 
@@ -650,9 +648,7 @@ def step_impl(context):
     namespaces["ddi"] = "http://www.icpsr.umich.edu/DDI"
     for dmdsec_id in dmdsec_ids:
         ddi_codebook = tree.find(
-            'mets:dmdSec[@ID="{}"]/mets:mdWrap/mets:xmlData/ddi:codebook'.format(
-                dmdsec_id
-            ),
+            f'mets:dmdSec[@ID="{dmdsec_id}"]/mets:mdWrap/mets:xmlData/ddi:codebook',
             namespaces=namespaces,
         )
         if ddi_codebook is not None:
@@ -714,9 +710,7 @@ def step_impl(context, expected_entries_count):
     rights_linking_ids = utils.retrieve_rights_linking_object_identifiers(
         mets.tree, nsmap=context.mets_nsmap
     )
-    error = "Expected objects with rightsMD sections: {} is incorrect: {}".format(
-        expected_entries_count, len(rights_linking_ids)
-    )
+    error = f"Expected objects with rightsMD sections: {expected_entries_count} is incorrect: {len(rights_linking_ids)}"
     assert len(rights_linking_ids) == expected_entries_count, error
 
 
@@ -729,9 +723,7 @@ def step_impl(context, expected_entries_count):
         md_type="PREMIS:RIGHTS",
         nsmap=context.mets_nsmap,
     )
-    error = "Expected objects with rightsMD sections: {} is incorrect: {}".format(
-        expected_entries_count, len(rights_md_ids)
-    )
+    error = f"Expected objects with rightsMD sections: {expected_entries_count} is incorrect: {len(rights_md_ids)}"
     assert len(rights_md_ids) == expected_entries_count, error
 
 
@@ -753,9 +745,7 @@ def step_impl(context, expected_entries_count):
         )
         if doc.get("LABEL") != METS
     ]
-    error = "Expected submission documents: {} is incorrect: {}".format(
-        expected_entries_count, len(submission_docs)
-    )
+    error = f"Expected submission documents: {expected_entries_count} is incorrect: {len(submission_docs)}"
     assert len(submission_docs) == expected_entries_count, error
 
 
@@ -1425,10 +1415,8 @@ def step(context):
         ]:
             if pointer.attrib.get(attr, "") != expected_value:
                 errors.append(
-                    'Expected {} attribute of Xpointer in dmdSec with ID={} to be "". '
-                    "Got {} instead".format(
-                        attr, xpointer_dmdsec_id, pointer.attrib.get(attr)
-                    )
+                    f'Expected {attr} attribute of Xpointer in dmdSec with ID={xpointer_dmdsec_id} to be "". '
+                    f"Got {pointer.attrib.get(attr)} instead"
                 )
         if errors:
             continue
@@ -1503,10 +1491,8 @@ def step(context):
         ]:
             if pointer.attrib.get(attr, "") != expected_value:
                 errors.append(
-                    'Expected {} attribute of Xpointer in amdSec with ID={} to be "". '
-                    "Got {} instead".format(
-                        attr, xpointer_dmdsec_id, pointer.attrib.get(attr)
-                    )
+                    f'Expected {attr} attribute of Xpointer in amdSec with ID={xpointer_dmdsec_id} to be "". '
+                    f"Got {pointer.attrib.get(attr)} instead"
                 )
 
     assert not errors, errors
@@ -1532,8 +1518,8 @@ def step(context):
     ]
     uses = [file_group.attrib.get("USE") for file_group in file_groups]
     error = (
-        "Expected order of the fileGrp elements in the fileSec to be {}. "
-        "Got {} instead.".format(expected_order, uses)
+        f"Expected order of the fileGrp elements in the fileSec to be {expected_order}. "
+        f"Got {uses} instead."
     )
     try:
         uses_order_indexes = [expected_order.index(use) for use in uses]

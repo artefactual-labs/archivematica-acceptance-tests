@@ -1,4 +1,5 @@
 """Archivematica Browser Preservation Planning Ability"""
+
 import logging
 
 from selenium.common.exceptions import NoSuchElementException
@@ -6,7 +7,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 
 from . import selenium_ability
-
 
 logger = logging.getLogger("amuser.preservationplanning")
 
@@ -157,8 +157,8 @@ class ArchivematicaBrowserPreservationPlanningAbility(
                 option.click()
                 break
         self.driver.find_element(By.ID, "id_description").send_keys(description)
-        js_script = 'document.getElementById("id_command").value =' " `{}`;".format(
-            policy_command
+        js_script = (
+            'document.getElementById("id_command").value =' f" `{policy_command}`;"
         )
         self.driver.execute_script(js_script)
         self.driver.find_element(By.ID, "id_script_type").send_keys("Python")
@@ -213,9 +213,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         description. Uses the FPR asynchronous search input.
         """
         terse_format = format_.split(":")[2].strip()
-        search_term = '"{}" "{}" "{}"'.format(
-            purpose, terse_format, command_description
-        )
+        search_term = f'"{purpose}" "{terse_format}" "{command_description}"'
         self.search_rules(search_term)
 
     def ensure_fpr_rule_enabled(self, purpose, format_, command_description):
@@ -234,17 +232,13 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         ]
         if not disabled_rules:
             logger.info(
-                'Tried to enable FPR rule with purpose "{}" that runs command "{}"'
-                ' against files with format "{}" but did not find it'.format(
-                    purpose, command_description, format_
-                )
+                f'Tried to enable FPR rule with purpose "{purpose}" that runs command "{command_description}"'
+                f' against files with format "{format_}" but did not find it'
             )
             return
         assert len(disabled_rules) == 1, (
-            'Expected to enable one FPR rule with purpose "{}" that runs command "{}"'
-            ' against files with format "{}" but found {} disabled rules'.format(
-                purpose, command_description, format_, len(disabled_rules)
-            )
+            f'Expected to enable one FPR rule with purpose "{purpose}" that runs command "{command_description}"'
+            f' against files with format "{format_}" but found {len(disabled_rules)} disabled rules'
         )
         rule = disabled_rules[0]
         rule.find_element(By.CSS_SELECTOR, "td:nth-child(6) a:nth-child(3)").click()

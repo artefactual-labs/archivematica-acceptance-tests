@@ -1,11 +1,11 @@
 """Utilities for AM User."""
+
 import logging
 import time
 
 import requests
 
 from . import constants as c
-
 
 logger = logging.getLogger("amuser.utils")
 

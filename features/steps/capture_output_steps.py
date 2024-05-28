@@ -1,10 +1,10 @@
 """Steps for the Capture Output Setting Feature."""
+
 import logging
 
 from behave import given
 from behave import then
 from behave import when
-
 
 logger = logging.getLogger("amauat.steps.captureoutput")
 

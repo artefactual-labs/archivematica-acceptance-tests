@@ -4,13 +4,13 @@ This module contains the ``ArchivematicaDockerAbility`` class, which encodes the
 ability of an Archivematica user to use Docker to interact configure and deploy
 Archivematica.
 """
+
 import logging
 import os
 import shlex
 import subprocess
 
 from . import base
-
 
 logger = logging.getLogger("amuser.docker")
 
@@ -28,9 +28,7 @@ class ArchivematicaDockerAbility(base.Base):
         """Recreate the docker-compose deploy of Archivematica by calling
         docker-compose's ``up`` subcommand.
         """
-        dc_recreate_cmd = "docker-compose -f {} up -d".format(
-            self.docker_compose_file_path
-        )
+        dc_recreate_cmd = f"docker-compose -f {self.docker_compose_file_path} up -d"
         capture_output = {True: "true"}.get(capture_output, "false")
         env = dict(os.environ, AM_CAPTURE_CLIENT_SCRIPT_OUTPUT=capture_output)
         subprocess.check_output(shlex.split(dc_recreate_cmd), env=env)
@@ -54,12 +52,10 @@ class ArchivematicaDockerAbility(base.Base):
             " TIMEDIFF(t.endTime,t.startTime) as duration"
             " FROM Tasks t"
             " INNER JOIN Files f ON f.fileUUID=t.fileUUID"
-            " WHERE f.sipUUID='{}'"
-            " ORDER by endTime-startTime, exec;".format(sip_uuid)
+            f" WHERE f.sipUUID='{sip_uuid}'"
+            " ORDER by endTime-startTime, exec;"
         )
-        cmd_str = 'docker-compose exec mysql mysql -u {} -p{} MCP -e "{}"'.format(
-            mysql_user, mysql_password, sql_query
-        )
+        cmd_str = f'docker-compose exec mysql mysql -u {mysql_user} -p{mysql_password} MCP -e "{sql_query}"'
         res = subprocess.check_output(
             shlex.split(cmd_str), cwd=self.docker_compose_path
         ).decode("utf8")
@@ -114,9 +110,7 @@ class ArchivematicaDockerAbility(base.Base):
         local_path = os.path.join(self.tmp_path, filename)
         subprocess.check_output(
             shlex.split(
-                "docker cp {}:{} {}".format(
-                    docker_container_id, server_file_path, local_path
-                )
+                f"docker cp {docker_container_id}:{server_file_path} {local_path}"
             ),
             cwd=self.docker_compose_path,
         ).decode("utf8").strip()
@@ -136,9 +130,7 @@ class ArchivematicaDockerAbility(base.Base):
         local_path = os.path.join(self.tmp_path, dirname)
         subprocess.check_output(
             shlex.split(
-                "docker cp {}:{} {}".format(
-                    docker_container_id, server_dir_path, local_path
-                )
+                f"docker cp {docker_container_id}:{server_dir_path} {local_path}"
             ),
             cwd=self.docker_compose_path,
         ).decode("utf8").strip()

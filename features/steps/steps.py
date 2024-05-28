@@ -1,4 +1,5 @@
 """General-purpose Steps."""
+
 import logging
 import os
 import time
@@ -9,7 +10,6 @@ from behave import use_step_matcher
 from behave import when
 
 from features.steps import utils
-
 
 logger = logging.getLogger("amauat.steps")
 
@@ -328,10 +328,10 @@ def step_impl(context):
     # AIP pointer file because otherwise, e.g., after a re-ingest, it can be
     # out of date. See @reencrypt-different-key.
     time.sleep(context.am_user.pessimistic_wait)
-    context.scenario.aip_pointer_path = (
-        app
-    ) = context.am_user.api.download_aip_pointer_file(
-        uuid_val, context.am_user.browser.ss_api_key
+    context.scenario.aip_pointer_path = app = (
+        context.am_user.api.download_aip_pointer_file(
+            uuid_val, context.am_user.browser.ss_api_key
+        )
     )
     logger.info("downloaded AIP pointer file for AIP %s to %s", uuid_val, app)
 

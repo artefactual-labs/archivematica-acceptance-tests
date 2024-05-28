@@ -1,4 +1,5 @@
 """Archivematica Browser File Explorer Ability"""
+
 import logging
 import time
 
@@ -12,7 +13,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from . import constants as c
 from . import selenium_ability
-
 
 logger = logging.getLogger("amuser.fileexplorer")
 
@@ -245,10 +245,10 @@ def get_xpath_matches_folder_text(folder_text):
     """
     return (
         "div[contains(@class, 'tree-label') and"
-        " descendant::span[starts-with(normalize-space(text()), '{0}') and"
+        f" descendant::span[starts-with(normalize-space(text()), '{folder_text}') and"
         " starts-with(normalize-space(substring-after("
         "normalize-space(text()),"
-        " '{0}')), '(')]]".format(folder_text)
+        f" '{folder_text}')), '(')]]"
     )
 
 
@@ -256,9 +256,7 @@ def folder_label2icon_xpath(folder_label_xpath):
     """Given XPATH for TS folder label, return XPATH for its folder
     icon.
     """
-    return "{}/preceding-sibling::i[@class='tree-branch-head']".format(
-        folder_label_xpath
-    )
+    return f"{folder_label_xpath}/preceding-sibling::i[@class='tree-branch-head']"
 
 
 def folder_label2children_xpath(folder_label_xpath):

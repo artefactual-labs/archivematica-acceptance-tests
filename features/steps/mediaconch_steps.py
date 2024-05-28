@@ -1,4 +1,5 @@
 """Steps for the MediaConch-related Features."""
+
 import logging
 import os
 
@@ -8,7 +9,6 @@ from behave import when
 from lxml import etree
 
 from features.steps import utils
-
 
 logger = logging.getLogger("amauat.steps.mediaconch")
 
@@ -283,23 +283,21 @@ def step_impl(context, contains, policy_file):
     )
     if contains in ("contains", "does contain"):
         assert os.path.isfile(original_policy_path)
-        assert os.path.isfile(
-            aip_policy_path
-        ), "There is no MediaConch policy file in the AIP at" " {}!".format(
-            aip_policy_path
+        assert os.path.isfile(aip_policy_path), (
+            "There is no MediaConch policy file in the AIP at" f" {aip_policy_path}!"
         )
         with open(original_policy_path) as filei:
             original_policy = filei.read().strip()
         with open(aip_policy_path) as filei:
             aip_policy = filei.read().strip()
         assert aip_policy == original_policy, (
-            "The local policy file at {} is different from the one in the AIP"
-            " at {}".format(original_policy_path, aip_policy_path)
+            f"The local policy file at {original_policy_path} is different from the one in the AIP"
+            f" at {aip_policy_path}"
         )
     else:
         assert not os.path.isfile(aip_policy_path), (
-            "There is a MediaConch policy file in the AIP at {} but there"
-            " shouldn't be!".format(aip_policy_path)
+            f"There is a MediaConch policy file in the AIP at {aip_policy_path} but there"
+            " shouldn't be!"
         )
 
 
@@ -310,8 +308,8 @@ def step_impl(context, contains, policy_file):
     aip_path = context.scenario.aip_path
     original_policy_path = os.path.join(POLICIES_DIR, policy_file)
     policy_file_no_ext, _ = os.path.splitext(policy_file)
-    transfer_dirname = "{}-{}".format(
-        context.scenario.transfer_name, context.scenario.transfer_uuid
+    transfer_dirname = (
+        f"{context.scenario.transfer_name}-{context.scenario.transfer_uuid}"
     )
     aip_policy_path = os.path.join(
         aip_path,
@@ -326,23 +324,21 @@ def step_impl(context, contains, policy_file):
     )
     if contains in ("contains", "does contain"):
         assert os.path.isfile(original_policy_path)
-        assert os.path.isfile(
-            aip_policy_path
-        ), "There is no MediaConch policy file in the AIP at" " {}!".format(
-            aip_policy_path
+        assert os.path.isfile(aip_policy_path), (
+            "There is no MediaConch policy file in the AIP at" f" {aip_policy_path}!"
         )
         with open(original_policy_path) as filei:
             original_policy = filei.read().strip()
         with open(aip_policy_path) as filei:
             aip_policy = filei.read().strip()
         assert aip_policy == original_policy, (
-            "The local policy file at {} is different from the one in the AIP"
-            " at {}".format(original_policy_path, aip_policy_path)
+            f"The local policy file at {original_policy_path} is different from the one in the AIP"
+            f" at {aip_policy_path}"
         )
     else:
         assert not os.path.isfile(aip_policy_path), (
-            "There is a MediaConch policy file in the AIP at {} but there"
-            " shouldn't be!".format(aip_policy_path)
+            f"There is a MediaConch policy file in the AIP at {aip_policy_path} but there"
+            " shouldn't be!"
         )
 
 
@@ -353,8 +349,8 @@ def step_impl(context, policy_file):
     policy_file_no_ext, _ = os.path.splitext(policy_file)
     aip_path = context.scenario.aip_path
     assert policy_file_no_ext, "policy_file_no_ext is falsey!"
-    transfer_dirname = "{}-{}".format(
-        context.scenario.transfer_name, context.scenario.transfer_uuid
+    transfer_dirname = (
+        f"{context.scenario.transfer_name}-{context.scenario.transfer_uuid}"
     )
     aip_policy_outputs_path = os.path.join(
         aip_path,
@@ -367,8 +363,8 @@ def step_impl(context, policy_file):
         policy_file_no_ext,
     )
     assert os.path.isdir(aip_policy_outputs_path), (
-        "We expected {} to be a directory but it either does not exist or it is"
-        " not a directory".format(aip_policy_outputs_path)
+        f"We expected {aip_policy_outputs_path} to be a directory but it either does not exist or it is"
+        " not a directory"
     )
     contents = os.listdir(aip_policy_outputs_path)
     assert contents
@@ -384,8 +380,8 @@ def step_impl(context, policy_file):
             root_tag = doc.getroot().tag
             expected_root_tag = "{https://mediaarea.net/mediaconch}MediaConch"
             assert root_tag == expected_root_tag, (
-                "The root tag of file {} was expected to be {} but was actually"
-                " {}".format(fp, expected_root_tag, root_tag)
+                f"The root tag of file {fp} was expected to be {expected_root_tag} but was actually"
+                f" {root_tag}"
             )
 
 

@@ -3,6 +3,7 @@
 This module contains the ``ArchivematicaMETSAbility`` class, which represents an
 Archivematica user's ability to interact with METS XML files.
 """
+
 import os
 
 from . import base
@@ -68,15 +69,13 @@ class ArchivematicaMETSAbility(base.Base):
                     idfr = [x for x in entity["identifiers"] if x[0] == idfr_type][0][1]
                 except IndexError:
                     idfr = None
-                assert (
-                    idfr
-                ), "Unable to find an identifier of type {} for entity" " {}".format(
-                    idfr_type, entity["path"]
+                assert idfr, (
+                    "Unable to find an identifier of type {} for entity" " {}".format(
+                        idfr_type, entity["path"]
+                    )
                 )
                 if idfr_type == "UUID":
-                    assert utils.is_uuid(idfr), "Identifier {} is not a UUID".format(
-                        idfr
-                    )
+                    assert utils.is_uuid(idfr), f"Identifier {idfr} is not a UUID"
                 elif idfr_type == "hdl":
                     assert utils.is_hdl(
                         idfr, entity["type"], accession_no

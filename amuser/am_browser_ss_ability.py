@@ -1,4 +1,5 @@
 """Archivematica Browser Storage Service Ability"""
+
 import logging
 import pprint
 import time
@@ -10,7 +11,6 @@ from selenium.webdriver.support.ui import Select
 from . import base
 from . import selenium_ability
 from . import utils
-
 
 logger = logging.getLogger("amuser.ss")
 
@@ -43,8 +43,8 @@ class ArchivematicaBrowserStorageServiceAbility(
                 matching_rows.append(row_el)
         if len(matching_rows) != 1:
             raise ArchivematicaBrowserStorageServiceAbilityError(
-                "More than one delete request row {} matches AIP"
-                " {}".format(len(matching_rows), aip_uuid)
+                f"More than one delete request row {len(matching_rows)} matches AIP"
+                f" {aip_uuid}"
             )
         matching_rows[0].find_element(By.TAG_NAME, "textarea").send_keys("Cuz wanna")
         matching_rows[0].find_element(By.CSS_SELECTOR, 'input[name="approve"]').click()
@@ -318,9 +318,9 @@ class ArchivematicaBrowserStorageServiceAbility(
                 break
         if not found_replicator:
             raise ArchivematicaBrowserStorageServiceAbilityError(
-                "Unable to find replicator location {} as a possible replicator"
+                f"Unable to find replicator location {replicator_location_uuid} as a possible replicator"
                 " for the default AIP Storage"
-                " location".format(replicator_location_uuid)
+                " location"
             )
         self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
 

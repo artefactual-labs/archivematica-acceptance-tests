@@ -1,4 +1,5 @@
 """Utilities for Steps files."""
+
 import csv
 import datetime
 import logging
@@ -160,15 +161,13 @@ def assert_premis_properties(event, context, properties):
         desc_el = event.find(xpath, context.am_user.mets.mets_nsmap)
         for relation, value in predicates:
             if relation == "equals":
-                assert desc_el.text.strip() == value, "{} does not equal {}".format(
-                    desc_el.text.strip(), value
-                )
+                assert (
+                    desc_el.text.strip() == value
+                ), f"{desc_el.text.strip()} does not equal {value}"
             elif relation == "contains":
                 assert (
                     value in desc_el.text.strip()
-                ), "{} does not substring-contain {}".format(
-                    desc_el.text.strip(), value
-                )
+                ), f"{desc_el.text.strip()} does not substring-contain {value}"
             elif relation == "regex":
                 assert re.search(
                     value, desc_el.text.strip()
@@ -347,8 +346,8 @@ def call_api_endpoint(
         warning_message = f"Got invalid response from {endpoint}. Retrying"
     if error_message is None:
         error_message = (
-            "Could not get a valid response from {}"
-            " after {} attempts".format(endpoint, max_attempts)
+            f"Could not get a valid response from {endpoint}"
+            f" after {max_attempts} attempts"
         )
     response = None
     attempts = 0
@@ -496,9 +495,9 @@ def start_reingest(
         api_clients_config, transfer_name
     ):
         raise environment.EnvironmentError(
-            "Cannot start reingest of AIP {} because there is a "
+            f"Cannot start reingest of AIP {sip_uuid} because there is a "
             "unapproved transfer with the same directory name in "
-            "watchedDirectories/activeTransfers/standardTransfer".format(sip_uuid)
+            "watchedDirectories/activeTransfers/standardTransfer"
         )
     am = configure_ss_client(api_clients_config[SS_API_CONFIG_KEY])
     am.reingest_type = reingest_type
@@ -951,9 +950,9 @@ def job_tasks_failed(job, valid_exit_codes):
 
 def assert_microservice_executes(api_clients_config, unit_uuid, microservice_name):
     jobs = get_jobs(api_clients_config, unit_uuid, job_microservice=microservice_name)
-    assert len(jobs), "No jobs found with microservice {} for unit {}".format(
-        microservice_name, unit_uuid
-    )
+    assert len(
+        jobs
+    ), f"No jobs found with microservice {microservice_name} for unit {unit_uuid}"
 
 
 def assert_source_md_in_bagit_mets(mets_root, mets_nsmap):
@@ -976,15 +975,11 @@ def assert_source_md_in_bagit_mets(mets_root, mets_nsmap):
     )
     assert transfer_md, "Cannot find transfer_metadata element"
     element_count = len(transfer_md[0])
-    assert element_count > 0, "No elements in BagIt transfer metadata: {}".format(
-        element_count
-    )
+    assert element_count > 0, f"No elements in BagIt transfer metadata: {element_count}"
 
 
 def get_gpg_space_location_description(space_uuid):
-    return "Store AIP Encrypted in standard Archivematica Directory ({})".format(
-        space_uuid
-    )
+    return f"Store AIP Encrypted in standard Archivematica Directory ({space_uuid})"
 
 
 def copy_metadata_files(api_clients_config, sip_uuid, relative_paths):
@@ -1211,9 +1206,7 @@ def find_aip_by_transfer_metadata(
     summary_text = summary_el.text.strip()
     result = summary_text == expected_summary_message
     # This assertion allows tenacity to retry the call on error
-    assert result, "Search phrase: {}, expected summary message: {}, got: {}".format(
-        repr(search_phrase), repr(expected_summary_message), repr(summary_text)
-    )
+    assert result, f"Search phrase: {repr(search_phrase)}, expected summary message: {repr(expected_summary_message)}, got: {repr(summary_text)}"
     return result
 
 

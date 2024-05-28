@@ -4,6 +4,7 @@ This module contains the ``ArchivematicaSSHAbility`` class, which encodes the
 ability of an Archivematica user to use SSH and scp to interact with
 Archivematica.
 """
+
 import logging
 import os
 import shlex
@@ -33,14 +34,8 @@ class ArchivematicaSSHAbility(base.Base):
             cmd = (
                 "scp"
                 " -o StrictHostKeyChecking=no"
-                " -i {}"
-                " {}@{}:{} {}".format(
-                    self.ssh_identity_file,
-                    self.server_user,
-                    self.am_hostname,
-                    server_file_path,
-                    local_path,
-                )
+                f" -i {self.ssh_identity_file}"
+                f" {self.server_user}@{self.am_hostname}:{server_file_path} {local_path}"
             )
             try:
                 subprocess.check_output(shlex.split(cmd))
@@ -58,9 +53,7 @@ class ArchivematicaSSHAbility(base.Base):
                 "scp"
                 " -o UserKnownHostsFile=/dev/null"
                 " -o StrictHostKeyChecking=no"
-                " {}@{}:{} {}".format(
-                    self.server_user, self.am_hostname, server_file_path, local_path
-                )
+                f" {self.server_user}@{self.am_hostname}:{server_file_path} {local_path}"
             )
             child = pexpect.spawn(cmd)
             if self.ssh_requires_password:
@@ -95,15 +88,9 @@ class ArchivematicaSSHAbility(base.Base):
             cmd = (
                 "scp"
                 " -r"
-                " -i {}"
+                f" -i {self.ssh_identity_file}"
                 " -o StrictHostKeyChecking=no"
-                " {}@{}:{} {}".format(
-                    self.ssh_identity_file,
-                    self.server_user,
-                    self.am_hostname,
-                    server_dir_path,
-                    local_path,
-                )
+                f" {self.server_user}@{self.am_hostname}:{server_dir_path} {local_path}"
             )
             subprocess.check_output(shlex.split(cmd))
         elif self.server_user and self.server_password:
@@ -112,9 +99,7 @@ class ArchivematicaSSHAbility(base.Base):
                 " -r"
                 " -o UserKnownHostsFile=/dev/null"
                 " -o StrictHostKeyChecking=no"
-                " {}@{}:{} {}".format(
-                    self.server_user, self.am_hostname, server_dir_path, local_path
-                )
+                f" {self.server_user}@{self.am_hostname}:{server_dir_path} {local_path}"
             )
             logger.info("Command for scp-ing a remote directory to local:\n%s", cmd)
             child = pexpect.spawn(cmd)
@@ -145,12 +130,10 @@ class ArchivematicaSSHAbility(base.Base):
         if self.server_user and self.ssh_identity_file:
             cmd = (
                 "ssh"
-                " -i {}"
+                f" -i {self.ssh_identity_file}"
                 " -o StrictHostKeyChecking=no"
-                " {}@{}"
-                " ls /etc/init.d/elasticsearch".format(
-                    self.ssh_identity_file, self.server_user, self.am_hostname
-                )
+                f" {self.server_user}@{self.am_hostname}"
+                " ls /etc/init.d/elasticsearch"
             )
             logger.info("Command for checking if Elasticsearch is installed: %s", cmd)
             try:
@@ -164,10 +147,8 @@ class ArchivematicaSSHAbility(base.Base):
                 "ssh"
                 " -o UserKnownHostsFile=/dev/null"
                 " -o StrictHostKeyChecking=no"
-                " {}@{}"
-                " ls /etc/init.d/elasticsearch".format(
-                    self.server_user, self.am_hostname
-                )
+                f" {self.server_user}@{self.am_hostname}"
+                " ls /etc/init.d/elasticsearch"
             )
             logger.info("Command for checking if Elasticsearch is installed: %s", cmd)
             child = pexpect.spawn(cmd)

@@ -3,6 +3,7 @@
 This module contains the ``ArchivematicaAPIAbility`` class, which represents a
 user's ability to use Archivematica's APIs to interact with Archivematica.
 """
+
 import logging
 import os
 import time
@@ -10,7 +11,6 @@ import time
 import requests
 
 from . import base
-
 
 logger = logging.getLogger("amuser.api")
 

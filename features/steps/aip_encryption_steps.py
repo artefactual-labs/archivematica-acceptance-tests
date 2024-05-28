@@ -1,4 +1,5 @@
 """Steps for the AIP Encryption Feature."""
+
 import logging
 import os
 import tarfile
@@ -10,7 +11,6 @@ from behave import when
 from lxml import etree
 
 from features.steps import utils
-
 
 GPG_KEYS_DIR = "etc/gpgkeys"
 STDRD_GPG_TB_REL_PATH = os.path.join(
@@ -53,9 +53,7 @@ def step_impl(context):
         " attributes"
         " Purpose: AIP Storage;"
         " Relative path: var/archivematica/sharedDirectory/www/AIPsStoreEncrypted;"
-        " Description: {};".format(
-            utils.get_gpg_space_location_description(context.scenario.space_uuid)
-        )
+        f" Description: {utils.get_gpg_space_location_description(context.scenario.space_uuid)};"
     )
 
 
@@ -68,9 +66,9 @@ def step_impl(context):
         "Given the user has ensured that there is a location in the GPG Space with"
         " attributes"
         " Purpose: Transfer Backlog;"
-        " Relative path: {};"
+        f" Relative path: {STDRD_GPG_TB_REL_PATH};"
         " Description: Store Transfers Encrypted in standard Archivematica"
-        " Directory;".format(STDRD_GPG_TB_REL_PATH)
+        " Directory;"
     )
 
 
@@ -178,19 +176,15 @@ def step_impl(context):
 )
 def step_impl(context):
     context.execute_steps(
-        'Given the processing config decision "Store AIP location" is set to "{}"\n'.format(
-            utils.get_gpg_space_location_description(context.scenario.space_uuid)
-        )
+        f'Given the processing config decision "Store AIP location" is set to "{utils.get_gpg_space_location_description(context.scenario.space_uuid)}"\n'
     )
 
 
 @when("an encrypted AIP is created from the directory at {transfer_path}")
 def step_impl(context, transfer_path):
     context.execute_steps(
-        "When a transfer is initiated on directory {}\n"
-        "And the user waits for the AIP to appear in archival storage".format(
-            transfer_path
-        )
+        f"When a transfer is initiated on directory {transfer_path}\n"
+        "And the user waits for the AIP to appear in archival storage"
     )
 
 
@@ -248,9 +242,7 @@ def step_impl(context):
     search_results = context.scenario.aip_search_results
     assert (
         len(search_results) == 2
-    ), "We expected 2 search results but there are {} in {}".format(
-        len(search_results), str(search_results)
-    )
+    ), f"We expected 2 search results but there are {len(search_results)} in {str(search_results)}"
     the_aips = [dct for dct in search_results if dct["uuid"] == the_aip_uuid]
     not_the_aips = [dct for dct in search_results if dct["uuid"] != the_aip_uuid]
     assert len(the_aips) == 1
@@ -263,16 +255,12 @@ def step_impl(context):
     replica_actions = {x.strip() for x in replica["actions"].split("|")}
     assert (
         replica_actions == expected_replica_actions
-    ), "We expected the replica actions to be {} but in fact they were {}".format(
-        expected_replica_actions, replica_actions
-    )
+    ), f"We expected the replica actions to be {expected_replica_actions} but in fact they were {replica_actions}"
     expected_aip_actions = {"Pointer File", "Download", "Request Deletion", "Re-ingest"}
     aip_actions = {x.strip() for x in the_aip["actions"].split("|")}
     assert (
         aip_actions == expected_aip_actions
-    ), "We expected the AIP actions to be {} but in fact they were {}".format(
-        expected_aip_actions, aip_actions
-    )
+    ), f"We expected the AIP actions to be {expected_aip_actions} but in fact they were {aip_actions}"
     context.scenario.master_aip_uuid = the_aip_uuid
     context.scenario.replica_aip_uuid = replica_uuid
 
@@ -477,11 +465,7 @@ def step_impl(context):
     we use scp to copy the remote AIP to a local directory and then we attempt
     to decompress it and expect to fail.
     """
-    path_on_disk = "/{}/originals/{}-{}".format(
-        STDRD_GPG_TB_REL_PATH,
-        context.scenario.transfer_name,
-        context.scenario.transfer_uuid,
-    )
+    path_on_disk = f"/{STDRD_GPG_TB_REL_PATH}/originals/{context.scenario.transfer_name}-{context.scenario.transfer_uuid}"
     logger.info("expecting encrypted transfer to be at %s on server", path_on_disk)
     if getattr(context.am_user.docker, "docker_compose_path", None):
         dip_local_path = context.am_user.docker.cp_server_file_to_local(path_on_disk)
@@ -516,12 +500,7 @@ def step_impl(context, aips_store_path):
     tmp = context.scenario.sip_uuid.replace("-", "")
     parts = [tmp[i : i + 4] for i in range(0, len(tmp), 4)]
     subpath = "/".join(parts)
-    aip_server_path = "{}{}/{}-{}".format(
-        aips_store_path,
-        subpath,
-        context.scenario.transfer_name,
-        context.scenario.sip_uuid,
-    )
+    aip_server_path = f"{aips_store_path}{subpath}/{context.scenario.transfer_name}-{context.scenario.sip_uuid}"
     if getattr(context.am_user.docker, "docker_compose_path", None):
         aip_local_path = context.am_user.docker.cp_server_file_to_local(aip_server_path)
     elif context.am_user.ssh_accessible:
@@ -559,9 +538,7 @@ def step_impl(context):
 def step_impl(context, reason):
     assert (
         context.scenario.delete_gpg_key_success is False
-    ), "GPG deletion success is something other than False: {}".format(
-        context.scenario.delete_gpg_key_success
-    )
+    ), f"GPG deletion success is something other than False: {context.scenario.delete_gpg_key_success}"
     if reason == "it is attached to a space":
         assert context.scenario.delete_gpg_key_msg.startswith("GPG key")
         assert context.scenario.delete_gpg_key_msg.endswith(
@@ -715,8 +692,8 @@ def assert_pointer_transform_file_encryption(pointer_path, ns, fingerprint=None)
         if fingerprint:
             transform_key = decr_tran_el.get("TRANSFORMKEY", ns)
             assert transform_key == fingerprint, (
-                "TRANSFORMKEY fingerprint {} does not match expected"
-                " fingerprint {}".format(transform_key, fingerprint)
+                f"TRANSFORMKEY fingerprint {transform_key} does not match expected"
+                f" fingerprint {fingerprint}"
             )
         # premis:compositionLevel incremented
         compos_lvl_el = doc.find(

@@ -1,4 +1,5 @@
 """Archivematica Transfer & Ingest Tabs Ability"""
+
 import logging
 import sys
 import time
@@ -14,7 +15,6 @@ from . import am_browser_transfer_ability as transfer_abl
 from . import base
 from . import selenium_ability
 from . import utils
-
 
 logger = logging.getLogger("amuser.transferingest")
 
@@ -116,10 +116,8 @@ class ArchivematicaBrowserTransferIngestAbility(
             assert f'Unable to select choice "{choice_text}"' == str(exc)
         else:
             raise AssertionError(
-                'We were able to select choice "{}" at decision point "{}" even'
-                " though we expected this not to be possible.".format(
-                    choice_text, decision_point
-                )
+                f'We were able to select choice "{choice_text}" at decision point "{decision_point}" even'
+                " though we expected this not to be possible."
             )
 
     @selenium_ability.recurse_on_stale
@@ -142,9 +140,7 @@ class ArchivematicaBrowserTransferIngestAbility(
             # The job is taking a long time to complete. Half the
             # amount of checking to avoid stack-overflow.
             logger.warning(
-                "Recursion limit close to being reached: level: {} <= {}".format(
-                    level, sys.getrecursionlimit()
-                )
+                f"Recursion limit close to being reached: level: {level} <= {sys.getrecursionlimit()}"
             )
             time.sleep(self.micro_wait)
         else:
@@ -186,9 +182,9 @@ class ArchivematicaBrowserTransferIngestAbility(
         while True:
             if attempts > max_attempts:
                 msg = (
-                    "Exceeded maxumim allowable attempts ({}) for checking"
-                    " whether micro-service group {} of transfer {} is"
-                    " visible.".format(max_attempts, group_name, transfer_uuid)
+                    f"Exceeded maxumim allowable attempts ({max_attempts}) for checking"
+                    f" whether micro-service group {group_name} of transfer {transfer_uuid} is"
+                    " visible."
                 )
                 logger.warning(msg)
                 raise ArchivematicaBrowserTransferIngestAbilityError(msg)

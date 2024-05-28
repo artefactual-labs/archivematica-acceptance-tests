@@ -1,4 +1,5 @@
 """Archivematica Browser Jobs & Tasks Ability"""
+
 import logging
 import sys
 import time
@@ -9,7 +10,6 @@ from selenium.webdriver.common.by import By
 from . import constants as c
 from . import selenium_ability
 from . import utils
-
 
 logger = logging.getLogger("amuser.jobstasks")
 
@@ -197,9 +197,7 @@ class ArchivematicaBrowserJobsTasksAbility(
                         # The job is taking a long time to complete. Half the
                         # amount of checking to avoid stack-overflow.
                         logger.warning(
-                            "Recursion limit close to being reached: level: {} <= {}".format(
-                                level, sys.getrecursionlimit()
-                            )
+                            f"Recursion limit close to being reached: level: {level} <= {sys.getrecursionlimit()}"
                         )
                         time.sleep(self.quick_wait)
                     else:

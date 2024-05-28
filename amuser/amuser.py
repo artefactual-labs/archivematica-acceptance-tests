@@ -3,6 +3,7 @@
 This module contains the ``ArchivematicaUser`` class, which represents a user
 of Archivematica.
 """
+
 import logging
 import os
 import shlex
@@ -16,7 +17,6 @@ from . import am_mets_ability
 from . import am_ssh_ability
 from . import base
 from . import constants as c
-
 
 logger = logging.getLogger("amuser")
 
@@ -87,9 +87,7 @@ class ArchivematicaUser(base.Base):
         assert p.returncode == 0
         assert os.path.isdir(
             aip_dir_path
-        ), "Failed to create dir {} from compressed AIP at {}".format(
-            aip_dir_path, aip_path
-        )
+        ), f"Failed to create dir {aip_dir_path} from compressed AIP at {aip_path}"
         return aip_dir_path
 
 
