@@ -23,9 +23,9 @@ RUN set -ex \
 	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 RUN locale-gen en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 ENV PYENV_ROOT=${PYENV_DIR}/data
 ENV PATH=$PYENV_ROOT/shims:$PYENV_ROOT/bin:${SELENIUM_DIR}/bin:$PATH
