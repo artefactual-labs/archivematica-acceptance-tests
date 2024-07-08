@@ -17,7 +17,7 @@ build==1.2.1
     # via pip-tools
 cachetools==5.3.3
     # via tox
-certifi==2024.6.2
+certifi==2024.7.4
     # via
     #   -r requirements.txt
     #   requests
@@ -39,7 +39,7 @@ exceptiongroup==1.2.1
     #   -r requirements.txt
     #   trio
     #   trio-websocket
-filelock==3.15.1
+filelock==3.15.4
     # via
     #   tox
     #   virtualenv
@@ -52,7 +52,7 @@ idna==3.7
     #   -r requirements.txt
     #   requests
     #   trio
-importlib-metadata==7.1.0
+importlib-metadata==8.0.0
     # via build
 lxml==5.2.2
     # via
@@ -92,7 +92,7 @@ ptyprocess==0.7.0
     # via
     #   -r requirements.txt
     #   pexpect
-pyproject-api==1.6.1
+pyproject-api==1.7.1
     # via tox
 pyproject-hooks==1.1.0
     # via
@@ -106,9 +106,9 @@ requests==2.32.3
     # via
     #   -r requirements.txt
     #   amclient
-ruff==0.4.9
+ruff==0.5.1
     # via -r requirements-dev.in
-selenium==4.21.0
+selenium==4.22.0
     # via -r requirements.txt
 six==1.16.0
     # via
@@ -123,7 +123,7 @@ sortedcontainers==2.4.0
     # via
     #   -r requirements.txt
     #   trio
-tenacity==8.4.1
+tenacity==8.5.0
     # via -r requirements.txt
 tomli==2.0.1
     # via
@@ -131,9 +131,9 @@ tomli==2.0.1
     #   pip-tools
     #   pyproject-api
     #   tox
-tox==4.15.1
+tox==4.16.0
     # via -r requirements-dev.in
-trio==0.25.1
+trio==0.26.0
     # via
     #   -r requirements.txt
     #   selenium
@@ -152,8 +152,12 @@ urllib3[socks]==2.2.2
     #   amclient
     #   requests
     #   selenium
-virtualenv==20.26.2
+virtualenv==20.26.3
     # via tox
+websocket-client==1.8.0
+    # via
+    #   -r requirements.txt
+    #   selenium
 wheel==0.43.0
     # via pip-tools
 wsproto==1.2.0
@@ -164,7 +168,7 @@ zipp==3.19.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==24.0
+pip==24.1.2
     # via pip-tools
-setuptools==70.0.0
+setuptools==70.2.0
     # via pip-tools
