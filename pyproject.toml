@@ -1,3 +1,24 @@
+[tool.ruff.lint]
+# Rule reference: https://docs.astral.sh/ruff/rules/
+select = [
+  "B",
+  "C4",
+  "E",
+  "F",
+  "I",
+  "UP",
+  "W",
+]
+ignore = [
+  "B904",
+  "E501",
+  "F811",
+  "UP031",
+]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
 [[tool.mypy.overrides]]
 module = ["features.steps.*"]
 disable_error_code = "no-redef"
