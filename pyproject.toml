@@ -1,0 +1,3 @@
+[[tool.mypy.overrides]]
+module = ["features.steps.*"]
+disable_error_code = "no-redef"
