@@ -63,6 +63,7 @@ class ArchivematicaBrowserStorageServiceAbility(
         self.driver.find_element(By.CSS_SELECTOR, "input[type=text]").send_keys(
             aip_uuid
         )
+        self.wait_for_invisibility("#DataTables_Table_0_processing")
         while True:
             # DataTables_Table_0
             row_els = self.driver.find_elements(
