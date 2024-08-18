@@ -22,3 +22,18 @@ force-single-line = true
 [[tool.mypy.overrides]]
 module = ["features.steps.*"]
 disable_error_code = "no-redef"
+
+[tool.tox]
+legacy_tox_ini = """
+    [tox]
+    skipsdist = True
+    envlist = linting
+
+    [testenv]
+    skip_install = True
+
+    [testenv:linting]
+    basepython = python3
+    deps = pre-commit
+    commands = pre-commit run --all-files --show-diff-on-failure
+"""
