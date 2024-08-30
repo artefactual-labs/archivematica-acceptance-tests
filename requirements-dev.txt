@@ -15,9 +15,9 @@ behave==1.2.6
     # via -r requirements.txt
 build==1.2.1
     # via pip-tools
-cachetools==5.4.0
+cachetools==5.5.0
     # via tox
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   -r requirements.txt
     #   requests
@@ -47,14 +47,14 @@ h11==0.14.0
     # via
     #   -r requirements.txt
     #   wsproto
-idna==3.7
+idna==3.8
     # via
     #   -r requirements.txt
     #   requests
     #   trio
-importlib-metadata==8.2.0
+importlib-metadata==8.4.0
     # via build
-lxml==5.2.2
+lxml==5.3.0
     # via
     #   -r requirements.txt
     #   metsrw
@@ -74,7 +74,7 @@ parse==1.20.2
     #   -r requirements.txt
     #   behave
     #   parse-type
-parse-type==0.6.2
+parse-type==0.6.3
     # via
     #   -r requirements.txt
     #   behave
@@ -106,9 +106,9 @@ requests==2.32.3
     # via
     #   -r requirements.txt
     #   amclient
-ruff==0.5.6
+ruff==0.6.3
     # via -r requirements-dev.in
-selenium==4.23.1
+selenium==4.24.0
     # via -r requirements.txt
 six==1.16.0
     # via
@@ -131,7 +131,7 @@ tomli==2.0.1
     #   pip-tools
     #   pyproject-api
     #   tox
-tox==4.17.1
+tox==4.18.0
     # via -r requirements-dev.in
 trio==0.26.2
     # via
@@ -164,11 +164,11 @@ wsproto==1.2.0
     # via
     #   -r requirements.txt
     #   trio-websocket
-zipp==3.19.2
+zipp==3.20.1
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 pip==24.2
     # via pip-tools
-setuptools==72.1.0
+setuptools==74.0.0
     # via pip-tools
