@@ -35,4 +35,4 @@ Feature: Archivematica recognizes manually normalized files
 
     Examples: Transfer paths
     | transfer_path                                                                  |
-    | ~/archivematica-sampledata/TestTransfers/acceptance-tests/manual-normalization |
+    | TestTransfers/acceptance-tests/manual-normalization |
