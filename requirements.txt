@@ -24,7 +24,7 @@ exceptiongroup==1.2.2
     #   trio-websocket
 h11==0.14.0
     # via wsproto
-idna==3.8
+idna==3.10
     # via
     #   requests
     #   trio
@@ -72,7 +72,7 @@ trio-websocket==0.11.1
     # via selenium
 typing-extensions==4.12.2
     # via selenium
-urllib3[socks]==2.2.2
+urllib3[socks]==2.2.3
     # via
     #   amclient
     #   requests
