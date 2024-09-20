@@ -13,7 +13,7 @@ attrs==24.2.0
     #   trio
 behave==1.2.6
     # via -r requirements.txt
-build==1.2.1
+build==1.2.2
     # via pip-tools
 cachetools==5.5.0
     # via tox
@@ -39,7 +39,7 @@ exceptiongroup==1.2.2
     #   -r requirements.txt
     #   trio
     #   trio-websocket
-filelock==3.15.4
+filelock==3.16.1
     # via
     #   tox
     #   virtualenv
@@ -47,12 +47,12 @@ h11==0.14.0
     # via
     #   -r requirements.txt
     #   wsproto
-idna==3.8
+idna==3.10
     # via
     #   -r requirements.txt
     #   requests
     #   trio
-importlib-metadata==8.4.0
+importlib-metadata==8.5.0
     # via build
 lxml==5.3.0
     # via
@@ -82,7 +82,7 @@ pexpect==4.9.0
     # via -r requirements.txt
 pip-tools==7.4.1
     # via -r requirements-dev.in
-platformdirs==4.2.2
+platformdirs==4.3.6
     # via
     #   tox
     #   virtualenv
@@ -92,7 +92,7 @@ ptyprocess==0.7.0
     # via
     #   -r requirements.txt
     #   pexpect
-pyproject-api==1.7.1
+pyproject-api==1.8.0
     # via tox
 pyproject-hooks==1.1.0
     # via
@@ -106,7 +106,7 @@ requests==2.32.3
     # via
     #   -r requirements.txt
     #   amclient
-ruff==0.6.3
+ruff==0.6.6
     # via -r requirements-dev.in
 selenium==4.24.0
     # via -r requirements.txt
@@ -131,7 +131,7 @@ tomli==2.0.1
     #   pip-tools
     #   pyproject-api
     #   tox
-tox==4.18.0
+tox==4.20.0
     # via -r requirements-dev.in
 trio==0.26.2
     # via
@@ -146,13 +146,13 @@ typing-extensions==4.12.2
     # via
     #   -r requirements.txt
     #   selenium
-urllib3[socks]==2.2.2
+urllib3[socks]==2.2.3
     # via
     #   -r requirements.txt
     #   amclient
     #   requests
     #   selenium
-virtualenv==20.26.3
+virtualenv==20.26.5
     # via tox
 websocket-client==1.8.0
     # via
@@ -164,11 +164,11 @@ wsproto==1.2.0
     # via
     #   -r requirements.txt
     #   trio-websocket
-zipp==3.20.1
+zipp==3.20.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 pip==24.2
     # via pip-tools
-setuptools==74.0.0
+setuptools==75.1.0
     # via pip-tools
