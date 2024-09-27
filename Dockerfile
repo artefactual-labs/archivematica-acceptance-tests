@@ -93,6 +93,10 @@ FROM base AS archivematica-acceptance-tests
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
+ENV SE_MANAGER_PATH=${SELENIUM_DIR}/bin/selenium-manager
+ENV SE_CHROME_PATH=${SELENIUM_DIR}/bin/google-chrome
+ENV SE_FIREFOX_PATH=${SELENIUM_DIR}/bin/firefox
+
 RUN set -ex \
 	&& apt-get -qqy update \
 	&& apt-get -qqy --no-install-recommends install \
