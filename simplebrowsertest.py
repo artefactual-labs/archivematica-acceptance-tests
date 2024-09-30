@@ -8,7 +8,7 @@ TEST_TITLE = "Home | Artefactual"
 
 def get_chrome_driver():
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    options.add_argument("--headless=old")
     driver = webdriver.Chrome(options=options)
     return driver
 
