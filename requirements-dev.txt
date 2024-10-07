@@ -13,7 +13,7 @@ attrs==24.2.0
     #   trio
 behave==1.2.6
     # via -r requirements.txt
-build==1.2.2
+build==1.2.2.post1
     # via pip-tools
 cachetools==5.5.0
     # via tox
@@ -74,7 +74,7 @@ parse==1.20.2
     #   -r requirements.txt
     #   behave
     #   parse-type
-parse-type==0.6.3
+parse-type==0.6.4
     # via
     #   -r requirements.txt
     #   behave
@@ -94,7 +94,7 @@ ptyprocess==0.7.0
     #   pexpect
 pyproject-api==1.8.0
     # via tox
-pyproject-hooks==1.1.0
+pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
@@ -106,9 +106,9 @@ requests==2.32.3
     # via
     #   -r requirements.txt
     #   amclient
-ruff==0.6.6
+ruff==0.6.9
     # via -r requirements-dev.in
-selenium==4.24.0
+selenium==4.25.0
     # via -r requirements.txt
 six==1.16.0
     # via
@@ -125,13 +125,13 @@ sortedcontainers==2.4.0
     #   trio
 tenacity==9.0.0
     # via -r requirements.txt
-tomli==2.0.1
+tomli==2.0.2
     # via
     #   build
     #   pip-tools
     #   pyproject-api
     #   tox
-tox==4.20.0
+tox==4.21.2
     # via -r requirements-dev.in
 trio==0.26.2
     # via
@@ -146,13 +146,14 @@ typing-extensions==4.12.2
     # via
     #   -r requirements.txt
     #   selenium
+    #   tox
 urllib3[socks]==2.2.3
     # via
     #   -r requirements.txt
     #   amclient
     #   requests
     #   selenium
-virtualenv==20.26.5
+virtualenv==20.26.6
     # via tox
 websocket-client==1.8.0
     # via
