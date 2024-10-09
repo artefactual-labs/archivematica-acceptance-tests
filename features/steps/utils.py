@@ -754,7 +754,7 @@ def wait_for_transfer(api_clients_config, transfer_uuid):
             status = resp.get("status")
         return resp
     except environment.EnvironmentError as err:
-        assert AssertionError(
+        raise AssertionError(
             f"Error checking transfer (uuid: {transfer_uuid}) status: {err}"
         )
 
@@ -771,7 +771,7 @@ def wait_for_ingest(api_clients_config, sip_uuid):
             status = resp.get("status")
         return resp
     except environment.EnvironmentError as err:
-        assert AssertionError(f"Error checking ingest (uuid: {sip_uuid}) status: {err}")
+        raise AssertionError(f"Error checking ingest (uuid: {sip_uuid}) status: {err}")
 
 
 def get_transfer_result(api_clients_config, transfer_uuid):
