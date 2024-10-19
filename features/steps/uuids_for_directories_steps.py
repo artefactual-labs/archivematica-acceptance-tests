@@ -70,7 +70,7 @@ def step_impl(context, dir_path):
     empty_dirs = []
 
     # These are the names of the files that Archivematica will remove by
-    # default. See MCPClient/lib/settings/common.py,
+    # default. See MCPClient/settings/common.py,
     # clientScripts/removeHiddenFilesAndDirectories.py, and
     # clientScripts/removeUnneededFiles.py.
     to_be_removed_files = [
