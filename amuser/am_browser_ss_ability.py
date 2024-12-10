@@ -15,6 +15,13 @@ from . import utils
 logger = logging.getLogger("amuser.ss")
 
 
+# These correspond to the keys used in the key import test.
+GPG_KEYIDS_TO_IMPORT = {
+    "AAC5E07B370A2D9A": "aadams-passphraseless.key",
+    "0F86C799E5DEDE22": "bbingo-passphrased.key",
+}
+
+
 class ArchivematicaBrowserStorageServiceAbilityError(base.ArchivematicaUserError):
     pass
 
@@ -125,6 +132,21 @@ class ArchivematicaBrowserStorageServiceAbility(
         if attributes.get("Access protocol") == "GPG encryption on Local Filesystem":
             # Visiting this URL creates a default GPG key when there is none
             self.navigate(self.get_gpg_keys_url())
+            if (
+                attributes.get("GnuPG Private Key")
+                == "Archivematica Storage Service GPG Key"
+            ):
+                # Replace the name of the default GPG encryption key with its
+                # key ID, ignoring any keys imported in other tests.
+                key_ids = [
+                    a.text
+                    for a in self.driver.find_elements(
+                        By.CSS_SELECTOR, "tbody tr td:first-child a"
+                    )
+                    if a.text not in GPG_KEYIDS_TO_IMPORT
+                ]
+                assert key_ids
+                attributes["GnuPG Private Key"] = key_ids[0]
         self.navigate(self.get_spaces_create_url())
         form_el = self.driver.find_element(
             By.CSS_SELECTOR, 'form[action="/spaces/create/"]'
@@ -439,7 +461,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         self.wait_for_presence("div.alert-success", self.nihilistic_wait)
         alert_text = self.driver.find_element(By.CSS_SELECTOR, "div.alert-success").text
         new_key_fingerprint = alert_text.split()[2]
-        return new_key_name, new_key_email, new_key_fingerprint
+        new_key_id = self.driver.find_elements(By.CSS_SELECTOR, "dd")[1].text
+        return new_key_name, new_key_email, new_key_fingerprint, new_key_id
 
     def change_encrypted_space_key(self, space_uuid, new_key_repr=None):
         """Edit the existing space with UUID ``space_uuid`` and set its GPG key

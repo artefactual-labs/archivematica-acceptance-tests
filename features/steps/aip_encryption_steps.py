@@ -147,9 +147,10 @@ def step_impl(context):
         new_key_name,
         new_key_email,
         new_key_fingerprint,
+        new_key_id,
     ) = context.am_user.browser.create_new_gpg_key()
-    context.scenario.new_key_name = new_key_name
     context.scenario.new_key_fingerprint = new_key_fingerprint
+    context.scenario.new_key_id = new_key_id
     if getattr(context.scenario, "space_uuid", None) is not None:
         # Don't look for a space if previos steps saved it
         standard_encr_space_uuid = context.scenario.space_uuid
@@ -160,13 +161,13 @@ def step_impl(context):
                 "Access protocol": "GPG encryption on Local Filesystem",
                 "Path": "/",
                 "Staging path": "/var/archivematica/storage_service/storage_service_encrypted",
-                "GnuPG Private Key": "Archivematica Storage Service GPG Key",
+                "GnuPG Private Key": new_key_id,
             }
         )["uuid"]
     new_key_repr = f"{new_key_name} <{new_key_email}>"
     logger.info('Created a new GPG key "%s"', new_key_repr)
     context.am_user.browser.change_encrypted_space_key(
-        standard_encr_space_uuid, new_key_repr
+        standard_encr_space_uuid, new_key_id
     )
 
 
@@ -189,18 +190,18 @@ def step_impl(context, transfer_path):
 
 @when("the user attempts to delete the new GPG key")
 def step_impl(context):
-    new_key_name = context.scenario.new_key_name
-    logger.info('Attempting to delete GPG key "%s"', new_key_name)
+    new_key_id = context.scenario.new_key_id
+    logger.info('Attempting to delete GPG key "%s"', new_key_id)
     (
         context.scenario.delete_gpg_key_success,
         context.scenario.delete_gpg_key_msg,
-    ) = context.am_user.browser.delete_gpg_key(new_key_name)
+    ) = context.am_user.browser.delete_gpg_key(new_key_id)
     if context.scenario.delete_gpg_key_success:
-        logger.info('Attempt to delete GPG key "%s" was SUCCESSFUL', new_key_name)
+        logger.info('Attempt to delete GPG key "%s" was SUCCESSFUL', new_key_id)
     else:
         logger.info(
             'Attempt to delete GPG key "%s" FAILED: "%s"',
-            new_key_name,
+            new_key_id,
             context.scenario.delete_gpg_key_msg,
         )
 
@@ -208,7 +209,7 @@ def step_impl(context):
 @when("the user assigns a different GPG key to the standard GPG-encrypted space")
 def step_impl(context):
     """Edit the standard GPG-encrypted space so that it is using a GPG key
-    other than the one stored in ``context.scenario.new_key_name``.
+    other than the one stored in ``context.scenario.new_key_id``.
     """
     if getattr(context.scenario, "space_uuid", None) is not None:
         # Don't look for a space if previos steps saved it
@@ -220,7 +221,7 @@ def step_impl(context):
                 "Access protocol": "GPG encryption on Local Filesystem",
                 "Path": "/",
                 "Staging path": "/var/archivematica/storage_service/storage_service_encrypted",
-                "GnuPG Private Key": context.scenario.new_key_name,
+                "GnuPG Private Key": context.scenario.new_key_id,
             }
         )["uuid"]
     context.am_user.browser.change_encrypted_space_key(standard_encr_space_uuid)

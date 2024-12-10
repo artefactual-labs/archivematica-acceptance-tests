@@ -73,12 +73,12 @@ Feature: AIP Encryption
   @allow-passphraseless-key-import
   Scenario: Richard wants to ensure that a passphrase-less GPG key can be imported into the storage service.
     When the user attempts to import GPG key aadams-passphraseless.key
-    Then the user succeeds in importing the GPG key aadams
+    Then the user succeeds in importing the GPG key AAC5E07B370A2D9A
 
   @prohibit-passphrased-key-import
   Scenario: Richard wants to ensure that a GPG key with a passphrase cannot be imported into the storage service. Keys with passphrases would break the storage service's encryption functionality.
     When the user attempts to import GPG key bbingo-passphrased.key
-    Then the user fails to import the GPG key bbingo because it requires a passphrase
+    Then the user fails to import the GPG key 0F86C799E5DEDE22 because it requires a passphrase
 
   @allow-orphaned-key-delete
   Scenario: Richard wants to ensure that GPG deletion is never permitted if the key is associated to a space or if it is needed to decrypt an existing package. However, if all space associations are destroyed and all dependent packages deleted, then deletion of the (orphaned) key should be permitted.
