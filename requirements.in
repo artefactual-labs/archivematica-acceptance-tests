@@ -1,7 +1,7 @@
 amclient
 behave
 lxml
-metsrw
+git+https://github.com/artefactual-labs/mets-reader-writer.git@c6e7d12330611e241b63fff9a5c6c3fd59abd191#egg=metsrw
 pexpect
 requests
 selenium
