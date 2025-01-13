@@ -49,8 +49,7 @@ def step_impl(context, dir_path):
             local_path = context.am_user.localfs.read_server_file(dir_path)
     if local_path is None:
         msg = (
-            f"Unable to copy item {dir_path} from the server to the local file"
-            " system."
+            f"Unable to copy item {dir_path} from the server to the local file system."
         )
         logger.warning(msg)
         raise Exception(msg)
@@ -166,9 +165,9 @@ def step_impl(context):
         ("logical", './/mets:structMap[@LABEL="Normative Directory Structure"]'),
     ):
         struct_map_el = mets.find(xpath, ns)
-        assert (
-            struct_map_el is not None
-        ), f"We expected to find a {type_}-type structMap but did not"
+        assert struct_map_el is not None, (
+            f"We expected to find a {type_}-type structMap but did not"
+        )
         subpaths = utils.get_subpaths_from_struct_map(struct_map_el, ns)
         subpaths = [
             p.replace("/objects", "", 1)
@@ -221,9 +220,9 @@ def step_impl(context):
                 continue
             dirname = os.path.basename(dirpath)
             mets_div_el = struct_map_el.find(f'.//mets:div[@LABEL="{dirname}"]', ns)
-            assert (
-                mets_div_el is not None
-            ), f"Could not find a <mets:div> for directory at {dirpath} in {type_}-type structmap"
+            assert mets_div_el is not None, (
+                f"Could not find a <mets:div> for directory at {dirpath} in {type_}-type structmap"
+            )
             if (
                 type_ == "logical"
                 and dirpath not in context.scenario.remote_dir_empty_subfolders
@@ -231,9 +230,9 @@ def step_impl(context):
                 continue
             dmdid = mets_div_el.get("DMDID")
             dmdSec_el = mets.find(f'.//mets:dmdSec[@ID="{dmdid}"]', ns)
-            assert (
-                dmdSec_el is not None
-            ), f"Could not find a <mets:dmdSec> for directory at {dirpath} in {type_}-type structmap"
+            assert dmdSec_el is not None, (
+                f"Could not find a <mets:dmdSec> for directory at {dirpath} in {type_}-type structmap"
+            )
             try:
                 id_type = dmdSec_el.find(
                     ".//premis:objectIdentifierType", ns

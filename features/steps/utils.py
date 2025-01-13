@@ -161,17 +161,17 @@ def assert_premis_properties(event, context, properties):
         desc_el = event.find(xpath, context.am_user.mets.mets_nsmap)
         for relation, value in predicates:
             if relation == "equals":
-                assert (
-                    desc_el.text.strip() == value
-                ), f"{desc_el.text.strip()} does not equal {value}"
+                assert desc_el.text.strip() == value, (
+                    f"{desc_el.text.strip()} does not equal {value}"
+                )
             elif relation == "contains":
-                assert (
-                    value in desc_el.text.strip()
-                ), f"{desc_el.text.strip()} does not substring-contain {value}"
+                assert value in desc_el.text.strip(), (
+                    f"{desc_el.text.strip()} does not substring-contain {value}"
+                )
             elif relation == "regex":
-                assert re.search(
-                    value, desc_el.text.strip()
-                ), f"{desc_el.text.strip()} does not contain regex {value}"
+                assert re.search(value, desc_el.text.strip()), (
+                    f"{desc_el.text.strip()} does not contain regex {value}"
+                )
 
 
 def initiate_transfer(context, transfer_path, accession_no=None, transfer_type=None):
@@ -664,7 +664,7 @@ def assert_structmap_item_path_exists(item, root_path, parent_path=""):
         elif item.attrib["TYPE"] == "Directory":
             assert os.path.isdir(path)
         else:
-            msg = "Cannot handle structMap items with attribute " 'TYPE "{}"'.format(
+            msg = 'Cannot handle structMap items with attribute TYPE "{}"'.format(
                 item.attrib["TYPE"]
             )
             raise ValueError(msg)
@@ -939,9 +939,9 @@ def assert_jobs_fail(
         job_error = "Job '{} ({})' of unit '{}' does not have a FAILED status or one of its tasks has an invalid exit code ({})".format(
             job["name"], job["uuid"], unit_uuid, ", ".join(map(str, valid_exit_codes))
         )
-        assert job["status"] == "FAILED" or job_tasks_failed(
-            job, valid_exit_codes
-        ), job_error
+        assert job["status"] == "FAILED" or job_tasks_failed(job, valid_exit_codes), (
+            job_error
+        )
 
 
 def job_tasks_failed(job, valid_exit_codes):
@@ -950,9 +950,9 @@ def job_tasks_failed(job, valid_exit_codes):
 
 def assert_microservice_executes(api_clients_config, unit_uuid, microservice_name):
     jobs = get_jobs(api_clients_config, unit_uuid, job_microservice=microservice_name)
-    assert len(
-        jobs
-    ), f"No jobs found with microservice {microservice_name} for unit {unit_uuid}"
+    assert len(jobs), (
+        f"No jobs found with microservice {microservice_name} for unit {unit_uuid}"
+    )
 
 
 def assert_source_md_in_bagit_mets(mets_root, mets_nsmap):
@@ -961,9 +961,9 @@ def assert_source_md_in_bagit_mets(mets_root, mets_nsmap):
     source_md_elem = mets_root.xpath("mets:amdSec/mets:sourceMD", namespaces=mets_nsmap)
     # Initial assertions about the sourceMD element.
     assert source_md_elem, "sourceMD cannot be found, sourceMD is None"
-    assert (
-        len(source_md_elem) is EXPECTED_SOURCE_MD_ELEMS
-    ), f"sourceMD count is incorrect: {len(source_md_elem)}"
+    assert len(source_md_elem) is EXPECTED_SOURCE_MD_ELEMS, (
+        f"sourceMD count is incorrect: {len(source_md_elem)}"
+    )
     md_wrap_elems = source_md_elem[0].xpath("mets:mdWrap", namespaces=mets_nsmap)
     # Assert the metadata type is associated with BagIt.
     assert md_wrap_elems
@@ -1206,7 +1206,9 @@ def find_aip_by_transfer_metadata(
     summary_text = summary_el.text.strip()
     result = summary_text == expected_summary_message
     # This assertion allows tenacity to retry the call on error
-    assert result, f"Search phrase: {repr(search_phrase)}, expected summary message: {repr(expected_summary_message)}, got: {repr(summary_text)}"
+    assert result, (
+        f"Search phrase: {repr(search_phrase)}, expected summary message: {repr(expected_summary_message)}, got: {repr(summary_text)}"
+    )
     return result
 
 

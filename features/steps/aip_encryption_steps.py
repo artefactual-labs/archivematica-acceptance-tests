@@ -58,8 +58,7 @@ def step_impl(context):
 
 
 @given(
-    "there is a standard GPG-encrypted Transfer Backlog location in the"
-    " storage service"
+    "there is a standard GPG-encrypted Transfer Backlog location in the storage service"
 )
 def step_impl(context):
     context.execute_steps(
@@ -240,9 +239,9 @@ def step_impl(context):
     """
     the_aip_uuid = utils.get_uuid_val(context, "sip")
     search_results = context.scenario.aip_search_results
-    assert (
-        len(search_results) == 2
-    ), f"We expected 2 search results but there are {len(search_results)} in {str(search_results)}"
+    assert len(search_results) == 2, (
+        f"We expected 2 search results but there are {len(search_results)} in {str(search_results)}"
+    )
     the_aips = [dct for dct in search_results if dct["uuid"] == the_aip_uuid]
     not_the_aips = [dct for dct in search_results if dct["uuid"] != the_aip_uuid]
     assert len(the_aips) == 1
@@ -253,14 +252,14 @@ def step_impl(context):
     assert replica["replica_of"] == the_aip["uuid"]
     expected_replica_actions = {"Pointer File", "Download", "Request Deletion"}
     replica_actions = {x.strip() for x in replica["actions"].split("|")}
-    assert (
-        replica_actions == expected_replica_actions
-    ), f"We expected the replica actions to be {expected_replica_actions} but in fact they were {replica_actions}"
+    assert replica_actions == expected_replica_actions, (
+        f"We expected the replica actions to be {expected_replica_actions} but in fact they were {replica_actions}"
+    )
     expected_aip_actions = {"Pointer File", "Download", "Request Deletion", "Re-ingest"}
     aip_actions = {x.strip() for x in the_aip["actions"].split("|")}
-    assert (
-        aip_actions == expected_aip_actions
-    ), f"We expected the AIP actions to be {expected_aip_actions} but in fact they were {aip_actions}"
+    assert aip_actions == expected_aip_actions, (
+        f"We expected the AIP actions to be {expected_aip_actions} but in fact they were {aip_actions}"
+    )
     context.scenario.master_aip_uuid = the_aip_uuid
     context.scenario.replica_aip_uuid = replica_uuid
 
@@ -447,8 +446,7 @@ def step_impl(context, key_name):
 
 
 @then(
-    "the user fails to import the GPG key {key_name} because it requires a"
-    " passphrase"
+    "the user fails to import the GPG key {key_name} because it requires a passphrase"
 )
 def step_impl(context, key_name):
     assert context.scenario.import_gpg_key_result == (
@@ -536,9 +534,9 @@ def step_impl(context):
 
 @then("the user is prevented from deleting the key because {reason}")
 def step_impl(context, reason):
-    assert (
-        context.scenario.delete_gpg_key_success is False
-    ), f"GPG deletion success is something other than False: {context.scenario.delete_gpg_key_success}"
+    assert context.scenario.delete_gpg_key_success is False, (
+        f"GPG deletion success is something other than False: {context.scenario.delete_gpg_key_success}"
+    )
     if reason == "it is attached to a space":
         assert context.scenario.delete_gpg_key_msg.startswith("GPG key")
         assert context.scenario.delete_gpg_key_msg.endswith(
@@ -553,9 +551,9 @@ def step_impl(context, reason):
 
 @then("the user succeeds in deleting the GPG key")
 def step_impl(context):
-    assert (
-        context.scenario.delete_gpg_key_success is True
-    ), context.scenario.delete_gpg_key_msg
+    assert context.scenario.delete_gpg_key_success is True, (
+        context.scenario.delete_gpg_key_msg
+    )
     assert context.scenario.delete_gpg_key_msg.endswith("successfully deleted.")
 
 

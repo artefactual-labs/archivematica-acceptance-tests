@@ -189,8 +189,10 @@ MICRO_SERVICES2GROUPS = {
     "Reminder: add metadata if desired": ("Add final metadata",),
     "Remove cache files": ("Remove cache files",),
     "Remove empty manual normalization directories": ("Process metadata directory",),
-    "Remove files without linking information (failed normalization"
-    " artifacts etc.)": ("Process submission documentation", "Normalize"),
+    "Remove files without linking information (failed normalization artifacts etc.)": (
+        "Process submission documentation",
+        "Normalize",
+    ),
     "Remove hidden files and directories": ("Verify transfer compliance",),
     "Remove the processing directory": ("Store AIP",),
     "Remove unneeded files": ("Verify transfer compliance",),

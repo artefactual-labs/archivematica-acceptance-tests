@@ -146,7 +146,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         ``policy_command``.
         """
         logger.info(
-            "Creating an FPR policy check command with description" ' "%s".',
+            'Creating an FPR policy check command with description "%s".',
             description,
         )
         self.navigate(self.get_create_command_url())
@@ -157,9 +157,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
                 option.click()
                 break
         self.driver.find_element(By.ID, "id_description").send_keys(description)
-        js_script = (
-            'document.getElementById("id_command").value =' f" `{policy_command}`;"
-        )
+        js_script = f'document.getElementById("id_command").value = `{policy_command}`;'
         self.driver.execute_script(js_script)
         self.driver.find_element(By.ID, "id_script_type").send_keys("Python")
         self.driver.find_element(By.ID, "id_command_usage").send_keys("Validation")

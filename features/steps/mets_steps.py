@@ -84,9 +84,9 @@ def step_impl(context, quant):
     mets = utils.get_mets_from_scenario(context, api=True)
     mets_dmd_sec_els = mets.findall(".//mets:dmdSec", context.am_user.mets.mets_nsmap)
     try:
-        assert len(mets_dmd_sec_els) == int(
-            quant
-        ), f"Expected {int(quant)} dmdSec element(s), got {len(mets_dmd_sec_els)}"
+        assert len(mets_dmd_sec_els) == int(quant), (
+            f"Expected {int(quant)} dmdSec element(s), got {len(mets_dmd_sec_els)}"
+        )
     except ValueError:
         raise utils.ArchivematicaStepsError(
             f"Unable to recognize the quantifier {quant} when checking for dmdSec"
