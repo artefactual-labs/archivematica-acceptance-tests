@@ -216,7 +216,7 @@ def step_impl(context):
     assert "Send to backlog" not in context.scenario.decision_options
 
 
-@then('the "Index AIP" micro-service output indicates that no indexing has' " occurred")
+@then('the "Index AIP" micro-service output indicates that no indexing has occurred')
 def step_impl(context):
     unit_type = utils.get_normalized_unit_type("ingest")
     uuid_val = utils.get_uuid_val(context, unit_type)
@@ -285,9 +285,9 @@ def step_impl(context, tab_name):
     displayed_tabs = [t.lower() for t in context.am_user.browser.get_displayed_tabs()]
     tab_name = tab_name.replace(" tab", "").strip().lower()
     assert displayed_tabs
-    assert (
-        "transfer" in displayed_tabs
-    ), f'"transfer" is not in {str(displayed_tabs)}'  # sanity check
+    assert "transfer" in displayed_tabs, (
+        f'"transfer" is not in {str(displayed_tabs)}'
+    )  # sanity check
     assert tab_name not in displayed_tabs
 
 

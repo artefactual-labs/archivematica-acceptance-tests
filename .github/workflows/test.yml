@@ -10,7 +10,7 @@ on:
 jobs:
   test-virtualenv:
     name: "Test Python ${{ matrix.python-version }} (virtualenv)"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-24.04"
     strategy:
       fail-fast: false
       matrix:
@@ -19,6 +19,7 @@ jobs:
           "3.10",
           "3.11",
           "3.12",
+          "3.13",
         ]
     steps:
       - name: "Check out repository"
@@ -40,7 +41,7 @@ jobs:
           ./simplebrowsertest.py
   test-docker:
     name: "Test Python ${{ matrix.python-version }} (docker)"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-24.04"
     strategy:
       fail-fast: false
       matrix:
@@ -49,6 +50,7 @@ jobs:
           "3.10",
           "3.11",
           "3.12",
+          "3.13",
         ]
     steps:
       - name: "Check out repository"
@@ -75,14 +77,14 @@ jobs:
             /home/artefactual/acceptance-tests/simplebrowsertest.py
   lint:
     name: "Lint"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-24.04"
     steps:
       - name: "Check out repository"
         uses: "actions/checkout@v4"
       - name: "Set up Python"
         uses: "actions/setup-python@v5"
         with:
-          python-version: "3.9"
+          python-version: "3.x"
           cache: "pip"
           cache-dependency-path: |
             requirements.txt

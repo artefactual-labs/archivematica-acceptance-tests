@@ -793,15 +793,15 @@ def step_impl(context):
 )
 def step_impl(context):
     expected_dmdsec_status = ("original-superseded", "update")
-    assert context.current_transfer[
-        "metadata_csv_files"
-    ], "Could not extract the rows of the original metadata.csv in {}".format(
-        context.current_transfer["extracted_aip_dir"]
+    assert context.current_transfer["metadata_csv_files"], (
+        "Could not extract the rows of the original metadata.csv in {}".format(
+            context.current_transfer["extracted_aip_dir"]
+        )
     )
-    assert context.current_transfer[
-        "reingest_metadata_csv_files"
-    ], "Could not extract the rows of the reingested metadata.csv in {}".format(
-        context.current_transfer["reingest_extracted_aip_dir"]
+    assert context.current_transfer["reingest_metadata_csv_files"], (
+        "Could not extract the rows of the reingested metadata.csv in {}".format(
+            context.current_transfer["reingest_extracted_aip_dir"]
+        )
     )
     reingest_mets = metsrw.METSDocument.fromfile(
         context.current_transfer["reingest_aip_mets_location"]
@@ -930,15 +930,15 @@ def step_impl(context, dmdsec_status):
 def step_impl(context):
     expected_dmdsec_status = ("original-superseded", "update")
     expected_mdwrap_mdtype = ("OTHER",)
-    assert context.current_transfer[
-        "source_metadata_files"
-    ], "Could not extract the rows of the original source-metadata.csv in {}".format(
-        context.current_transfer["extracted_aip_dir"]
+    assert context.current_transfer["source_metadata_files"], (
+        "Could not extract the rows of the original source-metadata.csv in {}".format(
+            context.current_transfer["extracted_aip_dir"]
+        )
     )
-    assert context.current_transfer[
-        "reingest_source_metadata_files"
-    ], "Could not extract the rows of the reingested source-metadata.csv in {}".format(
-        context.current_transfer["reingest_extracted_aip_dir"]
+    assert context.current_transfer["reingest_source_metadata_files"], (
+        "Could not extract the rows of the reingested source-metadata.csv in {}".format(
+            context.current_transfer["reingest_extracted_aip_dir"]
+        )
     )
     reingest_mets = metsrw.METSDocument.fromfile(
         context.current_transfer["reingest_aip_mets_location"]
@@ -1023,15 +1023,15 @@ def step_impl(context):
 def step_impl(context, dmdsec_status):
     expected_dmdsec_status = (dmdsec_status,)
     expected_mdwrap_mdtype = ("OTHER",)
-    assert context.current_transfer[
-        "source_metadata_files"
-    ], "Could not extract the rows of the original source-metadata.csv in {}".format(
-        context.current_transfer["extracted_aip_dir"]
+    assert context.current_transfer["source_metadata_files"], (
+        "Could not extract the rows of the original source-metadata.csv in {}".format(
+            context.current_transfer["extracted_aip_dir"]
+        )
     )
-    assert context.current_transfer[
-        "reingest_source_metadata_files"
-    ], "Could not extract the rows of the reingested source-metadata.csv in {}".format(
-        context.current_transfer["reingest_extracted_aip_dir"]
+    assert context.current_transfer["reingest_source_metadata_files"], (
+        "Could not extract the rows of the reingested source-metadata.csv in {}".format(
+            context.current_transfer["reingest_extracted_aip_dir"]
+        )
     )
     reingest_mets = metsrw.METSDocument.fromfile(
         context.current_transfer["reingest_aip_mets_location"]
@@ -1105,18 +1105,18 @@ def step_impl(context, dmdsec_status):
 def step_impl(context, dmdsec_status):
     expected_dmdsec_status = (dmdsec_status,)
     expected_mdwrap_mdtype = ("OTHER",)
-    assert context.current_transfer[
-        "source_metadata_files"
-    ], "Could not extract the rows of the original source-metadata.csv in {}".format(
-        context.current_transfer["extracted_aip_dir"]
+    assert context.current_transfer["source_metadata_files"], (
+        "Could not extract the rows of the original source-metadata.csv in {}".format(
+            context.current_transfer["extracted_aip_dir"]
+        )
     )
     original_source_metadata_by_type_id = {
         row["type_id"]: row for row in context.current_transfer["source_metadata_files"]
     }
-    assert context.current_transfer[
-        "reingest_source_metadata_files"
-    ], "Could not extract the rows of the reingested source-metadata.csv in {}".format(
-        context.current_transfer["reingest_extracted_aip_dir"]
+    assert context.current_transfer["reingest_source_metadata_files"], (
+        "Could not extract the rows of the reingested source-metadata.csv in {}".format(
+            context.current_transfer["reingest_extracted_aip_dir"]
+        )
     )
     reingest_mets = metsrw.METSDocument.fromfile(
         context.current_transfer["reingest_aip_mets_location"]

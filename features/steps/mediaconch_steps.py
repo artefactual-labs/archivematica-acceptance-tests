@@ -284,7 +284,7 @@ def step_impl(context, contains, policy_file):
     if contains in ("contains", "does contain"):
         assert os.path.isfile(original_policy_path)
         assert os.path.isfile(aip_policy_path), (
-            "There is no MediaConch policy file in the AIP at" f" {aip_policy_path}!"
+            f"There is no MediaConch policy file in the AIP at {aip_policy_path}!"
         )
         with open(original_policy_path) as filei:
             original_policy = filei.read().strip()
@@ -325,7 +325,7 @@ def step_impl(context, contains, policy_file):
     if contains in ("contains", "does contain"):
         assert os.path.isfile(original_policy_path)
         assert os.path.isfile(aip_policy_path), (
-            "There is no MediaConch policy file in the AIP at" f" {aip_policy_path}!"
+            f"There is no MediaConch policy file in the AIP at {aip_policy_path}!"
         )
         with open(original_policy_path) as filei:
             original_policy = filei.read().strip()

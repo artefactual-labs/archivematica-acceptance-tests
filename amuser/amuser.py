@@ -85,9 +85,9 @@ class ArchivematicaUser(base.Base):
         p = subprocess.Popen(cmd, cwd=cwd, stdout=devnull, stderr=subprocess.STDOUT)
         p.wait()
         assert p.returncode == 0
-        assert os.path.isdir(
-            aip_dir_path
-        ), f"Failed to create dir {aip_dir_path} from compressed AIP at {aip_path}"
+        assert os.path.isdir(aip_dir_path), (
+            f"Failed to create dir {aip_dir_path} from compressed AIP at {aip_path}"
+        )
         return aip_dir_path
 
 

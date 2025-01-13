@@ -59,9 +59,9 @@ class ArchivematicaMETSAbility(base.Base):
             if entity["name"] == "objects":
                 continue
             # All entities have an id, i.e., DMDID or ADMID
-            assert entity.get(
-                "id"
-            ), "Unable to find a DMDID/ADMID for entity {}".format(entity["path"])
+            assert entity.get("id"), (
+                "Unable to find a DMDID/ADMID for entity {}".format(entity["path"])
+            )
             purls = []
             # All entities should have the following types of identifier
             for idfr_type in ("UUID", "hdl", "URI"):
@@ -70,21 +70,21 @@ class ArchivematicaMETSAbility(base.Base):
                 except IndexError:
                     idfr = None
                 assert idfr, (
-                    "Unable to find an identifier of type {} for entity" " {}".format(
+                    "Unable to find an identifier of type {} for entity {}".format(
                         idfr_type, entity["path"]
                     )
                 )
                 if idfr_type == "UUID":
                     assert utils.is_uuid(idfr), f"Identifier {idfr} is not a UUID"
                 elif idfr_type == "hdl":
-                    assert utils.is_hdl(
-                        idfr, entity["type"], accession_no
-                    ), f"Identifier {idfr} is not a hdl"
+                    assert utils.is_hdl(idfr, entity["type"], accession_no), (
+                        f"Identifier {idfr} is not a hdl"
+                    )
                 else:
                     purls.append(idfr)
-            assert utils.all_urls_resolve(
-                purls
-            ), "At least one PURL does not resolve in\n  {}".format("\n  ".join(purls))
+            assert utils.all_urls_resolve(purls), (
+                "At least one PURL does not resolve in\n  {}".format("\n  ".join(purls))
+            )
 
     @staticmethod
     def assert_empty_dir_documented_identified(mets_doc, empty_dir_rel_path):
@@ -146,10 +146,7 @@ def _add_entity_identifiers(entity, doc, ns):
     elif e_type == "file":
         amd_sec_el = doc.xpath(f"mets:amdSec[@ID='{e_id}']", namespaces=ns)[0]
         obj_idfr_els = amd_sec_el.findall(
-            ".//mets:mdWrap/"
-            "mets:xmlData/"
-            "premis:object/"
-            "premis:objectIdentifier",
+            ".//mets:mdWrap/mets:xmlData/premis:object/premis:objectIdentifier",
             ns,
         )
         for obj_idfr_el in obj_idfr_els:
