@@ -43,7 +43,7 @@ RUN set -ex \
 	&& SELENIUM_MANAGER_DOWNLOAD_URL=$(curl -sL -o /dev/null -w '%{url_effective}' https://github.com/SeleniumHQ/selenium_manager_artifacts/releases/latest | sed -e 's|/tag/\(.*\)|/download/\1/selenium-manager-linux|g') \
 	&& curl -o $SELENIUM_BIN/selenium-manager -L $SELENIUM_MANAGER_DOWNLOAD_URL \
 	&& chmod +x $SELENIUM_BIN/selenium-manager \
-	&& CHROME_OUTPUT=$($SELENIUM_BIN/selenium-manager --cache-path $SELENIUM_CACHE --browser chrome --output JSON) \
+	&& CHROME_OUTPUT=$($SELENIUM_BIN/selenium-manager --cache-path $SELENIUM_CACHE --browser chrome --browser-version 131 --output JSON) \
 	&& FIREFOX_OUTPUT=$($SELENIUM_BIN/selenium-manager --cache-path $SELENIUM_CACHE --browser firefox --output JSON) \
 	&& ln -s $(echo $CHROME_OUTPUT | jq -r '.result.browser_path') $SELENIUM_BIN/google-chrome \
 	&& ln -s $(echo $CHROME_OUTPUT | jq -r '.result.driver_path') $SELENIUM_BIN/chromedriver \
