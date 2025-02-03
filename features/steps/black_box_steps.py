@@ -6,6 +6,7 @@ contents of their AIPs without relying on user interface interactions.
 """
 
 import os
+from typing import Optional
 
 import metsrw
 from behave import given
@@ -1527,3 +1528,42 @@ def step(context):
         raise AssertionError(error)
     else:
         assert uses_order_indexes == sorted(uses_order_indexes), error
+
+
+@then('{task_count} "{job_name}" tasks were executed')
+def step_impl(context, task_count: Optional[int] = None, job_name: str = "") -> None:
+    unit_uuid = context.current_transfer["transfer_uuid"]
+    jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
+    assert len(jobs), f"No jobs found for unit {unit_uuid}"
+    if task_count is None:
+        assert int(task_count) == 0
+    else:
+        assert len(jobs[0]["tasks"]) == int(task_count)
+
+
+@then('{task_count} "{job_name}" tasks failed')
+def step_impl(context, job_name, task_count):
+    unit_uuid = context.current_transfer["transfer_uuid"]
+    jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
+    assert len(jobs), f"No jobs found for unit {unit_uuid}"
+
+    fail_task = 0
+    for job in jobs:
+        for task in job["tasks"]:
+            if task["exit_code"] == 1:
+                fail_task += 1
+        assert fail_task == int(task_count)
+
+
+@then('{task_count} "{job_name}" were successful')
+def step_impl(context, job_name, task_count):
+    unit_uuid = context.current_transfer["transfer_uuid"]
+    jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
+    assert len(jobs), f"No jobs found for unit {unit_uuid}"
+
+    success_task = 0
+    for job in jobs:
+        for task in job["tasks"]:
+            if task["exit_code"] == 0:
+                success_task += 1
+        assert success_task == int(task_count)
