@@ -6,6 +6,6 @@ Feature: Alma wants to ensure that JHOVE validation in Archivematica works corre
     When the transfer compliance is verified
     Then the "Identify file format" microservice completes successfully
     And the "Validate formats" job fails
-    And 16 "Validate formats" tasks were executed
+    And 17 "Validate formats" tasks were executed
     And 8 "Validate formats" tasks failed
-    And 8 "Validate formats" were successful
+    And 9 "Validate formats" tasks succeeded
