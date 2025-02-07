@@ -18,6 +18,7 @@ RUN set -ex \
 		ca-certificates \
 		curl \
 		git \
+		gnupg \
 		jq \
 		locales \
 	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
@@ -43,10 +44,7 @@ RUN set -ex \
 	&& SELENIUM_MANAGER_DOWNLOAD_URL=$(curl -sL -o /dev/null -w '%{url_effective}' https://github.com/SeleniumHQ/selenium_manager_artifacts/releases/latest | sed -e 's|/tag/\(.*\)|/download/\1/selenium-manager-linux|g') \
 	&& curl -o $SELENIUM_BIN/selenium-manager -L $SELENIUM_MANAGER_DOWNLOAD_URL \
 	&& chmod +x $SELENIUM_BIN/selenium-manager \
-	&& CHROME_OUTPUT=$($SELENIUM_BIN/selenium-manager --cache-path $SELENIUM_CACHE --browser chrome --output JSON) \
 	&& FIREFOX_OUTPUT=$($SELENIUM_BIN/selenium-manager --cache-path $SELENIUM_CACHE --browser firefox --output JSON) \
-	&& ln -s $(echo $CHROME_OUTPUT | jq -r '.result.browser_path') $SELENIUM_BIN/google-chrome \
-	&& ln -s $(echo $CHROME_OUTPUT | jq -r '.result.driver_path') $SELENIUM_BIN/chromedriver \
 	&& ln -s $(echo $FIREFOX_OUTPUT | jq -r '.result.browser_path') $SELENIUM_BIN/firefox \
 	&& ln -s $(echo $FIREFOX_OUTPUT | jq -r '.result.driver_path') $SELENIUM_BIN/geckodriver
 
@@ -94,14 +92,17 @@ ARG USER_ID=1000
 ARG GROUP_ID=1000
 
 ENV SE_MANAGER_PATH=${SELENIUM_DIR}/bin/selenium-manager
-ENV SE_CHROME_PATH=${SELENIUM_DIR}/bin/google-chrome
+ENV SE_CHROME_PATH=/usr/bin/google-chrome
 ENV SE_FIREFOX_PATH=${SELENIUM_DIR}/bin/firefox
 
 RUN set -ex \
+	&& curl -fSsL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+	&& echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
 	&& apt-get -qqy update \
 	&& apt-get -qqy --no-install-recommends install \
 		bzip2 \
 		gnupg \
+		google-chrome-stable \
 		libasound2 \
 		libdbus-glib-1-2 \
 		libdrm2 \
@@ -123,6 +124,13 @@ RUN set -ex \
 COPY --chown=${USER_ID}:${GROUP_ID} --from=browsers-builder --link /selenium /selenium
 COPY --chown=${USER_ID}:${GROUP_ID} --from=pyenv-builder --link /pyenv /pyenv
 COPY --chown=${USER_ID}:${GROUP_ID} --link . /home/artefactual/acceptance-tests
+
+# Download the ChromeDriver version that matches the recently installed version
+# of Google Chrome.
+RUN set -ex \
+	&& GOOGLE_CHROME_VERSION=$(google-chrome --version | cut --delimiter ' ' --fields 3) \
+	&& CHROME_OUTPUT=$($SELENIUM_DIR/bin/selenium-manager --cache-path $SELENIUM_DIR/cache --browser chrome --driver-version $GOOGLE_CHROME_VERSION --output JSON --avoid-browser-download) \
+	&& ln -s $(echo $CHROME_OUTPUT | jq -r '.result.driver_path') $SELENIUM_DIR/bin/chromedriver
 
 RUN set -ex \
 	&& groupadd --gid ${GROUP_ID} artefactual \
