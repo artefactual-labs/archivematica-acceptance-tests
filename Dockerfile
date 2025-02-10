@@ -103,7 +103,7 @@ RUN set -ex \
 		bzip2 \
 		gnupg \
 		google-chrome-stable \
-		libasound2 \
+		libasound2t64 \
 		libdbus-glib-1-2 \
 		libdrm2 \
 		libgbm1 \
