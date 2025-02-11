@@ -1529,17 +1529,25 @@ def step(context):
         assert uses_order_indexes == sorted(uses_order_indexes), error
 
 
-@then('{task_count:d} "{job_name}" tasks were executed')
-def step_impl(context, task_count, job_name):
-    unit_uuid = context.current_transfer["transfer_uuid"]
+def get_uuid_value(context, unit_type):
+    return (
+        context.current_transfer["transfer_uuid"]
+        if unit_type == "transfer"
+        else context.current_transfer["sip_uuid"]
+    )
+
+
+@then('{task_count:d} "{job_name}" {unit_type} tasks were executed')
+def step_impl(context, task_count, job_name, unit_type):
+    unit_uuid = get_uuid_value(context, unit_type)
     jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
     assert len(jobs), f"No jobs found for unit {unit_uuid}"
     assert len(jobs[0]["tasks"]) == task_count
 
 
-@then('{task_count:d} "{job_name}" tasks failed')
-def step_impl(context, job_name, task_count):
-    unit_uuid = context.current_transfer["transfer_uuid"]
+@then('{task_count:d} "{job_name}" {unit_type} tasks failed')
+def step_impl(context, job_name, task_count, unit_type):
+    unit_uuid = get_uuid_value(context, unit_type)
     jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
     assert len(jobs), f"No jobs found for unit {unit_uuid}"
 
@@ -1551,9 +1559,9 @@ def step_impl(context, job_name, task_count):
     assert fail_task == task_count
 
 
-@then('{task_count:d} "{job_name}" tasks succeeded')
-def step_impl(context, job_name, task_count):
-    unit_uuid = context.current_transfer["transfer_uuid"]
+@then('{task_count:d} "{job_name}" {unit_type} tasks succeeded')
+def step_impl(context, job_name, task_count, unit_type):
+    unit_uuid = get_uuid_value(context, unit_type)
     jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
     assert len(jobs), f"No jobs found for unit {unit_uuid}"
 
@@ -1563,3 +1571,34 @@ def step_impl(context, job_name, task_count):
             if task["exit_code"] == 0:
                 success_task += 1
     assert success_task == task_count
+
+
+@then("{file_count:d} {file_extension} file is {status}")
+def step_impl(context, file_count, file_extension, status):
+    unit_uuid = context.current_transfer["transfer_uuid"] + "/?detailed=1"
+    jobs = utils.get_jobs(
+        context.api_clients_config, unit_uuid, job_microservice="Validation"
+    )
+    assert len(jobs), f"No jobs found for unit {unit_uuid}"
+
+    success_file = 0
+    fail_file = 0
+
+    for job in jobs:
+        for task in job["tasks"]:
+            if status == "failed":
+                if (file_extension).lower() == task["file_name"].split(".")[
+                    -1
+                ] and task["exit_code"] == 1:
+                    fail_file += 1
+                    assert file_count == fail_file
+                else:
+                    continue
+            if status == "succeeded":
+                if (file_extension).lower() == task["file_name"].split(".")[
+                    -1
+                ] and task["exit_code"] == 0:
+                    success_file += 1
+                    assert file_count == success_file
+                else:
+                    continue
