@@ -54,7 +54,7 @@ idna==3.10
     #   trio
 importlib-metadata==8.6.1
     # via build
-lxml==5.3.0
+lxml==5.3.1
     # via
     #   -r requirements.txt
     #   metsrw
@@ -106,7 +106,7 @@ requests==2.32.3
     # via
     #   -r requirements.txt
     #   amclient
-ruff==0.9.5
+ruff==0.9.6
     # via -r requirements-dev.in
 selenium==4.28.1
     # via -r requirements.txt
@@ -153,7 +153,7 @@ urllib3[socks]==2.3.0
     #   amclient
     #   requests
     #   selenium
-virtualenv==20.29.1
+virtualenv==20.29.2
     # via tox
 websocket-client==1.8.0
     # via
@@ -169,7 +169,7 @@ zipp==3.21.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==25.0
+pip==25.0.1
     # via pip-tools
 setuptools==75.8.0
     # via pip-tools
