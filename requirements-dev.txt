@@ -4,29 +4,29 @@
 #
 #    pip-compile --allow-unsafe --output-file=requirements-dev.txt requirements-dev.in
 #
-amclient==1.4.0
-    # via -r requirements.txt
+amclient @ git+https://github.com/artefactual-labs/amclient.git@b34ae76a584b5014d24adbc21067e3d0218a2a93
+    # via -r /src/requirements.txt
 attrs==25.1.0
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   outcome
     #   trio
 behave==1.2.6
-    # via -r requirements.txt
+    # via -r /src/requirements.txt
 build==1.2.2.post1
     # via pip-tools
 cachetools==5.5.1
     # via tox
 certifi==2025.1.31
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   requests
     #   selenium
 chardet==5.2.0
     # via tox
 charset-normalizer==3.4.1
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   requests
 click==8.1.8
     # via pip-tools
@@ -36,7 +36,7 @@ distlib==0.3.9
     # via virtualenv
 exceptiongroup==1.2.2
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   trio
     #   trio-websocket
 filelock==3.17.0
@@ -45,25 +45,26 @@ filelock==3.17.0
     #   virtualenv
 h11==0.14.0
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   wsproto
 idna==3.10
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   requests
     #   trio
 importlib-metadata==8.6.1
     # via build
-lxml==5.3.0
+lxml==5.3.1
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   metsrw
 metsrw==0.6.1
-    # via -r requirements.txt
+    # via -r /src/requirements.txt
 outcome==1.3.0.post0
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   trio
+    #   trio-websocket
 packaging==24.2
     # via
     #   build
@@ -71,15 +72,15 @@ packaging==24.2
     #   tox
 parse==1.20.2
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   behave
     #   parse-type
 parse-type==0.6.4
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   behave
 pexpect==4.9.0
-    # via -r requirements.txt
+    # via -r /src/requirements.txt
 pip-tools==7.4.1
     # via -r requirements-dev.in
 platformdirs==4.3.6
@@ -90,7 +91,7 @@ pluggy==1.5.0
     # via tox
 ptyprocess==0.7.0
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   pexpect
 pyproject-api==1.9.0
     # via tox
@@ -100,31 +101,31 @@ pyproject-hooks==1.2.0
     #   pip-tools
 pysocks==1.7.1
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   urllib3
 requests==2.32.3
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   amclient
-ruff==0.9.5
+ruff==0.9.6
     # via -r requirements-dev.in
-selenium==4.28.1
-    # via -r requirements.txt
+selenium==4.29.0
+    # via -r /src/requirements.txt
 six==1.17.0
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   behave
     #   parse-type
 sniffio==1.3.1
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   trio
 sortedcontainers==2.4.0
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   trio
 tenacity==9.0.0
-    # via -r requirements.txt
+    # via -r /src/requirements.txt
 tomli==2.2.1
     # via
     #   build
@@ -133,43 +134,43 @@ tomli==2.2.1
     #   tox
 tox==4.24.1
     # via -r requirements-dev.in
-trio==0.28.0
+trio==0.29.0
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   selenium
     #   trio-websocket
-trio-websocket==0.11.1
+trio-websocket==0.12.1
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   selenium
 typing-extensions==4.12.2
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   selenium
     #   tox
 urllib3[socks]==2.3.0
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   amclient
     #   requests
     #   selenium
-virtualenv==20.29.1
+virtualenv==20.29.2
     # via tox
 websocket-client==1.8.0
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   selenium
 wheel==0.45.1
     # via pip-tools
 wsproto==1.2.0
     # via
-    #   -r requirements.txt
+    #   -r /src/requirements.txt
     #   trio-websocket
 zipp==3.21.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==25.0
+pip==25.0.1
     # via pip-tools
 setuptools==75.8.0
     # via pip-tools
