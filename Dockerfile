@@ -1,6 +1,6 @@
 ARG TARGET=archivematica-acceptance-tests
 
-ARG UBUNTU_VERSION=22.04
+ARG UBUNTU_VERSION=24.04
 
 FROM ubuntu:${UBUNTU_VERSION} AS base
 
@@ -11,6 +11,13 @@ ARG PYENV_DIR=/pyenv
 ARG SELENIUM_DIR=/selenium
 
 ENV DEBIAN_FRONTEND=noninteractive
+
+# Ubuntu 24.04 and later Docker images include a default user with UID (1000)
+# and GID (1000). Remove this user to prevent conflicts with the USER_ID and
+# GROUP_ID build arguments.
+RUN set -ex \
+	&& id -u ubuntu >/dev/null 2>&1 \
+	&& userdel --remove ubuntu || true
 
 RUN set -ex \
 	&& apt-get -qqy update \
@@ -103,7 +110,7 @@ RUN set -ex \
 		bzip2 \
 		gnupg \
 		google-chrome-stable \
-		libasound2 \
+		libasound2t64 \
 		libdbus-glib-1-2 \
 		libdrm2 \
 		libgbm1 \
