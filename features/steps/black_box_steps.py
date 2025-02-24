@@ -6,6 +6,7 @@ contents of their AIPs without relying on user interface interactions.
 """
 
 import os
+import pathlib
 
 import metsrw
 from behave import given
@@ -1529,7 +1530,7 @@ def step(context):
         assert uses_order_indexes == sorted(uses_order_indexes), error
 
 
-def get_uuid_value(context, unit_type):
+def get_unit_uuid(context, unit_type):
     return (
         context.current_transfer["transfer_uuid"]
         if unit_type == "transfer"
@@ -1539,15 +1540,20 @@ def get_uuid_value(context, unit_type):
 
 @then('{task_count:d} "{job_name}" {unit_type} tasks were executed')
 def step_impl(context, task_count, job_name, unit_type):
-    unit_uuid = get_uuid_value(context, unit_type)
+    unit_uuid = get_unit_uuid(context, unit_type)
     jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
     assert len(jobs), f"No jobs found for unit {unit_uuid}"
-    assert len(jobs[0]["tasks"]) == task_count
+    task_size = 0
+    for job in jobs:
+        for task in job["tasks"]:
+            if task:
+                task_size += 1
+    assert task_size == task_count, f"No tasks found for unit {unit_uuid}"
 
 
 @then('{task_count:d} "{job_name}" {unit_type} tasks failed')
-def step_impl(context, job_name, task_count, unit_type):
-    unit_uuid = get_uuid_value(context, unit_type)
+def step_impl(context, task_count, job_name, unit_type):
+    unit_uuid = get_unit_uuid(context, unit_type)
     jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
     assert len(jobs), f"No jobs found for unit {unit_uuid}"
 
@@ -1556,12 +1562,12 @@ def step_impl(context, job_name, task_count, unit_type):
         for task in job["tasks"]:
             if task["exit_code"] == 1:
                 fail_task += 1
-    assert fail_task == task_count
+    assert fail_task == task_count, f"No failed task found for unit {unit_uuid}"
 
 
 @then('{task_count:d} "{job_name}" {unit_type} tasks succeeded')
-def step_impl(context, job_name, task_count, unit_type):
-    unit_uuid = get_uuid_value(context, unit_type)
+def step_impl(context, task_count, job_name, unit_type):
+    unit_uuid = get_unit_uuid(context, unit_type)
     jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
     assert len(jobs), f"No jobs found for unit {unit_uuid}"
 
@@ -1570,35 +1576,43 @@ def step_impl(context, job_name, task_count, unit_type):
         for task in job["tasks"]:
             if task["exit_code"] == 0:
                 success_task += 1
-    assert success_task == task_count
+    assert success_task == task_count, f"No successful task found for unit {unit_uuid}"
+
+
+def verify_task_exit_code(file_extension, task, expected_exit_codes):
+    if (
+        "." + file_extension.lower() == (pathlib.Path(task["file_name"]).suffix).lower()
+        and task["exit_code"] in expected_exit_codes
+    ):
+        return True
 
 
 @then("{file_count:d} {file_extension} file is {status}")
 def step_impl(context, file_count, file_extension, status):
-    unit_uuid = context.current_transfer["transfer_uuid"] + "/?detailed=1"
+    unit_uuid = context.current_transfer["transfer_uuid"]
     jobs = utils.get_jobs(
-        context.api_clients_config, unit_uuid, job_microservice="Validation"
+        context.api_clients_config,
+        unit_uuid,
+        job_microservice="Validation",
+        detailed_task=True,
     )
     assert len(jobs), f"No jobs found for unit {unit_uuid}"
 
-    success_file = 0
-    fail_file = 0
+    status_to_task_exit_codes = {
+        "failed": (1, 179),
+        "succeeded": (0,),
+    }
+    assert status in status_to_task_exit_codes, (
+        f"No {status} found for {file_extension} file"
+    )
 
+    expected_exit_codes = status_to_task_exit_codes[status]
+
+    total = 0
     for job in jobs:
         for task in job["tasks"]:
-            if status == "failed":
-                if (file_extension).lower() == task["file_name"].split(".")[
-                    -1
-                ] and task["exit_code"] == 1:
-                    fail_file += 1
-                    assert file_count == fail_file
-                else:
-                    continue
-            if status == "succeeded":
-                if (file_extension).lower() == task["file_name"].split(".")[
-                    -1
-                ] and task["exit_code"] == 0:
-                    success_file += 1
-                    assert file_count == success_file
-                else:
-                    continue
+            if verify_task_exit_code(file_extension, task, expected_exit_codes):
+                total += 1
+        assert file_count == total, (
+            f"No {file_extension} file is {status} for unit {unit_uuid}"
+        )
