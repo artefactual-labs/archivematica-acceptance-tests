@@ -10,22 +10,22 @@ Feature: Alma wants to ensure that JHOVE validation in Archivematica works corre
     And 8 "Validate formats" transfer tasks failed
     And 9 "Validate formats" transfer tasks succeeded
     And the "Validation" microservice is executed
-    And 1 AIFF file is failed
-    And 1 AIFF file is succeeded
-    And 1 GIF file is failed
-    And 1 GIF file is succeeded
-    And 1 JP2 file is failed
-    And 1 JP2 file is succeeded
-    And 1 JPG file is failed
-    And 1 JPG file is succeeded
-    And 1 PDF file is failed
-    And 1 PDF file is succeeded
-    And 1 TIF file is failed
-    And 1 TIF file is succeeded
-    And 1 WARC file is failed
-    And 1 WARC file is succeeded
-    And 1 WAV file is failed
-    And 1 WAV file is succeeded
+    And 1 AIFF file(s) failed
+    And 1 AIFF file(s) succeeded
+    And 1 GIF file(s) failed
+    And 1 GIF file(s) succeeded
+    And 1 JP2 file(s) failed
+    And 1 JP2 file(s) succeeded
+    And 1 JPG file(s) failed
+    And 1 JPG file(s) succeeded
+    And 1 PDF file(s) failed
+    And 1 PDF file(s) succeeded
+    And 1 TIF file(s) failed
+    And 1 TIF file(s) succeeded
+    And 1 WARC file(s) failed
+    And 1 WARC file(s) succeeded
+    And 1 WAV file(s) failed
+    And 1 WAV file(s) succeeded
     And the AIP can be successfully stored
     And there are 16 original objects in the AIP METS with a validation event
 

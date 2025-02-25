@@ -1545,9 +1545,8 @@ def step_impl(context, task_count, job_name, unit_type):
     assert len(jobs), f"No jobs found for unit {unit_uuid}"
     task_size = 0
     for job in jobs:
-        for task in job["tasks"]:
-            if task:
-                task_size += 1
+        for _task in job["tasks"]:
+            task_size += 1
     assert task_size == task_count, (
         f"Expected {task_count} tasks to be executed for unit {unit_uuid}, got {task_size} instead."
     )
@@ -1585,21 +1584,14 @@ def step_impl(context, task_count, job_name, unit_type):
     )
 
 
-def verify_task_exit_code(file_extension, task, expected_exit_codes):
-    if (
-        "." + file_extension.lower() == (pathlib.Path(task["file_name"]).suffix).lower()
-        and task["exit_code"] in expected_exit_codes
-    ):
-        return True
-
-
-@then("{file_count:d} {file_extension} file is {status}")
+@then("{file_count:d} {file_extension} file(s) {status}")
 def step_impl(context, file_count, file_extension, status):
     unit_uuid = context.current_transfer["transfer_uuid"]
     jobs = utils.get_jobs(
         context.api_clients_config,
         unit_uuid,
         job_name="Validate formats",
+        job_microservice="Validation",
         detailed_task=True,
     )
     assert len(jobs), f"No jobs found for unit {unit_uuid}"
@@ -1617,8 +1609,12 @@ def step_impl(context, file_count, file_extension, status):
     total = 0
     for job in jobs:
         for task in job["tasks"]:
-            if verify_task_exit_code(file_extension, task, expected_exit_codes):
+            if (
+                "." + file_extension.lower()
+                == pathlib.Path(task["file_name"]).suffix.lower()
+                and task["exit_code"] in expected_exit_codes
+            ):
                 total += 1
-        assert file_count == total, (
-            f"The expected file count for unit {unit_uuid} is {file_count}, but found {total}. "
-        )
+    assert file_count == total, (
+        f"The expected file count for unit {unit_uuid} is {file_count}, but found {total}. "
+    )
