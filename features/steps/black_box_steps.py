@@ -1548,7 +1548,9 @@ def step_impl(context, task_count, job_name, unit_type):
         for task in job["tasks"]:
             if task:
                 task_size += 1
-    assert task_size == task_count, f"No tasks found for unit {unit_uuid}"
+    assert task_size == task_count, (
+        f"Expected {task_count} tasks to be executed for unit {unit_uuid}, got {task_size} instead."
+    )
 
 
 @then('{task_count:d} "{job_name}" {unit_type} tasks failed')
@@ -1562,7 +1564,9 @@ def step_impl(context, task_count, job_name, unit_type):
         for task in job["tasks"]:
             if task["exit_code"] == 1:
                 fail_task += 1
-    assert fail_task == task_count, f"No failed task found for unit {unit_uuid}"
+    assert fail_task == task_count, (
+        f"Expected {fail_task} failed tasks for unit {unit_uuid}, but found {task_count}."
+    )
 
 
 @then('{task_count:d} "{job_name}" {unit_type} tasks succeeded')
@@ -1576,7 +1580,9 @@ def step_impl(context, task_count, job_name, unit_type):
         for task in job["tasks"]:
             if task["exit_code"] == 0:
                 success_task += 1
-    assert success_task == task_count, f"No successful task found for unit {unit_uuid}"
+    assert success_task == task_count, (
+        f"Expected {success_task} successful tasks for unit {unit_uuid}, but found {task_count}."
+    )
 
 
 def verify_task_exit_code(file_extension, task, expected_exit_codes):
@@ -1593,7 +1599,7 @@ def step_impl(context, file_count, file_extension, status):
     jobs = utils.get_jobs(
         context.api_clients_config,
         unit_uuid,
-        job_microservice="Validation",
+        job_name="Validate formats",
         detailed_task=True,
     )
     assert len(jobs), f"No jobs found for unit {unit_uuid}"
@@ -1603,7 +1609,7 @@ def step_impl(context, file_count, file_extension, status):
         "succeeded": (0,),
     }
     assert status in status_to_task_exit_codes, (
-        f"No {status} found for {file_extension} file"
+        f"The requested status {status} does not match the task exit code for the unit {unit_uuid}."
     )
 
     expected_exit_codes = status_to_task_exit_codes[status]
@@ -1614,5 +1620,5 @@ def step_impl(context, file_count, file_extension, status):
             if verify_task_exit_code(file_extension, task, expected_exit_codes):
                 total += 1
         assert file_count == total, (
-            f"No {file_extension} file is {status} for unit {unit_uuid}"
+            f"The expected file count for unit {unit_uuid} is {file_count}, but found {total}. "
         )
