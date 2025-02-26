@@ -6,6 +6,7 @@ contents of their AIPs without relying on user interface interactions.
 """
 
 import os
+import pathlib
 
 import metsrw
 from behave import given
@@ -1527,3 +1528,91 @@ def step(context):
         raise AssertionError(error)
     else:
         assert uses_order_indexes == sorted(uses_order_indexes), error
+
+
+def get_unit_uuid(context, unit_type):
+    return (
+        context.current_transfer["transfer_uuid"]
+        if unit_type == "transfer"
+        else context.current_transfer["sip_uuid"]
+    )
+
+
+@then('{task_count:d} "{job_name}" {unit_type} tasks were executed')
+def step_impl(context, task_count, job_name, unit_type):
+    unit_uuid = get_unit_uuid(context, unit_type)
+    jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
+    assert len(jobs), f"No jobs found for unit {unit_uuid}"
+
+    task_size = sum([len(job["tasks"]) for job in jobs])
+    assert task_size == task_count, (
+        f"Expected {task_count} tasks to be executed for unit {unit_uuid}, got {task_size} instead."
+    )
+
+
+@then('{task_count:d} "{job_name}" {unit_type} tasks failed')
+def step_impl(context, task_count, job_name, unit_type):
+    unit_uuid = get_unit_uuid(context, unit_type)
+    jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
+    assert len(jobs), f"No jobs found for unit {unit_uuid}"
+
+    fail_task = 0
+    for job in jobs:
+        for task in job["tasks"]:
+            if task["exit_code"] == 1:
+                fail_task += 1
+    assert fail_task == task_count, (
+        f"Expected {fail_task} failed tasks for unit {unit_uuid}, but found {task_count}."
+    )
+
+
+@then('{task_count:d} "{job_name}" {unit_type} tasks succeeded')
+def step_impl(context, task_count, job_name, unit_type):
+    unit_uuid = get_unit_uuid(context, unit_type)
+    jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
+    assert len(jobs), f"No jobs found for unit {unit_uuid}"
+
+    success_task = 0
+    for job in jobs:
+        for task in job["tasks"]:
+            if task["exit_code"] == 0:
+                success_task += 1
+    assert success_task == task_count, (
+        f"Expected {success_task} successful tasks for unit {unit_uuid}, but found {task_count}."
+    )
+
+
+@then("{file_count:d} {file_extension} file(s) {status}")
+def step_impl(context, file_count, file_extension, status):
+    unit_uuid = context.current_transfer["transfer_uuid"]
+    jobs = utils.get_jobs(
+        context.api_clients_config,
+        unit_uuid,
+        job_name="Validate formats",
+        job_microservice="Validation",
+        detailed_task=True,
+    )
+    assert len(jobs), f"No jobs found for unit {unit_uuid}"
+
+    status_to_task_exit_codes = {
+        "failed": (1, 179),
+        "succeeded": (0,),
+    }
+    assert status in status_to_task_exit_codes, (
+        f"The requested status {status} does not match the task exit code for the unit {unit_uuid}."
+    )
+
+    expected_exit_codes = status_to_task_exit_codes[status]
+
+    total = 0
+    for job in jobs:
+        for task in job["tasks"]:
+            if (
+                f".{file_extension.lower()}"
+                == pathlib.Path(task["file_name"]).suffix.lower()
+                and task["exit_code"] in expected_exit_codes
+            ):
+                total += 1
+    assert file_count == total, (
+        f"Expected {file_count} {file_extension} file(s) {status} during file format validation for unit {unit_uuid}, but got {total} instead."
+    )

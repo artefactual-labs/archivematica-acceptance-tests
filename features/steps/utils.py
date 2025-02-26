@@ -871,6 +871,7 @@ def get_jobs(
     job_microservice=None,
     job_link_uuid=None,
     job_name=None,
+    detailed_task=None,
 ):
     am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
     am.unit_uuid = unit_uuid
@@ -880,6 +881,8 @@ def get_jobs(
         am.job_link_uuid = job_link_uuid
     if job_name is not None:
         am.job_name = job_name
+    if detailed_task is not None:
+        am.detailed = detailed_task
     return call_api_endpoint(
         endpoint=am.get_jobs,
         warning_message="Cannot check job status",
