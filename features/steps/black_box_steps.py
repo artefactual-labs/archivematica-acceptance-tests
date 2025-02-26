@@ -1543,10 +1543,8 @@ def step_impl(context, task_count, job_name, unit_type):
     unit_uuid = get_unit_uuid(context, unit_type)
     jobs = utils.get_jobs(context.api_clients_config, unit_uuid, job_name=job_name)
     assert len(jobs), f"No jobs found for unit {unit_uuid}"
-    task_size = 0
-    for job in jobs:
-        for _task in job["tasks"]:
-            task_size += 1
+
+    task_size = sum([len(job["tasks"]) for job in jobs])
     assert task_size == task_count, (
         f"Expected {task_count} tasks to be executed for unit {unit_uuid}, got {task_size} instead."
     )
@@ -1610,11 +1608,11 @@ def step_impl(context, file_count, file_extension, status):
     for job in jobs:
         for task in job["tasks"]:
             if (
-                "." + file_extension.lower()
+                f".{file_extension.lower()}"
                 == pathlib.Path(task["file_name"]).suffix.lower()
                 and task["exit_code"] in expected_exit_codes
             ):
                 total += 1
     assert file_count == total, (
-        f"The expected file count for unit {unit_uuid} is {file_count}, but found {total}. "
+        f"Expected {file_count} {file_extension} file(s) {status} during file format validation for unit {unit_uuid}, but got {total} instead."
     )
