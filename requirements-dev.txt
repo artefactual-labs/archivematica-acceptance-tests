@@ -15,7 +15,7 @@ behave==1.2.6
     # via -r /src/requirements.txt
 build==1.2.2.post1
     # via pip-tools
-cachetools==5.5.1
+cachetools==5.5.2
     # via tox
 certifi==2025.1.31
     # via
@@ -107,7 +107,7 @@ requests==2.32.3
     # via
     #   -r /src/requirements.txt
     #   amclient
-ruff==0.9.6
+ruff==0.9.9
     # via -r requirements-dev.in
 selenium==4.29.0
     # via -r /src/requirements.txt
@@ -139,7 +139,7 @@ trio==0.29.0
     #   -r /src/requirements.txt
     #   selenium
     #   trio-websocket
-trio-websocket==0.12.1
+trio-websocket==0.12.2
     # via
     #   -r /src/requirements.txt
     #   selenium
@@ -154,7 +154,7 @@ urllib3[socks]==2.3.0
     #   amclient
     #   requests
     #   selenium
-virtualenv==20.29.2
+virtualenv==20.29.3
     # via tox
 websocket-client==1.8.0
     # via
@@ -172,5 +172,5 @@ zipp==3.21.0
 # The following packages are considered to be unsafe in a requirements file:
 pip==25.0.1
     # via pip-tools
-setuptools==75.8.0
+setuptools==75.8.2
     # via pip-tools
