@@ -40,6 +40,7 @@ class ArchivematicaSeleniumAbility(base.Base):
             options = webdriver.ChromeOptions()
             if headless:
                 options.add_argument("--headless=new")
+            options.page_load_strategy = "eager"
             driver = webdriver.Chrome(options=options)
             driver.set_window_size(1700, 900)
         elif self.driver_name == "Firefox":
