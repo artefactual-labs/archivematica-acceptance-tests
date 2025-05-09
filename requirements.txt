@@ -12,11 +12,11 @@ attrs==25.3.0
     #   trio
 behave==1.2.6
     # via -r requirements.in
-certifi==2025.1.31
+certifi==2025.4.26
     # via
     #   requests
     #   selenium
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
     # via requests
 exceptiongroup==1.2.2
     # via
@@ -54,7 +54,7 @@ requests==2.32.3
     # via
     #   -r requirements.in
     #   amclient
-selenium==4.31.0
+selenium==4.32.0
     # via -r requirements.in
 six==1.17.0
     # via
