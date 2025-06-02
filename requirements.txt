@@ -54,7 +54,7 @@ requests==2.32.3
     # via
     #   -r requirements.in
     #   amclient
-selenium==4.32.0
+selenium==4.33.0
     # via -r requirements.in
 six==1.17.0
     # via
