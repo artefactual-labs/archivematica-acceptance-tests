@@ -12,7 +12,7 @@ attrs==25.3.0
     #   trio
 behave==1.2.6
     # via -r requirements.in
-certifi==2025.4.26
+certifi==2025.6.15
     # via
     #   requests
     #   selenium
@@ -50,7 +50,7 @@ ptyprocess==0.7.0
     # via pexpect
 pysocks==1.7.1
     # via urllib3
-requests==2.32.3
+requests==2.32.4
     # via
     #   -r requirements.in
     #   amclient

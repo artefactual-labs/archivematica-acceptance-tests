@@ -15,9 +15,9 @@ behave==1.2.6
     # via -r /src/requirements.txt
 build==1.2.2.post1
     # via pip-tools
-cachetools==6.0.0
+cachetools==6.1.0
     # via tox
-certifi==2025.4.26
+certifi==2025.6.15
     # via
     #   -r /src/requirements.txt
     #   requests
@@ -103,11 +103,11 @@ pysocks==1.7.1
     # via
     #   -r /src/requirements.txt
     #   urllib3
-requests==2.32.3
+requests==2.32.4
     # via
     #   -r /src/requirements.txt
     #   amclient
-ruff==0.11.13
+ruff==0.12.0
     # via -r requirements-dev.in
 selenium==4.33.0
     # via -r /src/requirements.txt
@@ -132,7 +132,7 @@ tomli==2.2.1
     #   pip-tools
     #   pyproject-api
     #   tox
-tox==4.26.0
+tox==4.27.0
     # via -r requirements-dev.in
 trio==0.30.0
     # via
@@ -167,7 +167,7 @@ wsproto==1.2.0
     # via
     #   -r /src/requirements.txt
     #   trio-websocket
-zipp==3.22.0
+zipp==3.23.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
