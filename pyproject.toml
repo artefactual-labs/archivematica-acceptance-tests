@@ -1,3 +1,28 @@
+[project]
+name = "archivematica-acceptance-tests"
+description = "Archivematica Automated User Acceptance Tests (AMAUAT)"
+requires-python = ">=3.9"
+# The project.version field is required in pyproject.toml files, even if this
+# project is not yet versioned. Using a placeholder for now.
+version = "0.0.0"
+dependencies = [
+  "amclient",
+  "behave",
+  "lxml",
+  "metsrw",
+  "pexpect",
+  "requests",
+  "selenium",
+  "tenacity",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pip-tools",
+  "ruff",
+  "tox",
+]
+
 [tool.ruff]
 target-version = "py39"
 
