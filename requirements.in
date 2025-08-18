@@ -1,4 +1,4 @@
-git+https://github.com/artefactual-labs/amclient.git@b34ae76a584b5014d24adbc21067e3d0218a2a93#egg=amclient
+amclient
 behave
 lxml
 metsrw
