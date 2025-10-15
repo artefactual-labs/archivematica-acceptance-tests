@@ -4,7 +4,7 @@
 #
 #    pip-compile --allow-unsafe --extra=dev --output-file=requirements-dev.txt pyproject.toml
 #
-amclient==1.5.0
+amclient==1.6.0
     # via archivematica-acceptance-tests (pyproject.toml)
 attrs==25.4.0
     # via
@@ -14,7 +14,7 @@ behave==1.3.3
     # via archivematica-acceptance-tests (pyproject.toml)
 build==1.3.0
     # via pip-tools
-cachetools==6.2.0
+cachetools==6.2.1
     # via tox
 certifi==2025.10.5
     # via
@@ -22,7 +22,7 @@ certifi==2025.10.5
     #   selenium
 chardet==5.2.0
     # via tox
-charset-normalizer==3.4.3
+charset-normalizer==3.4.4
     # via requests
 click==8.1.8
     # via pip-tools
@@ -46,7 +46,7 @@ filelock==3.19.1
     #   virtualenv
 h11==0.16.0
     # via wsproto
-idna==3.10
+idna==3.11
     # via
     #   requests
     #   trio
@@ -111,7 +111,7 @@ sortedcontainers==2.4.0
     # via trio
 tenacity==9.1.2
     # via archivematica-acceptance-tests (pyproject.toml)
-tomli==2.2.1
+tomli==2.3.0
     # via
     #   behave
     #   build
@@ -137,7 +137,7 @@ urllib3[socks]==2.5.0
     #   amclient
     #   requests
     #   selenium
-virtualenv==20.34.0
+virtualenv==20.35.3
     # via tox
 websocket-client==1.9.0
     # via selenium
