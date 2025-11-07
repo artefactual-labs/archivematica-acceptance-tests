@@ -97,7 +97,7 @@ requests==2.32.5
     # via
     #   amclient
     #   archivematica-acceptance-tests (pyproject.toml)
-ruff==0.14.0
+ruff==0.14.4
     # via archivematica-acceptance-tests (pyproject.toml)
 selenium==4.36.0
     # via archivematica-acceptance-tests (pyproject.toml)
@@ -137,7 +137,7 @@ urllib3[socks]==2.5.0
     #   amclient
     #   requests
     #   selenium
-virtualenv==20.35.3
+virtualenv==20.35.4
     # via tox
 websocket-client==1.9.0
     # via selenium
@@ -151,7 +151,7 @@ zipp==3.23.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==25.2
+pip==25.3
     # via pip-tools
 setuptools==80.9.0
     # via pip-tools
