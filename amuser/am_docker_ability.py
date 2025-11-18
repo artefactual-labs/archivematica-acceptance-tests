@@ -63,7 +63,7 @@ class ArchivematicaDockerAbility(base.Base):
         keys = [k.strip() for k in lines[0].strip(" |").split("|")]
         for line in lines[1:]:
             vals = [v.strip() for v in line.strip(" |").split("|")]
-            tasks.append(dict(zip(keys, vals)))
+            tasks.append(dict(zip(keys, vals, strict=False)))
         return tasks
 
     def get_processes(self):
