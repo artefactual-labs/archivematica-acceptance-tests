@@ -6,7 +6,7 @@ FROM ubuntu:${UBUNTU_VERSION} AS base
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
-ARG PYTHON_VERSION=3.9
+ARG PYTHON_VERSION=3.10
 ARG PYENV_DIR=/pyenv
 ARG SELENIUM_DIR=/selenium
 
@@ -59,7 +59,7 @@ RUN set -ex \
 
 FROM base AS pyenv-builder
 
-ARG PYTHON_VERSION=3.9
+ARG PYTHON_VERSION
 
 RUN set -ex \
 	&& apt-get -qqy update \
