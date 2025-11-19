@@ -1235,5 +1235,5 @@ def assert_equal_lxml_elements(a, b):
 
     assert d_a == d_b, f"Attributes of {a} and {b} did not match"
 
-    for i, j in zip(a, b):
+    for i, j in zip(a, b, strict=False):
         assert_equal_lxml_elements(i, j)
