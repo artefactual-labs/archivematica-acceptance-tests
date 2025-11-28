@@ -13,6 +13,7 @@ import zipfile
 import environment
 import tenacity
 from amclient.amclient import AMClient
+from bagit import Bag
 from environment import AM_API_CONFIG_KEY
 from environment import SS_API_CONFIG_KEY
 from lxml import etree
@@ -1237,3 +1238,8 @@ def assert_equal_lxml_elements(a, b):
 
     for i, j in zip(a, b, strict=False):
         assert_equal_lxml_elements(i, j)
+
+
+def validate_bag(path: str) -> bool:
+    bag = Bag(path)
+    return bag.validate()
