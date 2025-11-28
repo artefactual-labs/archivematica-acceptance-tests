@@ -129,8 +129,6 @@ RUN set -ex \
 	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 COPY --chown=${USER_ID}:${GROUP_ID} --from=browsers-builder --link /selenium /selenium
-COPY --chown=${USER_ID}:${GROUP_ID} --from=pyenv-builder --link /pyenv /pyenv
-COPY --chown=${USER_ID}:${GROUP_ID} --link . /home/artefactual/acceptance-tests
 
 # Download the ChromeDriver version that matches the recently installed version
 # of Google Chrome.
@@ -142,6 +140,9 @@ RUN set -ex \
 RUN set -ex \
 	&& groupadd --gid ${GROUP_ID} artefactual \
 	&& useradd --uid ${USER_ID} --gid ${GROUP_ID} --create-home artefactual
+
+COPY --chown=${USER_ID}:${GROUP_ID} --from=pyenv-builder --link /pyenv /pyenv
+COPY --chown=${USER_ID}:${GROUP_ID} --link . /home/artefactual/acceptance-tests
 
 WORKDIR /home/artefactual/acceptance-tests
 
