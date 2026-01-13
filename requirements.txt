@@ -72,7 +72,7 @@ sortedcontainers==2.4.0
     # via trio
 tenacity==9.1.2
     # via archivematica-acceptance-tests (pyproject.toml)
-tomli==2.3.0
+tomli==2.4.0
     # via behave
 trio==0.32.0
     # via
