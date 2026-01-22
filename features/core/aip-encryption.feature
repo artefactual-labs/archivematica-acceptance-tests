@@ -64,11 +64,6 @@ Feature: AIP Encryption
     When a transfer is initiated on directory SampleTransfers/BagTransfer
     And the user waits for the SIP to appear in transfer backlog
     Then the transfer on disk is encrypted
-    # TODO: implement the following steps. Spending time implementing these did
-    # not seem justifiable at the present moment.
-    # And the files of the encrypted transfer are browseable in the appraisal tab
-    # And the files of the encrypted transfer are browseable in the ingest tab
-    # And a SIP can be created from the encrypted transfer in backlog
 
   @allow-passphraseless-key-import
   Scenario: Richard wants to ensure that a passphrase-less GPG key can be imported into the storage service.

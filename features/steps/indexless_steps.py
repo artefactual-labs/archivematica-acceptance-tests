@@ -143,7 +143,6 @@ def step_impl(context, tab_name):
     tab_name = tab_name.replace(" tab", "").strip().lower()
     url_getter = {
         "backlog": context.am_user.browser.get_transfer_backlog_url,
-        "appraisal": context.am_user.browser.get_appraisal_url,
         "archival storage": context.am_user.browser.get_archival_storage_url,
         "ingest": context.am_user.browser.get_ingest_url,
     }[tab_name]

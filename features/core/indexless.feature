@@ -118,12 +118,9 @@ Feature: Archivematica is deployed without Indexing feature
     And a default processing config that gets a transfer to the "Create SIP(s)" decision point
     When the user navigates to the Archivematica instance
     Then the Backlog tab is not displayed in the navigation bar
-    And the Appraisal tab is not displayed in the navigation bar
     And the Archival storage tab is not displayed in the navigation bar
     When the user navigates to the Backlog tab
     Then a warning is displayed indicating that the Backlog tab is not operational
-    When the user navigates to the Appraisal tab
-    Then a warning is displayed indicating that the Appraisal tab is not operational
     When the user navigates to the Archival storage tab
     Then a warning is displayed indicating that the Archival storage tab is not operational
     When the user navigates to the Ingest tab
