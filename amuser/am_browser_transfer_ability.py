@@ -93,26 +93,51 @@ class ArchivematicaBrowserTransferAbility(
         """Remove the topmost transfer: click on its "Remove" button and click
         "Confirm".
         """
+        try:
+            row_elem = top_transfer_elem.find_element(By.CSS_SELECTOR, "div.sip-row")
+            row_elem.click()
+        except NoSuchElementException:
+            pass
         remove_elem = top_transfer_elem.find_element(
             By.CSS_SELECTOR, "a.btn_remove_sip"
         )
         if remove_elem:
             remove_elem.click()
-            dialog_selector = "div.ui-dialog"
-            self.wait_for_presence(dialog_selector)
-            remove_sip_confirm_dialog_elems = self.driver.find_elements(
-                By.CSS_SELECTOR, "div.ui-dialog"
-            )
-            for dialog_elem in remove_sip_confirm_dialog_elems:
+            old_dialog_selector = "div.ui-dialog"
+            new_dialog_selector = "div.monitor-modal.monitor-modal-visible"
+            if self.driver.find_elements(By.CSS_SELECTOR, old_dialog_selector):
+                self.wait_for_presence(old_dialog_selector)
+                dialog_elems = self.driver.find_elements(
+                    By.CSS_SELECTOR, old_dialog_selector
+                )
+            else:
+                self.wait_for_presence(new_dialog_selector)
+                dialog_elems = self.driver.find_elements(
+                    By.CSS_SELECTOR, new_dialog_selector
+                )
+            remove_sip_confirm_dialog_elem = None
+            for dialog_elem in dialog_elems:
                 if dialog_elem.is_displayed():
                     remove_sip_confirm_dialog_elem = dialog_elem
                     break
-            for button_elem in remove_sip_confirm_dialog_elem.find_elements(
-                By.CSS_SELECTOR, "button"
-            ):
-                if button_elem.text.strip() == "Confirm":
-                    button_elem.click()
-            self.wait_for_invisibility(dialog_selector)
+            if not remove_sip_confirm_dialog_elem:
+                raise NoSuchElementException(
+                    "Unable to locate visible remove confirmation dialog"
+                )
+            confirm_button_elems = remove_sip_confirm_dialog_elem.find_elements(
+                By.CSS_SELECTOR, "button.btn.btn-primary"
+            )
+            if confirm_button_elems:
+                confirm_button_elems[0].click()
+            else:
+                for button_elem in remove_sip_confirm_dialog_elem.find_elements(
+                    By.CSS_SELECTOR, "button"
+                ):
+                    if button_elem.text.strip() == "Confirm":
+                        button_elem.click()
+                        break
+            self.wait_for_invisibility(old_dialog_selector, timeout=self.apathetic_wait)
+            self.wait_for_invisibility(new_dialog_selector, timeout=self.apathetic_wait)
             try:
                 while top_transfer_elem.is_displayed():
                     time.sleep(self.quick_wait)
