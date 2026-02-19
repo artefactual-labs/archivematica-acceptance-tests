@@ -53,17 +53,28 @@ class ArchivematicaBrowserJobsTasksAbility(
         self.navigate(unit_url)
         ms_name, group_name = utils.micro_service2group(ms_name)
         logger.info("expecting job %s to be in group %s", ms_name, group_name)
-        # If not visible, click the micro-service group to expand it.
+        # In the Vue monitor, the job container may not exist in the DOM until
+        # the group is expanded (v-if). For compatibility, also support legacy
+        # markup where the container is the sibling after `.microservice-group`.
         self.wait_for_transfer_micro_service_group(group_name, transfer_uuid)
-        is_visible = (
-            self.get_transfer_micro_service_group_elem(group_name, transfer_uuid)
-            .find_element(By.CSS_SELECTOR, "div.microservice-group + div")
-            .is_displayed()
+        ms_group_elem = self.get_transfer_micro_service_group_elem(
+            group_name, transfer_uuid
         )
+        job_container_els = ms_group_elem.find_elements(
+            By.CSS_SELECTOR, "div.job-container"
+        )
+        if not job_container_els:
+            job_container_els = ms_group_elem.find_elements(
+                By.CSS_SELECTOR, "div.microservice-group + div"
+            )
+        is_visible = any(el.is_displayed() for el in job_container_els)
         if not is_visible:
-            self.get_transfer_micro_service_group_elem(
-                group_name, transfer_uuid
-            ).click()
+            try:
+                ms_group_elem.find_element(
+                    By.CSS_SELECTOR, "div.microservice-group"
+                ).click()
+            except NoSuchElementException:
+                ms_group_elem.click()
         self.wait_for_microservice_visibility(ms_name, group_name, transfer_uuid)
         logger.info("exposed job %s (%s)", ms_name, group_name)
         return ms_name, group_name

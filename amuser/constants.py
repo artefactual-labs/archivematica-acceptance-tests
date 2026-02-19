@@ -259,9 +259,13 @@ JS_SNIPPET_GET_MICRO_SERVICES2GROUPS = """
         var group = $(this).find(
             'span.microservice-group-name').text().replace(
             'Micro-service: ', '');
-        var children = $(this).children();
-        if (!$(children[1]).is(':visible')) { children[0].click() }
-        $(children[1]).find('div.job').each(function(){
+        var header = $(this).find('div.microservice-group').first();
+        var container = $(this).find('div.job-container').first();
+        if (container.length === 0 || !container.is(':visible')) {
+            header.click();
+            container = $(this).find('div.job-container').first();
+        }
+        container.find('div.job').each(function(){
             var ms = $(this).find(
                 'div.job-detail-microservice span[title]').text();
             if (map_.hasOwnProperty(ms)) {
