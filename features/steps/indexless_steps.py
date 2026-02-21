@@ -142,7 +142,6 @@ def step_impl(context):
 def step_impl(context, tab_name):
     tab_name = tab_name.replace(" tab", "").strip().lower()
     url_getter = {
-        "backlog": context.am_user.browser.get_transfer_backlog_url,
         "archival storage": context.am_user.browser.get_archival_storage_url,
         "ingest": context.am_user.browser.get_ingest_url,
     }[tab_name]
@@ -204,15 +203,6 @@ def step_impl(context):
             ' for deployment method "%s".',
             method,
         )
-
-
-@then('there is no "Send to backlog" option')
-def step_impl(context):
-    """How to implement: assert that none of the options in the context match
-    "Send to backlog".
-    """
-    assert isinstance(context.scenario.decision_options, list)
-    assert "Send to backlog" not in context.scenario.decision_options
 
 
 @then('the "Index AIP" micro-service output indicates that no indexing has occurred')
@@ -303,13 +293,6 @@ def step_impl(context, tab_name):
 @then("the SIP Arrange pane is not displayed")
 def step_impl(context):
     context.am_user.browser.assert_sip_arrange_pane_not_displayed()
-
-
-@then('the "Create SIP(s)" decision point does not have a "Send to backlog" option')
-def step_impl(context):
-    context.am_user.browser.assert_no_option(
-        "Send to backlog", "Create SIP(s)", context.scenario.transfer_uuid
-    )
 
 
 # ==============================================================================

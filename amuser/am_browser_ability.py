@@ -205,50 +205,6 @@ class ArchivematicaBrowserAbility(
         assert alert_text.endswith("for re-ingest")
 
     # ==========================================================================
-    # Transfer Backlog Tab
-    # ==========================================================================
-
-    def wait_for_dip_in_transfer_backlog(self, dip_uuid):
-        """Wait for the DIP with UUID ``dip_uuid`` to appear in the Backlog tab."""
-        max_seconds = self.max_search_dip_backlog_attempts
-        seconds = 0
-        while True:
-            self.navigate(self.get_transfer_backlog_url(), reload=True)
-            self.driver.find_element(
-                By.CSS_SELECTOR, 'input[title="search query"]'
-            ).send_keys(dip_uuid)
-            Select(
-                self.driver.find_element(By.CSS_SELECTOR, 'select[title="field name"]')
-            ).select_by_visible_text("Transfer UUID")
-            Select(
-                self.driver.find_element(By.CSS_SELECTOR, 'select[title="query type"]')
-            ).select_by_visible_text("Phrase")
-            self.driver.find_element(By.ID, "search_submit").click()
-            self.wait_for_presence("#backlog-entries_info")
-            summary_el = self.driver.find_element(By.ID, "backlog-entries_info")
-            if summary_el.text.strip() == "Showing 0 to 0 of 0 entries":
-                seconds += 1
-                if seconds > max_seconds:
-                    logger.warning(
-                        "In waiting for DIP %s to appear in the"
-                        " transfer backlog, we exceeded the maximum"
-                        " wait period of %s seconds.",
-                        dip_uuid,
-                        max_seconds,
-                    )
-                    break
-                time.sleep(self.medium_wait)
-            else:
-                logger.info(
-                    "Found DIP %s in the transfer backlog after waiting"
-                    " for %s seconds.",
-                    dip_uuid,
-                    seconds,
-                )
-                time.sleep(self.medium_wait)  # Sleep a little longer, for good measure
-                break
-
-    # ==========================================================================
     # Administration Tab
     # ==========================================================================
 

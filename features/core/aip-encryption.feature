@@ -54,17 +54,6 @@ Feature: AIP Encryption
     When the user downloads the AIP
     Then the downloaded uncompressed AIP is an unencrypted tarfile
 
-  @transfer-backlog
-  Scenario: Richard wants to ensure that he can encrypt transfers in backlog.
-    Given there is a standard GPG-encrypted space in the storage service
-    And the user has disabled the default transfer backlog location
-    And there is a standard GPG-encrypted Transfer Backlog location in the storage service
-    And automated processing with all decision points resolved
-    And the processing config decision "Create SIP(s)" is set to "Send to backlog"
-    When a transfer is initiated on directory SampleTransfers/BagTransfer
-    And the user waits for the SIP to appear in transfer backlog
-    Then the transfer on disk is encrypted
-
   @allow-passphraseless-key-import
   Scenario: Richard wants to ensure that a passphrase-less GPG key can be imported into the storage service.
     When the user attempts to import GPG key aadams-passphraseless.key

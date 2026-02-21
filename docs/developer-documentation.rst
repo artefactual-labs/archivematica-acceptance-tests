@@ -351,7 +351,6 @@ ones.
     may be moved to other (super-)classes.)
 
     - Archival Storage tab (e.g., request AIP deletion)
-    - Transfer Backlog tab (e.g., wait for a transfer to appear)
     - Administration tab (e.g., configure a Handle server client)
     - Processing Configuration (e.g., set a particular processing configuration
       option)
