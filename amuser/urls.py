@@ -28,7 +28,6 @@ AM_URLS = (
     ("get_rules_url", "{}fpr/fprule/"),
     ("get_storage_setup_url", "{}installer/storagesetup/"),
     ("get_tasks_url", "{}tasks/{}/"),
-    ("get_transfer_backlog_url", "{}backlog/"),
     ("get_transfer_url", "{}transfer/"),
     ("get_validation_commands_url", "{}fpr/fpcommand/validation/"),
     ("get_aip_preview_url", "{}ingest/preview/aip/{}"),

@@ -13,14 +13,6 @@ from lxml import etree
 from features.steps import utils
 
 GPG_KEYS_DIR = "etc/gpgkeys"
-STDRD_GPG_TB_REL_PATH = os.path.join(
-    "var",
-    "archivematica",
-    "sharedDirectory",
-    "www",
-    "AIPsStore",
-    "transferBacklogEncrypted",
-)
 
 
 logger = logging.getLogger("amauat.steps.aipencryption")
@@ -54,20 +46,6 @@ def step_impl(context):
         " Purpose: AIP Storage;"
         " Relative path: var/archivematica/sharedDirectory/www/AIPsStoreEncrypted;"
         f" Description: {utils.get_gpg_space_location_description(context.scenario.space_uuid)};"
-    )
-
-
-@given(
-    "there is a standard GPG-encrypted Transfer Backlog location in the storage service"
-)
-def step_impl(context):
-    context.execute_steps(
-        "Given the user has ensured that there is a location in the GPG Space with"
-        " attributes"
-        " Purpose: Transfer Backlog;"
-        f" Relative path: {STDRD_GPG_TB_REL_PATH};"
-        " Description: Store Transfers Encrypted in standard Archivematica"
-        " Directory;"
     )
 
 
@@ -455,43 +433,6 @@ def step_impl(context, key_name):
         " with passphrases cannot be imported"
     )
     assert not context.am_user.browser.get_gpg_key_search_matches(key_name)
-
-
-@then("the transfer on disk is encrypted")
-def step_impl(context):
-    """Asserts that the DIP on the server (pointed to within the AIP pointer
-    file stored in context.scenario.aip_pointer_path) is encrypted. To do this,
-    we use scp to copy the remote AIP to a local directory and then we attempt
-    to decompress it and expect to fail.
-    """
-    path_on_disk = f"/{STDRD_GPG_TB_REL_PATH}/originals/{context.scenario.transfer_name}-{context.scenario.transfer_uuid}"
-    logger.info("expecting encrypted transfer to be at %s on server", path_on_disk)
-    if getattr(context.am_user.docker, "docker_compose_path", None):
-        dip_local_path = context.am_user.docker.cp_server_file_to_local(path_on_disk)
-    elif context.am_user.ssh_accessible:
-        dip_local_path = context.am_user.ssh.scp_server_file_to_local(path_on_disk)
-    else:
-        dip_local_path = context.am_user.localfs.read_server_file(path_on_disk)
-    if dip_local_path is None:
-        logger.info(
-            "Unable to copy file %s from the server to the local file"
-            " system. Server is not accessible via SSH. Abandoning"
-            " attempt to assert that the DIP on disk is"
-            " encrypted.",
-            path_on_disk,
-        )
-        return
-    elif dip_local_path is False:
-        logger.info(
-            "Unable to copy file %s from the server to the local file"
-            " system. Attempt to scp the file failed. Abandoning attempt"
-            " to assert that the DIP on disk is"
-            " encrypted.",
-            path_on_disk,
-        )
-        return
-    assert not os.path.isdir(dip_local_path)
-    assert not tarfile.is_tarfile(dip_local_path)
 
 
 @then("the uncompressed AIP on disk at {aips_store_path} is encrypted")

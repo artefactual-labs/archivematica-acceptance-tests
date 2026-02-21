@@ -124,11 +124,6 @@ def step_impl(context, attributes):
     )
 
 
-@given("the user has disabled the default transfer backlog location")
-def step_impl(context):
-    context.am_user.browser.disable_default_transfer_backlog()
-
-
 @given("a fully automated default processing config")
 def step_impl(context):
     """Note: step description should be changed. This fully automates the
@@ -355,13 +350,6 @@ def step_impl(context, aip_description):
         aip_uuid,
         getattr(context.scenario, aip_ptr_attr),
     )
-
-
-@when("the user waits for the SIP to appear in transfer backlog")
-def step_impl(context):
-    uuid_val = utils.get_uuid_val(context, "transfer")
-    context.am_user.browser.wait_for_dip_in_transfer_backlog(uuid_val)
-    time.sleep(context.am_user.pessimistic_wait)
 
 
 @when("the user adds metadata")

@@ -424,32 +424,6 @@ class ArchivematicaBrowserStorageServiceAbility(
                 ).text.strip(),
             )
 
-    def disable_default_transfer_backlog(self):
-        self.navigate(self.get_locations_url())
-        search_el = self.driver.find_element(By.CSS_SELECTOR, "input[type=text]")
-        search_el.send_keys("Default transfer backlog")
-        row_els = self.driver.find_elements(
-            By.CSS_SELECTOR, "#DataTables_Table_0 > tbody > tr"
-        )
-        if len(row_els) != 1:
-            raise ArchivematicaBrowserStorageServiceAbilityError(
-                "Unable to find a unique default transfer backlog location"
-            )
-        cell_el = row_els[0].find_elements(By.CSS_SELECTOR, "td")[9]
-        disable_a_el = enable_a_el = None
-        for a_el in cell_el.find_elements(By.CSS_SELECTOR, "a"):
-            if a_el.text.strip() == "Disable":
-                disable_a_el = a_el
-            if a_el.text.strip() == "Enable":
-                enable_a_el = a_el
-        if not (enable_a_el or disable_a_el):
-            raise ArchivematicaBrowserStorageServiceAbilityError(
-                "Unable to find a disable/enable button/link for the default"
-                " transfer backlog location"
-            )
-        if disable_a_el:
-            disable_a_el.click()
-
     def create_new_gpg_key(self):
         """Create a new GPG key with a unique name."""
         self.navigate(self.get_create_gpg_key_url())

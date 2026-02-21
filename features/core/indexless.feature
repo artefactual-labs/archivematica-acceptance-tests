@@ -117,19 +117,13 @@ Feature: Archivematica is deployed without Indexing feature
     Given an Archivematica instance with Indexing disabled
     And a default processing config that gets a transfer to the "Create SIP(s)" decision point
     When the user navigates to the Archivematica instance
-    Then the Backlog tab is not displayed in the navigation bar
-    And the Archival storage tab is not displayed in the navigation bar
-    When the user navigates to the Backlog tab
-    Then a warning is displayed indicating that the Backlog tab is not operational
+    Then the Archival storage tab is not displayed in the navigation bar
     When the user navigates to the Archival storage tab
     Then a warning is displayed indicating that the Archival storage tab is not operational
     When the user navigates to the Ingest tab
     Then the SIP Arrange pane is not displayed
-    When processing config decision "Create SIP(s)" is inspected
-    Then there is no "Send to backlog" option
     When a transfer is initiated on directory <transfer_path>
     And the user waits for the "Create SIP(s)" decision point to appear during transfer
-    Then the "Create SIP(s)" decision point does not have a "Send to backlog" option
 
     Examples: Transfer paths
     | transfer_path                                          |

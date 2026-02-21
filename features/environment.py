@@ -60,7 +60,6 @@ MAX_DOWNLOAD_AIP_ATTEMPTS = 20
 MAX_CHECK_AIP_STORED_ATTEMPTS = 60
 MAX_CHECK_METS_LOADED_ATTEMPTS = 60
 MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS = 120
-MAX_SEARCH_DIP_BACKLOG_ATTEMPTS = 120
 MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS = 1000
 MAX_CHECK_FOR_MS_GROUP_ATTEMPTS = 7200
 
@@ -122,9 +121,6 @@ def get_am_user(userdata):
             "max_search_aip_archival_storage_attempts": userdata.get(
                 "max_search_aip_archival_storage_attempts",
                 MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS,
-            ),
-            "max_search_dip_backlog_attempts": userdata.get(
-                "max_search_dip_backlog_attempts", MAX_SEARCH_DIP_BACKLOG_ATTEMPTS
             ),
             "max_check_transfer_appeared_attempts": userdata.get(
                 "max_check_transfer_appeared_attempts",

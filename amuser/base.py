@@ -61,7 +61,6 @@ class Base:
             "max_search_aip_archival_storage_attempts",
             c.MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS,
         ),
-        ("max_search_dip_backlog_attempts", c.MAX_SEARCH_DIP_BACKLOG_ATTEMPTS),
         (
             "max_check_transfer_appeared_attempts",
             c.MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS,
