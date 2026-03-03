@@ -1,6 +1,7 @@
 """Archivematica Browser Preservation Planning Ability"""
 
 import logging
+import time
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -19,26 +20,114 @@ class ArchivematicaBrowserPreservationPlanningAbility(
     interact with a live Archivematica instance.
     """
 
+    # We aim for compatibility with the new Vue-based tables and the legacy
+    # DataTables UI.
+    FPR_LAYOUT_SELECTORS = {
+        "search_input": {
+            "vue": '.fpr-table-app .fpr-toolbar-search input[type="search"]',
+            "legacy": "#DataTables_Table_0_filter input",
+        },
+        "table": {
+            "vue": ".fpr-table-app table",
+            "legacy": "#DataTables_Table_0",
+        },
+        "info": {
+            "vue": ".fpr-pagination-info",
+            "legacy": "#DataTables_Table_0_info",
+        },
+        "no_matches_alert": {
+            "vue": ".fpr-table-app .alert-info",
+        },
+    }
+
     def navigate_to_preservation_planning(self):
         self.navigate(self.get_preservation_planning_url())
 
     def navigate_to_normalization_rules(self):
         self.navigate(self.get_normalization_rules_url())
 
+    @classmethod
+    def _ordered_selectors(cls, key):
+        selector_group = cls.FPR_LAYOUT_SELECTORS[key]
+        return [
+            selector_group[layout]
+            for layout in ("vue", "legacy")
+            if layout in selector_group
+        ]
+
+    def _first_present_element(self, key):
+        for selector in self._ordered_selectors(key):
+            elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+            if elements:
+                return elements[0]
+        return None
+
+    def _find_fpr_search_input(self):
+        return self._first_present_element("search_input")
+
+    def _find_fpr_table(self):
+        return self._first_present_element("table")
+
+    def _find_fpr_info(self):
+        return self._first_present_element("info")
+
+    def _fpr_search_has_no_matches(self):
+        no_matches_selector = self.FPR_LAYOUT_SELECTORS["no_matches_alert"]["vue"]
+        if self.driver.find_elements(By.CSS_SELECTOR, no_matches_selector):
+            return True
+
+        info_el = self._find_fpr_info()
+        if not info_el:
+            return False
+        info_text = info_el.text.strip()
+        return info_text.startswith("Showing 0 to 0 of 0 entries")
+
+    def _wait_for_fpr_search_results(self):
+        # Vue tables apply filtering after a short debounce; avoid checking
+        # table state too early (pre-filter) to reduce false positives.
+        time.sleep(max(0.3, self.optimistic_wait * 2))
+
+        def action():
+            if self._fpr_search_has_no_matches():
+                return True
+            table_el = self._find_fpr_table()
+            if not table_el:
+                return False
+            # Force row text access once; if the DOM is still updating this
+            # raises stale-element and we retry.
+            for row in table_el.find_elements(By.CSS_SELECTOR, "tbody tr"):
+                _ = row.text
+            return True
+
+        self.retry_on_stale(action, max_attempts=5)
+
     def search_rules(self, search_term):
-        search_input_el = self.driver.find_element(
-            By.CSS_SELECTOR, "#DataTables_Table_0_filter input"
-        )
+        search_input_el = self._find_fpr_search_input()
+        if not search_input_el:
+            raise NoSuchElementException("Unable to find FPR search input")
+        search_input_el.clear()
         search_input_el.send_keys(search_term)
+        self._wait_for_fpr_search_results()
 
     def click_first_rule_replace_link(self):
         """Click the "replace" link of the first rule in the FPR rules table
         visible on the page.
         """
-        for a_el in self.driver.find_elements(By.TAG_NAME, "a"):
-            if a_el.text.strip() == "Replace":
-                a_el.click()
-                break
+
+        def action():
+            table_el = self._find_fpr_table()
+            if not table_el:
+                return False
+            for a_el in table_el.find_elements(By.CSS_SELECTOR, "tbody tr td a"):
+                if a_el.text.strip() == "Replace":
+                    a_el.click()
+                    return True
+            return False
+
+        if not self.retry_on_stale(action, max_attempts=5):
+            raise AssertionError(
+                'Unable to find a "Replace" link in the FPR rules table'
+            )
 
     def wait_for_rule_edit_interface(self):
         self.wait_for_presence("input[type=submit]")
@@ -53,7 +142,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
             By.CSS_SELECTOR, "input[type=submit]"
         )
         command_select_el.click()
-        self.wait_for_presence("#DataTables_Table_0")
+        self.wait_for_presence(".fpr-table-app, #DataTables_Table_0")
 
     def change_normalization_rule_command(self, search_term, command_name):
         """Edit the FPR normalization rule that uniquely matches
@@ -75,8 +164,10 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         """
         policy_command_url = None
         policy_command_descriptions = []
-        commands_table_el = self.driver.find_element(By.ID, "DataTables_Table_0")
-        for row_el in commands_table_el.find_elements(By.TAG_NAME, "tr"):
+        commands_table_el = self._find_fpr_table()
+        if not commands_table_el:
+            return []
+        for row_el in commands_table_el.find_elements(By.CSS_SELECTOR, "tbody tr"):
             try:
                 anchor_el = row_el.find_element(By.TAG_NAME, "a")
             except NoSuchElementException:
@@ -201,8 +292,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         """
         self.navigate(self.get_rules_url())
         self.search_for_fpr_rule(purpose, format_, command_description)
-        info_el = self.driver.find_element(By.ID, "DataTables_Table_0_info")
-        if info_el.text.strip().startswith("Showing 0 to 0 of 0 entries"):
+        if self._fpr_search_has_no_matches():
             return False
         return True
 
@@ -217,29 +307,37 @@ class ArchivematicaBrowserPreservationPlanningAbility(
     def ensure_fpr_rule_enabled(self, purpose, format_, command_description):
         self.navigate(self.get_rules_url())
         self.search_for_fpr_rule(purpose, format_, command_description)
-        self.wait_for_presence("#DataTables_Table_0_info")
-        info_el = self.driver.find_element(By.ID, "DataTables_Table_0_info")
-        if info_el.text.strip().startswith("Showing 0 to 0 of 0 entries"):
+        self.wait_for_presence("body")
+        if self._fpr_search_has_no_matches():
             return
-        disabled_rules = [
-            row
-            for row in self.driver.find_elements(
-                By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr"
+
+        def action():
+            table_el = self._find_fpr_table()
+            if not table_el:
+                return True
+            disabled_rules = []
+            for row in table_el.find_elements(By.CSS_SELECTOR, "tbody tr"):
+                if row.find_element(By.CSS_SELECTOR, "td:nth-child(5)").text == "No":
+                    disabled_rules.append(row)
+            if not disabled_rules:
+                logger.info(
+                    f'Tried to enable FPR rule with purpose "{purpose}" that runs command "{command_description}"'
+                    f' against files with format "{format_}" but did not find it'
+                )
+                return True
+            assert len(disabled_rules) == 1, (
+                f'Expected to enable one FPR rule with purpose "{purpose}" that runs command "{command_description}"'
+                f' against files with format "{format_}" but found {len(disabled_rules)} disabled rules'
             )
-            if row.find_element(By.CSS_SELECTOR, "td:nth-child(5)").text == "No"
-        ]
-        if not disabled_rules:
-            logger.info(
-                f'Tried to enable FPR rule with purpose "{purpose}" that runs command "{command_description}"'
-                f' against files with format "{format_}" but did not find it'
+            rule = disabled_rules[0]
+            rule.find_element(By.CSS_SELECTOR, "td:nth-child(6) a:nth-child(3)").click()
+            return True
+
+        result = self.retry_on_stale(action, max_attempts=5)
+        if not result:
+            raise AssertionError(
+                "Unable to enable FPR rule because the table kept refreshing"
             )
-            return
-        assert len(disabled_rules) == 1, (
-            f'Expected to enable one FPR rule with purpose "{purpose}" that runs command "{command_description}"'
-            f' against files with format "{format_}" but found {len(disabled_rules)} disabled rules'
-        )
-        rule = disabled_rules[0]
-        rule.find_element(By.CSS_SELECTOR, "td:nth-child(6) a:nth-child(3)").click()
         self.driver.find_element(By.CSS_SELECTOR, "input[value=Enable]").click()
 
     @staticmethod
