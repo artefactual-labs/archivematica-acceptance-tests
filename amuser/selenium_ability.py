@@ -2,6 +2,7 @@
 
 import logging
 import os
+import time
 
 from selenium import webdriver
 from selenium.common.exceptions import StaleElementReferenceException
@@ -163,6 +164,28 @@ class ArchivematicaSeleniumAbility(base.Base):
                 " matching selector %s took too much time!",
                 crucial_element_css_selector,
             )
+
+    def retry_on_stale(self, action, max_attempts=5, sleep_seconds=None):
+        """Retry callable ``action`` when Selenium returns stale elements.
+
+        ``action`` may return:
+        - ``False`` to request another attempt.
+        - any other value to stop retrying and return that value.
+        """
+        if sleep_seconds is None:
+            sleep_seconds = self.optimistic_wait
+        last_exception = None
+        for _ in range(max_attempts):
+            try:
+                result = action()
+                if result is not False:
+                    return result
+            except StaleElementReferenceException as exc:
+                last_exception = exc
+            time.sleep(sleep_seconds)
+        if last_exception:
+            raise last_exception
+        return None
 
 
 def recurse_on_stale(func):
