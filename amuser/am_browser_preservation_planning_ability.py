@@ -314,7 +314,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         def action():
             table_el = self._find_fpr_table()
             if not table_el:
-                return True
+                return False
             disabled_rules = []
             for row in table_el.find_elements(By.CSS_SELECTOR, "tbody tr"):
                 if row.find_element(By.CSS_SELECTOR, "td:nth-child(5)").text == "No":
@@ -322,23 +322,25 @@ class ArchivematicaBrowserPreservationPlanningAbility(
             if not disabled_rules:
                 logger.info(
                     f'Tried to enable FPR rule with purpose "{purpose}" that runs command "{command_description}"'
-                    f' against files with format "{format_}" but did not find it'
+                    f' against files with format "{format_}" but no disabled matching rule was found'
                 )
-                return True
+                return "already-enabled"
             assert len(disabled_rules) == 1, (
                 f'Expected to enable one FPR rule with purpose "{purpose}" that runs command "{command_description}"'
                 f' against files with format "{format_}" but found {len(disabled_rules)} disabled rules'
             )
             rule = disabled_rules[0]
             rule.find_element(By.CSS_SELECTOR, "td:nth-child(6) a:nth-child(3)").click()
-            return True
+            return "pending-enable-submit"
 
         result = self.retry_on_stale(action, max_attempts=5)
         if not result:
             raise AssertionError(
                 "Unable to enable FPR rule because the table kept refreshing"
             )
-        self.driver.find_element(By.CSS_SELECTOR, "input[value=Enable]").click()
+        if result == "pending-enable-submit":
+            self.wait_for_presence("input[value=Enable]")
+            self.driver.find_element(By.CSS_SELECTOR, "input[value=Enable]").click()
 
     @staticmethod
     def get_policy_command_description(policy_file):
