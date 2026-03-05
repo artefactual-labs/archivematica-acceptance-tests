@@ -80,7 +80,89 @@ class ArchivematicaBrowserAbility(
     # Archival Storage Tab
     # ==========================================================================
 
-    def wait_for_aip_in_archival_storage(self, aip_uuid):
+    def _search_archival_storage_vue(self, aip_uuid: str) -> bool | None:
+        """Search Archival Storage through the Vue interface.
+
+        This method returns ``True`` when the AIP is visible in the Vue table
+        results. It returns ``False`` when the Vue search controls exist but no
+        match is currently shown. It returns ``None`` when the Vue selectors
+        are not present at all, which allows callers to try legacy selectors.
+        """
+        query_input_els = self.driver.find_elements(
+            By.CSS_SELECTOR, "#search_form .aip-search-query-input"
+        )
+        if not query_input_els:
+            return None
+
+        query_input_el = query_input_els[0]
+        query_input_el.clear()
+        query_input_el.send_keys(aip_uuid)
+
+        field_select = Select(
+            self.driver.find_element(
+                By.CSS_SELECTOR, "#search_form .search-field-select"
+            )
+        )
+        try:
+            field_select.select_by_value("AIPUUID")
+        except NoSuchElementException:
+            field_select.select_by_visible_text("AIP UUID")
+
+        type_select = Select(
+            self.driver.find_element(
+                By.CSS_SELECTOR, "#search_form .search-type-select"
+            )
+        )
+        try:
+            type_select.select_by_value("string")
+        except NoSuchElementException:
+            type_select.select_by_visible_text("Phrase")
+
+        self.driver.find_element(
+            By.CSS_SELECTOR, "#search_form button[type='submit']"
+        ).click()
+        time.sleep(self.optimistic_wait)
+
+        return bool(
+            self.driver.find_elements(
+                By.CSS_SELECTOR, f'a[href$="/archival-storage/{aip_uuid}/"]'
+            )
+        )
+
+    def _search_archival_storage_legacy(self, aip_uuid: str) -> bool | None:
+        """Search Archival Storage through the legacy DataTables interface.
+
+        This method returns ``True`` when the legacy results table shows at
+        least one match for the requested AIP UUID. It returns ``False`` when
+        the legacy controls exist but the filtered result is empty. It returns
+        ``None`` when the legacy controls are missing, which signals that the
+        UI likely uses a different layout.
+        """
+        query_input_els = self.driver.find_elements(
+            By.CSS_SELECTOR, 'input[title="search query"]'
+        )
+        if not query_input_els:
+            return None
+
+        query_input_el = query_input_els[0]
+        query_input_el.clear()
+        query_input_el.send_keys(aip_uuid)
+        Select(
+            self.driver.find_element(By.CSS_SELECTOR, 'select[title="field name"]')
+        ).select_by_visible_text("AIP UUID")
+        Select(
+            self.driver.find_element(By.CSS_SELECTOR, 'select[title="query type"]')
+        ).select_by_visible_text("Phrase")
+        self.driver.find_element(By.ID, "search_submit").click()
+        self.wait_for_presence("#archival-storage-entries_info")
+
+        summary_el = self.driver.find_element(By.ID, "archival-storage-entries_info")
+        found = summary_el.text.strip() != "Showing 0 to 0 of 0 entries"
+        if found:
+            time.sleep(self.optimistic_wait)
+        return found
+
+    def wait_for_aip_in_archival_storage(self, aip_uuid: str) -> None:
         """Wait for the AIP with UUID ``aip_uuid`` to appear in the Archival
         storage tab.
         """
@@ -88,30 +170,26 @@ class ArchivematicaBrowserAbility(
         attempts = 0
         while True:
             self.navigate(self.get_archival_storage_url(), reload=True)
-            self.driver.find_element(
-                By.CSS_SELECTOR, 'input[title="search query"]'
-            ).send_keys(aip_uuid)
-            Select(
-                self.driver.find_element(By.CSS_SELECTOR, 'select[title="field name"]')
-            ).select_by_visible_text("AIP UUID")
-            Select(
-                self.driver.find_element(By.CSS_SELECTOR, 'select[title="query type"]')
-            ).select_by_visible_text("Phrase")
-            self.driver.find_element(By.ID, "search_submit").click()
-            self.wait_for_presence("#archival-storage-entries_info")
-            summary_el = self.driver.find_element(
-                By.ID, "archival-storage-entries_info"
-            )
-            if summary_el.text.strip() == "Showing 0 to 0 of 0 entries":
-                attempts += 1
-                if attempts > max_attempts:
-                    break
-                time.sleep(self.optimistic_wait)
-            else:
-                time.sleep(
-                    self.optimistic_wait
-                )  # Sleep a little longer, for good measure
+
+            vue_result = self._search_archival_storage_vue(aip_uuid)
+            if vue_result is True:
                 break
+
+            if vue_result is None:
+                legacy_result = self._search_archival_storage_legacy(aip_uuid)
+                if legacy_result is True:
+                    break
+                if legacy_result is None:
+                    # As a final compatibility fallback, we probe the direct
+                    # AIP detail URL. If that page is reachable, we can treat
+                    # the AIP as present in archival storage.
+                    self.navigate_to_aip_in_archival_storage(aip_uuid)
+                    break
+
+            attempts += 1
+            if attempts > max_attempts:
+                break
+            time.sleep(self.optimistic_wait)
 
     def request_aip_delete(self, aip_uuid):
         """Request the deletion of the AIP with UUID ``aip_uuid`` using the

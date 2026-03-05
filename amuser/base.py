@@ -4,6 +4,7 @@
 import os
 import re
 import shutil
+from collections.abc import Callable
 from urllib import parse
 
 from . import constants as c
@@ -22,6 +23,13 @@ class Base:
     """Base class for Archivematica user- and ability-type classes. Should only
     hold common functionality for configuring state.
     """
+
+    # These attributes/methods are configured dynamically in ``__init__`` and
+    # ``set_url_getters``. Declaring them here keeps static type checkers
+    # aligned with runtime behavior while preserving direct attribute access.
+    optimistic_wait: float
+    max_search_aip_archival_storage_attempts: int
+    get_archival_storage_url: Callable[[], str]
 
     expected_args = (
         ("am_username", c.DEFAULT_AM_USERNAME),
