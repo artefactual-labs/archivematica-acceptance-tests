@@ -34,18 +34,72 @@ class ArchivematicaBrowserStorageServiceAbility(
     Storage Service.
     """
 
+    # Support both the legacy DataTables UI and the newer Vue-based table UI.
+    SS_TABLE_LAYOUT_SELECTORS = {
+        "search_input": (
+            ".ss-table-search-input",
+            "#DataTables_Table_0_filter input",
+        ),
+        "table": (
+            "table.ss-table-grid",
+            "table#DataTables_Table_0",
+        ),
+    }
+
+    def _first_ss_present_element(self, selectors):
+        for selector in selectors:
+            elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+            if elements:
+                return elements[0]
+        return None
+
+    def _find_ss_table_search_input(self):
+        return self._first_ss_present_element(
+            self.SS_TABLE_LAYOUT_SELECTORS["search_input"]
+        )
+
+    def _find_ss_table(self):
+        return self._first_ss_present_element(self.SS_TABLE_LAYOUT_SELECTORS["table"])
+
+    def _search_ss_table(self, search_term):
+        search_el = self._find_ss_table_search_input()
+        if not search_el:
+            raise NoSuchElementException("Unable to locate SS table search input")
+        search_el.clear()
+        search_el.send_keys(search_term)
+        if self.driver.find_elements(By.CSS_SELECTOR, "#DataTables_Table_0_processing"):
+            self.wait_for_invisibility("#DataTables_Table_0_processing")
+        # Vue tables apply filtering after a short debounce.
+        time.sleep(max(0.3, self.optimistic_wait * 2))
+
+    def _get_ss_table_data_rows(self):
+        table_el = self._find_ss_table()
+        if not table_el:
+            return []
+
+        rows = []
+        for row_el in table_el.find_elements(By.CSS_SELECTOR, "tbody tr"):
+            cells = row_el.find_elements(By.TAG_NAME, "td")
+            if not cells:
+                continue
+            row_text = row_el.text.strip()
+            if len(cells) == 1 and (
+                "No matching records found" in row_text
+                or row_text.startswith("No ")
+                or row_text == "Loading data from server"
+            ):
+                continue
+            rows.append(row_el)
+        return rows
+
     def approve_aip_delete_request(self, aip_uuid):
         """Approve the deletion request of AIP with UUID ``aip_uuid`` via the
         SS GUI.
         """
         self.navigate(self.get_ss_package_delete_request_url())
-        self.driver.find_element(By.ID, "DataTables_Table_0_filter").find_element(
-            By.TAG_NAME, "input"
-        ).send_keys(aip_uuid)
+        self._search_ss_table(aip_uuid)
         matching_rows = []
-        for row_el in self.driver.find_elements(
-            By.CSS_SELECTOR, "table#DataTables_Table_0 tbody tr"
-        ):
+        for row_el in self._get_ss_table_data_rows():
             if len(row_el.find_elements(By.TAG_NAME, "td")) == 7:
                 matching_rows.append(row_el)
         if len(matching_rows) != 1:
@@ -54,7 +108,22 @@ class ArchivematicaBrowserStorageServiceAbility(
                 f" {aip_uuid}"
             )
         matching_rows[0].find_element(By.TAG_NAME, "textarea").send_keys("Cuz wanna")
-        matching_rows[0].find_element(By.CSS_SELECTOR, 'input[name="approve"]').click()
+        approve_controls = matching_rows[0].find_elements(
+            By.CSS_SELECTOR, 'input[name="approve"], button, input[type="submit"]'
+        )
+        approve_control = None
+        for control in approve_controls:
+            control_label = (
+                control.get_attribute("value") or control.text or ""
+            ).strip()
+            if control_label.lower() == "approve":
+                approve_control = control
+                break
+        if not approve_control:
+            raise ArchivematicaBrowserStorageServiceAbilityError(
+                "Unable to find approve control in package delete request row"
+            )
+        approve_control.click()
         assert self.driver.find_element(
             By.CSS_SELECTOR, "div.alert-success"
         ).text.strip() == ("Request approved: Package deleted successfully.")
@@ -66,26 +135,23 @@ class ArchivematicaBrowserStorageServiceAbility(
         max_attempts = 3
         attempts = 0
         self.navigate(self.get_packages_url())
-        self.wait_for_presence('#DataTables_Table_0_filter input[type="text"]')
-        self.driver.find_element(By.CSS_SELECTOR, "input[type=text]").send_keys(
-            aip_uuid
-        )
-        self.wait_for_invisibility("#DataTables_Table_0_processing")
+        self._search_ss_table(aip_uuid)
         while True:
-            # DataTables_Table_0
-            row_els = self.driver.find_elements(
-                By.CSS_SELECTOR, "#DataTables_Table_0 tr"
-            )
+            table_el = self._find_ss_table()
+            if not table_el:
+                break
             result = []
-            header = row_els[0]
             keys = [
                 th_el.text.strip().lower().replace(" ", "_")
-                for th_el in header.find_elements(By.TAG_NAME, "th")
+                for th_el in table_el.find_elements(By.CSS_SELECTOR, "thead th")
             ]
-            for row_el in row_els[1:]:
+            for row_el in table_el.find_elements(By.CSS_SELECTOR, "tbody tr"):
+                cell_els = row_el.find_elements(By.TAG_NAME, "td")
+                if len(cell_els) != len(keys):
+                    continue
                 row_dict = {}
-                for index, td_el in enumerate(row_el.find_elements(By.TAG_NAME, "td")):
-                    row_dict[keys[index]] = td_el.text.strip()
+                for index, td_el in enumerate(cell_els):
+                    row_dict[keys[index]] = " ".join(td_el.text.strip().split())
                 result.append(row_dict)
             # check if rows have been retrieved from the server yet
             if result and result[0].get("uuid") == "Loading data from server":
@@ -294,40 +360,40 @@ class ArchivematicaBrowserStorageServiceAbility(
         standard Archivematica Directory" is THE default AIP Storage location.
         """
         self.navigate(self.get_locations_url())
-        search_el = self.driver.find_element(By.CSS_SELECTOR, "input[type=text]")
-        search_el.send_keys("Store AIP in standard Archivematica Directory")
-        row_els = self.driver.find_elements(
-            By.CSS_SELECTOR, "#DataTables_Table_0 > tbody > tr"
-        )
+        self._search_ss_table("Store AIP in standard Archivematica Directory")
+        row_els = self._get_ss_table_data_rows()
+        row_els = [
+            row_el
+            for row_el in row_els
+            if row_el.find_elements(By.XPATH, './/a[normalize-space() = "Edit"]')
+        ]
+        row_els = [
+            row_el
+            for row_el in row_els
+            if "store aip in standard archivematica directory" in row_el.text.lower()
+        ]
+        unencrypted_rows = [
+            row_el for row_el in row_els if "encrypted" not in row_el.text.lower()
+        ]
+        if unencrypted_rows:
+            row_els = unencrypted_rows
+        if len(row_els) > 1:
+            raise ArchivematicaBrowserStorageServiceAbilityError(
+                "Unable to find a unique default AIP storage location"
+            )
         if not row_els:
             raise ArchivematicaBrowserStorageServiceAbilityError(
                 "Unable to find a default AIP storage location"
             )
-        if len(row_els) > 1:
-            new_row_els = []
-            for row_el in row_els:
-                row_text = []
-                for td_el in row_el.find_elements(By.CSS_SELECTOR, "td"):
-                    row_text.append(td_el.text.strip().lower())
-                if "encrypted" not in "".join(row_text):
-                    new_row_els.append(row_el)
-            if len(new_row_els) == 1:
-                row_els = new_row_els
-            else:
-                raise ArchivematicaBrowserStorageServiceAbilityError(
-                    "Unable to find a unique default AIP storage location"
-                )
-        cell_el = row_els[0].find_elements(By.CSS_SELECTOR, "td")[9]
-        edit_a_el = None
-        for a_el in cell_el.find_elements(By.CSS_SELECTOR, "a"):
-            if a_el.text.strip() == "Edit":
-                edit_a_el = a_el
-        if not edit_a_el:
+        edit_links = row_els[0].find_elements(
+            By.XPATH, './/a[normalize-space() = "Edit"]'
+        )
+        if not edit_links:
             raise ArchivematicaBrowserStorageServiceAbilityError(
                 "Unable to find an edit button/link for the default"
                 " AIP storage location"
             )
-        edit_a_el.click()
+        edit_links[0].click()
         self.wait_for_presence("select#id_replicators")
         replicators_select_el = self.driver.find_element(
             By.CSS_SELECTOR, "select#id_replicators"
@@ -366,12 +432,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         """
         fingerprints = []
         self.navigate(self.get_gpg_keys_url())
-        self.driver.find_element(By.CSS_SELECTOR, "input[type=text]").send_keys(
-            search_string
-        )
-        for row_el in self.driver.find_elements(
-            By.CSS_SELECTOR, "table#DataTables_Table_0 tbody tr"
-        ):
+        self._search_ss_table(search_string)
+        for row_el in self._get_ss_table_data_rows():
             try:
                 fingerprints.append(
                     row_el.find_elements(By.TAG_NAME, "td")[1].text.strip()
@@ -387,12 +449,8 @@ class ArchivematicaBrowserStorageServiceAbility(
         string.
         """
         self.navigate(self.get_gpg_keys_url())
-        self.driver.find_element(By.CSS_SELECTOR, "input[type=text]").send_keys(
-            key_name
-        )
-        matches = self.driver.find_elements(
-            By.CSS_SELECTOR, "table#DataTables_Table_0 tbody tr"
-        )
+        self._search_ss_table(key_name)
+        matches = self._get_ss_table_data_rows()
         try:
             assert len(matches) == 1
         except AssertionError:
@@ -404,9 +462,29 @@ class ArchivematicaBrowserStorageServiceAbility(
             )
             raise
         else:
-            matches[0].find_element(By.XPATH, 'td[3]/a[text() = "Delete"]').click()
+            delete_links = matches[0].find_elements(
+                By.XPATH, './/a[normalize-space() = "Delete"]'
+            )
+            if not delete_links:
+                raise NoSuchElementException(
+                    f'Unable to locate "Delete" action for key "{key_name}"'
+                )
+            delete_links[0].click()
         try:
-            self.driver.find_element(By.CSS_SELECTOR, "input[value=Delete]").click()
+            delete_controls = self.driver.find_elements(
+                By.CSS_SELECTOR, 'input[value="Delete"], button'
+            )
+            clicked = False
+            for control in delete_controls:
+                label = (control.get_attribute("value") or control.text or "").strip()
+                if label == "Delete":
+                    control.click()
+                    clicked = True
+                    break
+            if not clicked:
+                raise NoSuchElementException(
+                    'Unable to locate confirmation "Delete" button'
+                )
             try:
                 return (
                     True,
