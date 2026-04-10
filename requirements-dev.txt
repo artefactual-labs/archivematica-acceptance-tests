@@ -49,7 +49,7 @@ idna==3.11
     # via
     #   requests
     #   trio
-lxml==6.0.2
+lxml==6.0.3
     # via
     #   archivematica-acceptance-tests (pyproject.toml)
     #   metsrw
@@ -75,7 +75,7 @@ pexpect==4.9.0
     # via archivematica-acceptance-tests (pyproject.toml)
 pip-tools==7.5.3
     # via archivematica-acceptance-tests (pyproject.toml)
-platformdirs==4.9.4
+platformdirs==4.9.6
     # via
     #   python-discovery
     #   tox
@@ -92,7 +92,7 @@ pyproject-hooks==1.2.0
     #   pip-tools
 pysocks==1.7.1
     # via urllib3
-python-discovery==1.2.1
+python-discovery==1.2.2
     # via
     #   tox
     #   virtualenv
@@ -100,9 +100,9 @@ requests==2.33.1
     # via
     #   amclient
     #   archivematica-acceptance-tests (pyproject.toml)
-ruff==0.15.9
+ruff==0.15.10
     # via archivematica-acceptance-tests (pyproject.toml)
-selenium==4.41.0
+selenium==4.43.0
     # via archivematica-acceptance-tests (pyproject.toml)
 six==1.17.0
     # via
@@ -123,7 +123,7 @@ tomli==2.4.1
     #   tox
 tomli-w==1.2.0
     # via tox
-tox==4.52.0
+tox==4.52.1
     # via archivematica-acceptance-tests (pyproject.toml)
 trio==0.33.0
     # via
@@ -142,7 +142,7 @@ urllib3[socks]==2.6.3
     #   amclient
     #   requests
     #   selenium
-virtualenv==21.2.0
+virtualenv==21.2.1
     # via tox
 websocket-client==1.9.0
     # via selenium
