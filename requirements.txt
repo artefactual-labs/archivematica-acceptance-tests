@@ -34,7 +34,7 @@ idna==3.11
     # via
     #   requests
     #   trio
-lxml==6.0.3
+lxml==6.1.0
     # via
     #   archivematica-acceptance-tests (pyproject.toml)
     #   metsrw
