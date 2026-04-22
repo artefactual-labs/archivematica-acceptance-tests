@@ -12,7 +12,7 @@ attrs==26.1.0
     #   trio
 behave==1.3.3
     # via archivematica-acceptance-tests (pyproject.toml)
-certifi==2026.2.25
+certifi==2026.4.22
     # via
     #   requests
     #   selenium
@@ -30,11 +30,11 @@ exceptiongroup==1.3.1
     #   trio-websocket
 h11==0.16.0
     # via wsproto
-idna==3.11
+idna==3.13
     # via
     #   requests
     #   trio
-lxml==6.0.3
+lxml==6.1.0
     # via
     #   archivematica-acceptance-tests (pyproject.toml)
     #   metsrw
