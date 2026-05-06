@@ -152,7 +152,7 @@ wsproto==1.3.2
     # via trio-websocket
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==26.0.1
+pip==26.1
     # via pip-tools
 setuptools==82.0.1
     # via pip-tools
