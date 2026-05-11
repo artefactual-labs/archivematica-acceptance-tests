@@ -137,7 +137,7 @@ typing-extensions==4.15.0
     #   selenium
     #   tox
     #   virtualenv
-urllib3[socks]==2.6.3
+urllib3[socks]==2.7.0
     # via
     #   amclient
     #   requests

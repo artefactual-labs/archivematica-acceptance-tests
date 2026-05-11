@@ -84,7 +84,7 @@ typing-extensions==4.15.0
     # via
     #   exceptiongroup
     #   selenium
-urllib3[socks]==2.6.3
+urllib3[socks]==2.7.0
     # via
     #   amclient
     #   requests
