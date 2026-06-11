@@ -20,7 +20,7 @@ charset-normalizer==3.4.7
     # via requests
 colorama==0.4.6
     # via behave
-cucumber-expressions==19.0.0
+cucumber-expressions==19.0.1
     # via behave
 cucumber-tag-expressions==9.1.0
     # via behave
@@ -30,7 +30,7 @@ exceptiongroup==1.3.1
     #   trio-websocket
 h11==0.16.0
     # via wsproto
-idna==3.15
+idna==3.18
     # via
     #   requests
     #   trio
@@ -44,7 +44,7 @@ outcome==1.3.0.post0
     # via
     #   trio
     #   trio-websocket
-parse==1.22.0
+parse==1.22.1
     # via
     #   behave
     #   parse-type
