@@ -14,7 +14,7 @@ behave==1.3.3
     # via archivematica-acceptance-tests (pyproject.toml)
 build==1.5.0
     # via pip-tools
-cachetools==7.1.3
+cachetools==7.1.4
     # via tox
 certifi==2026.5.20
     # via
@@ -22,30 +22,30 @@ certifi==2026.5.20
     #   selenium
 charset-normalizer==3.4.7
     # via requests
-click==8.4.0
+click==8.4.1
     # via pip-tools
 colorama==0.4.6
     # via
     #   behave
     #   tox
-cucumber-expressions==19.0.0
+cucumber-expressions==19.0.1
     # via behave
 cucumber-tag-expressions==9.1.0
     # via behave
-distlib==0.4.0
+distlib==0.4.2
     # via virtualenv
 exceptiongroup==1.3.1
     # via
     #   trio
     #   trio-websocket
-filelock==3.29.0
+filelock==3.29.3
     # via
     #   python-discovery
     #   tox
     #   virtualenv
 h11==0.16.0
     # via wsproto
-idna==3.15
+idna==3.18
     # via
     #   requests
     #   trio
@@ -65,7 +65,7 @@ packaging==26.2
     #   pyproject-api
     #   tox
     #   wheel
-parse==1.22.0
+parse==1.22.1
     # via
     #   behave
     #   parse-type
@@ -75,7 +75,7 @@ pexpect==4.9.0
     # via archivematica-acceptance-tests (pyproject.toml)
 pip-tools==7.5.3
     # via archivematica-acceptance-tests (pyproject.toml)
-platformdirs==4.9.6
+platformdirs==4.10.0
     # via
     #   python-discovery
     #   tox
@@ -84,7 +84,7 @@ pluggy==1.6.0
     # via tox
 ptyprocess==0.7.0
     # via pexpect
-pyproject-api==1.10.0
+pyproject-api==1.10.1
     # via tox
 pyproject-hooks==1.2.0
     # via
@@ -92,7 +92,7 @@ pyproject-hooks==1.2.0
     #   pip-tools
 pysocks==1.7.1
     # via urllib3
-python-discovery==1.3.1
+python-discovery==1.4.0
     # via
     #   tox
     #   virtualenv
@@ -100,7 +100,7 @@ requests==2.34.2
     # via
     #   amclient
     #   archivematica-acceptance-tests (pyproject.toml)
-ruff==0.15.13
+ruff==0.15.16
     # via archivematica-acceptance-tests (pyproject.toml)
 selenium==4.44.0
     # via archivematica-acceptance-tests (pyproject.toml)
@@ -123,7 +123,7 @@ tomli==2.4.1
     #   tox
 tomli-w==1.2.0
     # via tox
-tox==4.54.0
+tox==4.55.1
     # via archivematica-acceptance-tests (pyproject.toml)
 trio==0.33.0
     # via
@@ -142,7 +142,7 @@ urllib3[socks]==2.7.0
     #   amclient
     #   requests
     #   selenium
-virtualenv==21.3.3
+virtualenv==21.4.2
     # via tox
 websocket-client==1.9.0
     # via selenium
@@ -152,7 +152,7 @@ wsproto==1.3.2
     # via trio-websocket
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==26.1.1
+pip==26.1.2
     # via pip-tools
 setuptools==82.0.1
     # via pip-tools
