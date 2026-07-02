@@ -24,21 +24,20 @@ jobs:
     steps:
       - name: "Check out repository"
         uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" # v7.0.1
-      - name: "Set up Python"
-        uses: "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97" # v7.0.0
+      - name: "Set up uv and Python"
+        uses: "astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990" # v8.3.2
         with:
           python-version: "${{ matrix.python-version }}"
-          cache: "pip"
-          cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
-      - name: "Install requirements"
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
+          enable-cache: true
+          cache-python: true
+          cache-dependency-glob: |
+            uv.lock
+          cache-suffix: "test-${{ matrix.python-version }}"
       - name: "Run test"
+        env:
+          UV_PYTHON: "${{ matrix.python-version }}"
         run: |
-          ./simplebrowsertest.py
+          make smoke-test
   test-docker:
     name: "Test Python ${{ matrix.python-version }} (docker)"
     runs-on: "ubuntu-24.04"
@@ -81,18 +80,15 @@ jobs:
     steps:
       - name: "Check out repository"
         uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" # v7.0.1
-      - name: "Set up Python"
-        uses: "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97" # v7.0.0
+      - name: "Set up uv and Python"
+        uses: "astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990" # v8.3.2
         with:
-          python-version: "3.x"
-          cache: "pip"
-          cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
-      - name: "Install tox"
+          python-version: "3.14"
+          enable-cache: true
+          cache-python: true
+          cache-dependency-glob: |
+            uv.lock
+          cache-suffix: "lint"
+      - name: "Run checks"
         run: |
-          python -m pip install --upgrade pip
-          pip install tox
-      - name: "Run tox"
-        run: |
-          tox -e linting
+          make check

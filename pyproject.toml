@@ -16,12 +16,17 @@ dependencies = [
   "tenacity",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-  "pip-tools",
+  "pre-commit",
   "ruff",
-  "tox",
 ]
+
+[tool.uv]
+# This repository is a test suite, not an installable Python package.
+package = false
+# GitHub Actions reads this value automatically via astral-sh/setup-uv.
+required-version = "==0.11.30"
 
 [tool.ruff.lint]
 # Rule reference: https://docs.astral.sh/ruff/rules/
@@ -47,18 +52,3 @@ force-single-line = true
 [[tool.mypy.overrides]]
 module = ["features.steps.*"]
 disable_error_code = "no-redef"
-
-[tool.tox]
-legacy_tox_ini = """
-    [tox]
-    skipsdist = True
-    envlist = linting
-
-    [testenv]
-    skip_install = True
-
-    [testenv:linting]
-    basepython = python3
-    deps = pre-commit
-    commands = pre-commit run --all-files --show-diff-on-failure
-"""
