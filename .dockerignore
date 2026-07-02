@@ -1,5 +1,10 @@
 .git
 .env
+.mypy_cache
+.ruff_cache
+# Exclude environments left behind by the former tox-based lint workflow.
+.tox
+.venv
 *.log
 __pycache__
 *.pyc

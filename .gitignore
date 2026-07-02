@@ -11,7 +11,9 @@ etc/aips/pictures-ee3eeb43-3f76-494e-8e35-e992fb3d4f98
 !etc/aips/pictures.7z
 test-files/
 .amsc-tmp/
+# Ignore environments left behind by the former tox-based lint workflow.
 .tox/
+.venv/
 .python-version
 __pycache__
 behave-tutorial/

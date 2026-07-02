@@ -1,13 +1,19 @@
 ARG TARGET=archivematica-acceptance-tests
 
 ARG UBUNTU_VERSION=24.04
+# Keep these in sync with tool.uv.required-version in pyproject.toml.
+ARG UV_VERSION=0.11.30
+ARG UV_DIGEST=sha256:93b61e21202b1dab861092748e46bbd6e0e41dd84f59b9174efd2353186e1b47
+ARG PYTHON_INSTALL_DIR=/python
+
+FROM ghcr.io/astral-sh/uv:${UV_VERSION}@${UV_DIGEST} AS uv
 
 FROM ubuntu:${UBUNTU_VERSION} AS base
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 ARG PYTHON_VERSION=3.10
-ARG PYENV_DIR=/pyenv
+ARG PYTHON_INSTALL_DIR=/python
 ARG SELENIUM_DIR=/selenium
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -19,7 +25,9 @@ RUN set -ex \
 	&& id -u ubuntu >/dev/null 2>&1 \
 	&& userdel --remove ubuntu || true
 
-RUN set -ex \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+	--mount=type=cache,target=/var/lib/apt,sharing=locked \
+	set -ex \
 	&& apt-get -qqy update \
 	&& apt-get -qqy --no-install-recommends install \
 		ca-certificates \
@@ -27,16 +35,14 @@ RUN set -ex \
 		git \
 		gnupg \
 		jq \
-		locales \
-	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+		locales
 
 RUN locale-gen en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-ENV PYENV_ROOT=${PYENV_DIR}/data
-ENV PATH=$PYENV_ROOT/shims:$PYENV_ROOT/bin:${SELENIUM_DIR}/bin:$PATH
+ENV PATH=${PYTHON_INSTALL_DIR}/venv/bin:${SELENIUM_DIR}/bin:$PATH
 
 # -----------------------------------------------------------------------------
 
@@ -60,39 +66,27 @@ RUN set -ex \
 
 # -----------------------------------------------------------------------------
 
-FROM base AS pyenv-builder
+FROM base AS python-builder
 
 ARG PYTHON_VERSION
 
-RUN set -ex \
-	&& apt-get -qqy update \
-	&& apt-get -qqy --no-install-recommends install \
-		build-essential \
-		libbz2-dev \
-		libffi-dev \
-		liblzma-dev \
-		libncursesw5-dev \
-		libreadline-dev \
-		libsqlite3-dev \
-		libssl-dev \
-		libxml2-dev \
-		libxmlsec1-dev \
-		tk-dev \
-		xz-utils \
-		zlib1g-dev \
-	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_PYTHON_CACHE_DIR=/root/.cache/uv/python
+ENV UV_PYTHON_INSTALL_DIR=${PYTHON_INSTALL_DIR}/managed
+ENV UV_PYTHON_PREFERENCE=only-managed
+ENV UV_PROJECT_ENVIRONMENT=${PYTHON_INSTALL_DIR}/venv
 
-RUN set -ex \
-	&& curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash \
-	&& pyenv install ${PYTHON_VERSION} \
-	&& pyenv global ${PYTHON_VERSION}
+COPY --from=uv --link /uv /usr/local/bin/uv
 
-COPY requirements-dev.txt requirements-dev.txt
+WORKDIR /app
 
-RUN set -ex \
-	&& pyenv exec python${PYTHON_VERSION} -m pip install --upgrade pip setuptools \
-	&& pyenv exec python${PYTHON_VERSION} -m pip install --requirement requirements-dev.txt \
-	&& pyenv rehash
+COPY pyproject.toml uv.lock ./
+
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
+	set -ex \
+	&& uv python install --no-bin ${PYTHON_VERSION} \
+	&& uv sync --locked --no-install-project --python ${PYTHON_VERSION}
 
 # -----------------------------------------------------------------------------
 
@@ -100,12 +94,15 @@ FROM base AS archivematica-acceptance-tests
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
+ARG PYTHON_INSTALL_DIR=/python
 
 ENV SE_MANAGER_PATH=${SELENIUM_DIR}/bin/selenium-manager
 ENV SE_CHROME_PATH=${SELENIUM_DIR}/bin/google-chrome
 ENV SE_FIREFOX_PATH=${SELENIUM_DIR}/bin/firefox
 
-RUN set -ex \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+	--mount=type=cache,target=/var/lib/apt,sharing=locked \
+	set -ex \
 	&& apt-get -qqy update \
 	&& apt-get -qqy --no-install-recommends install \
 		bzip2 \
@@ -124,11 +121,10 @@ RUN set -ex \
 		openssh-client \
 		p7zip-full \
 		tzdata \
-		unzip \
-	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+		unzip
 
 COPY --chown=${USER_ID}:${GROUP_ID} --from=browsers-builder --link /selenium /selenium
-COPY --chown=${USER_ID}:${GROUP_ID} --from=pyenv-builder --link /pyenv /pyenv
+COPY --chown=${USER_ID}:${GROUP_ID} --from=python-builder --link ${PYTHON_INSTALL_DIR} ${PYTHON_INSTALL_DIR}
 COPY --chown=${USER_ID}:${GROUP_ID} --link . /home/artefactual/acceptance-tests
 
 RUN set -ex \

@@ -86,35 +86,77 @@ read the `Detailed installation instructions`_ first.
 
 ::
 
-    $ virtualenv -p python3 env
-    $ source env/bin/activate
     $ git clone https://github.com/artefactual-labs/archivematica-acceptance-tests.git
     $ cd archivematica-acceptance-tests
-    $ pip install -r requirements.txt
-    $ behave
+    $ make sync-runtime
+    $ make behave
 
 
 Detailed installation instructions
 --------------------------------------------------------------------------------
 
-To install these tests manually, first create a virtual environment using Python
-3 and activate it::
-
-    $ virtualenv -p python3 env
-    $ source env/bin/activate
-
-Then clone the source::
+To install these tests manually, first install uv using the
+`uv installation documentation`_, then clone the source::
 
     $ git clone https://github.com/artefactual-labs/archivematica-acceptance-tests.git
+    $ cd archivematica-acceptance-tests
 
 Since lxml_ is a dependency, you may need to install python3-dev. On Ubuntu
 14.04 with Python 3 the following command should work::
 
     $ sudo apt-get install python3-dev
 
-Finally, install the Python dependencies::
+Finally, create the project environment and install its locked runtime
+dependencies. You can activate the environment if you want to invoke commands
+without the ``uv run`` prefix::
 
-    $ pip install -r requirements.txt
+    $ make sync-runtime
+    $ source .venv/bin/activate
+
+
+Managing Python dependencies
+--------------------------------------------------------------------------------
+
+Declare runtime dependencies in ``pyproject.toml`` and development dependencies
+in its ``dependency-groups.dev`` table. ``uv.lock`` records the exact versions
+used across supported Python versions and platforms and must be committed.
+This repository is configured as a uv virtual project because it is a test
+suite rather than an installable Python package. It uses uv's project commands
+(``uv lock``, ``uv sync``, and ``uv run``) rather than the pip-compatible
+interface. The lockfile is the sole dependency lock; requirements exports are
+not maintained.
+
+The Makefile provides shortcuts for common workflows:
+
+- ``make sync-runtime`` installs only the dependencies needed to run the tests.
+- ``make sync`` also installs development tools.
+- ``make lock-check`` verifies that ``uv.lock`` matches ``pyproject.toml``.
+- ``make lock`` refreshes the lockfile without upgrading existing versions,
+  while ``make upgrade`` upgrades all dependencies.
+- ``make check`` verifies the lockfile and runs all pre-commit checks.
+- ``make smoke-test`` runs the browser smoke test used by CI.
+- ``make behave BEHAVE_ARGS="..."`` runs the acceptance tests with optional
+  Behave arguments.
+- ``make docker-build`` builds the test image. Override ``PYTHON_VERSION`` or
+  ``DOCKER_IMAGE`` when needed.
+
+The primary uv version declaration is ``tool.uv.required-version`` in
+``pyproject.toml``. Local uv commands enforce it, and the ``setup-uv`` GitHub
+Action reads it automatically. The Docker build must repeat the version because
+Docker cannot read project metadata in a ``FROM`` instruction; it also pins the
+image digest for reproducible builds. These are the only two version pins.
+
+To upgrade uv, update ``tool.uv.required-version`` in ``pyproject.toml``
+together with ``UV_VERSION`` and ``UV_DIGEST`` in ``Dockerfile``. Obtain the
+multi-platform image digest with::
+
+    $ docker buildx imagetools inspect ghcr.io/astral-sh/uv:VERSION
+
+Standalone installer users can then run ``uv self update VERSION``; other
+installations must be updated through their package manager. Finally, run
+``make lock``, ``make check``, and ``make docker-build``. GitHub Actions will
+use the new version without another version change. If a local uv version is
+wrong, uv reports the exact update command before doing any project work.
 
 
 Install with deploy-pub
@@ -197,8 +239,13 @@ the default URLs and authentication strings as defined in
 ``features/environment.py``. However, in the typical case you will need to
 provide Behave with some configuration details that are appropriate to your
 environment and which target a specific subset of tests (i.e., feature files or
-scenarios).  The following command is a more realistic example of running the
-AMAUAT::
+scenarios). If the virtual environment is not activated, use ``make behave``
+and pass the same options through ``BEHAVE_ARGS``, for example::
+
+    $ make behave BEHAVE_ARGS="--tags=icc,ipc"
+
+The following command is a more realistic example of running the AMAUAT from
+an activated environment::
 
     $ behave \
         --tags=icc \
@@ -335,3 +382,4 @@ waiting too long for an event that will never happen, you can modify these
 .. _`Manual`: https://www.archivematica.org/en/docs/archivematica-1.7/
 .. _`behavior-driven development (BDD)`: https://en.wikipedia.org/wiki/Behavior-driven_development
 .. _`Behave documentation`: http://behave.readthedocs.io/en/latest/
+.. _`uv installation documentation`: https://docs.astral.sh/uv/getting-started/installation/
