@@ -38,7 +38,7 @@ lxml==6.1.1
     # via
     #   archivematica-acceptance-tests (pyproject.toml)
     #   metsrw
-metsrw==0.6.1
+metsrw==0.7.0
     # via archivematica-acceptance-tests (pyproject.toml)
 outcome==1.3.0.post0
     # via
@@ -80,7 +80,7 @@ trio==0.33.0
     #   trio-websocket
 trio-websocket==0.12.2
     # via selenium
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   exceptiongroup
     #   selenium
