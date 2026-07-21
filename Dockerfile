@@ -12,7 +12,6 @@ FROM ubuntu:${UBUNTU_VERSION} AS base
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
-ARG PYTHON_VERSION=3.10
 ARG PYTHON_INSTALL_DIR=/python
 ARG SELENIUM_DIR=/selenium
 
@@ -81,12 +80,17 @@ COPY --from=uv --link /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock ./
+COPY .python-version pyproject.toml uv.lock ./
 
 RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
 	set -ex \
-	&& uv python install --no-bin ${PYTHON_VERSION} \
-	&& uv sync --locked --no-install-project --python ${PYTHON_VERSION}
+	&& if [ -n "${PYTHON_VERSION}" ]; then \
+		uv python install --no-bin "${PYTHON_VERSION}"; \
+		uv sync --locked --no-install-project --python "${PYTHON_VERSION}"; \
+	else \
+		uv python install --no-bin; \
+		uv sync --locked --no-install-project; \
+	fi
 
 # -----------------------------------------------------------------------------
 

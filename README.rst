@@ -140,6 +140,22 @@ The Makefile provides shortcuts for common workflows:
 - ``make docker-build`` builds the test image. Override ``PYTHON_VERSION`` or
   ``DOCKER_IMAGE`` when needed.
 
+The exact project interpreter is pinned in ``.python-version``. Local uv
+commands and the ``setup-uv`` GitHub Action discover this file automatically;
+the Docker builder copies it before running ``uv python install``. The
+``project.requires-python`` value in ``pyproject.toml`` separately declares
+the supported Python minor line and controls dependency resolution.
+
+The CI test matrices intentionally override ``.python-version`` to exercise
+every supported Python version. Normal local, lint, and Docker workflows use
+the pinned version; the Makefile derives its Docker build argument from the
+file by default.
+
+To upgrade the default Python version, update ``.python-version`` and run
+``make lock``. If the supported range changes, also update
+``project.requires-python`` and the CI matrices; Ruff derives its target from
+the minimum supported version.
+
 The primary uv version declaration is ``tool.uv.required-version`` in
 ``pyproject.toml``. Local uv commands enforce it, and the ``setup-uv`` GitHub
 Action reads it automatically. The Docker build must repeat the version because
