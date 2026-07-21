@@ -1,7 +1,7 @@
 UV ?= uv
 DOCKER ?= docker
 DOCKER_IMAGE ?= archivematica-acceptance-tests:latest
-PYTHON_VERSION ?= 3.10
+PYTHON_VERSION ?= $(shell tr -d '\n' < $(CURDIR)/.python-version)
 BEHAVE_ARGS ?=
 
 .PHONY: lock
