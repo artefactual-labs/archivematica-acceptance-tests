@@ -25,8 +25,9 @@ dev = [
 [tool.uv]
 # This repository is a test suite, not an installable Python package.
 package = false
+# Keep compatibility with newer global uv installations used by deployments.
 # GitHub Actions reads this value automatically via astral-sh/setup-uv.
-required-version = "==0.11.30"
+required-version = ">=0.11.30"
 
 [tool.ruff.lint]
 # Rule reference: https://docs.astral.sh/ruff/rules/

@@ -156,23 +156,22 @@ To upgrade the default Python version, update ``.python-version`` and run
 ``project.requires-python`` and the CI matrices; Ruff derives its target from
 the minimum supported version.
 
-The primary uv version declaration is ``tool.uv.required-version`` in
-``pyproject.toml``. Local uv commands enforce it, and the ``setup-uv`` GitHub
-Action reads it automatically. The Docker build must repeat the version because
-Docker cannot read project metadata in a ``FROM`` instruction; it also pins the
-image digest for reproducible builds. These are the only two version pins.
+``tool.uv.required-version`` in ``pyproject.toml`` declares the minimum uv
+version and intentionally accepts newer global installations. Local uv commands
+enforce it, and the ``setup-uv`` GitHub Action reads it automatically and
+selects a compatible release. The Docker build independently pins its uv image
+version and digest for reproducible builds.
 
-To upgrade uv, update ``tool.uv.required-version`` in ``pyproject.toml``
-together with ``UV_VERSION`` and ``UV_DIGEST`` in ``Dockerfile``. Obtain the
-multi-platform image digest with::
+To raise the minimum supported uv version, update
+``tool.uv.required-version``. To upgrade the Docker build's uv release, update
+``UV_VERSION`` and ``UV_DIGEST`` in ``Dockerfile``. Obtain the multi-platform
+image digest with::
 
     $ docker buildx imagetools inspect ghcr.io/astral-sh/uv:VERSION
 
 Standalone installer users can then run ``uv self update VERSION``; other
 installations must be updated through their package manager. Finally, run
-``make lock``, ``make check``, and ``make docker-build``. GitHub Actions will
-use the new version without another version change. If a local uv version is
-wrong, uv reports the exact update command before doing any project work.
+``make lock``, ``make check``, and ``make docker-build``.
 
 
 Install with deploy-pub

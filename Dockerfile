@@ -1,7 +1,7 @@
 ARG TARGET=archivematica-acceptance-tests
 
 ARG UBUNTU_VERSION=24.04
-# Keep these in sync with tool.uv.required-version in pyproject.toml.
+# Pin the Docker tool image independently for reproducible builds.
 ARG UV_VERSION=0.11.30
 ARG UV_DIGEST=sha256:93b61e21202b1dab861092748e46bbd6e0e41dd84f59b9174efd2353186e1b47
 ARG PYTHON_INSTALL_DIR=/python
