@@ -4,15 +4,15 @@ requires-python = ">=3.10"
 
 [[package]]
 name = "amclient"
-version = "1.6.0"
+version = "1.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "requests" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f3/64/01b2571668c2f20d7f82036c163c690212fb551a06e07110ff9562085e13/amclient-1.6.0.tar.gz", hash = "sha256:d89d11bb1f81ccd9fa58c4b34b8f246992318e3386bbbe30baea7dde6ea23e72", size = 69746, upload-time = "2025-10-08T19:50:03.689Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/57/ec/2fd38061870c0304926bb3e407a367630c79fa84688198cd799eb408092b/amclient-1.7.0.tar.gz", hash = "sha256:e5ad951ff904c64fd409fa92f94efb40e585825910e4e719a201de12bbd71233", size = 71669, upload-time = "2026-08-05T17:20:17.897Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bf/5f/9ef26415468c442c9f3ef11bcd0efa126e573e835d2f99b710375ec36847/amclient-1.6.0-py3-none-any.whl", hash = "sha256:e62606a0fd863cd23610e982faed0d470040e4614aa3ed6549f2df31fd49822a", size = 42391, upload-time = "2025-10-08T19:50:02.228Z" },
+    { url = "https://files.pythonhosted.org/packages/73/c3/0871f212a4478da8f5ee10ca698775514c37721b03489fbe56dc889ddf9f/amclient-1.7.0-py3-none-any.whl", hash = "sha256:f9abc7e7bb1cf98e0f2261f4d3685a74d51e06acdb882d4b8b91f9be3641135a", size = 43248, upload-time = "2026-08-05T17:20:16.683Z" },
 ]
 
 [[package]]
@@ -38,7 +38,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "amclient" },
+    { name = "amclient", specifier = ">=1.7.0" },
     { name = "behave" },
     { name = "lxml" },
     { name = "metsrw" },

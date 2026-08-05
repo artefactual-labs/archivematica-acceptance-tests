@@ -7,7 +7,9 @@ contents of their AIPs without relying on user interface interactions.
 
 import os
 import pathlib
+import uuid
 
+import environment
 import metsrw
 from behave import given
 from behave import then
@@ -47,6 +49,110 @@ def step_impl(context, transfer_type, sample_transfer_path):
         context.api_clients_config, sample_transfer_path, transfer_type=transfer_type
     )
     context.current_transfer = transfer
+
+
+@given(
+    'a "{transfer_type}" transfer located in "{sample_transfer_path}" '
+    "is ready for idempotent submission"
+)
+def step_impl(context, transfer_type, sample_transfer_path):
+    transfer_path = os.path.join(environment.sample_data_path, sample_transfer_path)
+    if not utils.browse_default_ts_location(context.api_clients_config, transfer_path):
+        raise AssertionError(f"Location {transfer_path} cannot be verified")
+
+    run_id = uuid.uuid4().hex
+    context.current_transfer = {
+        "idempotency_key": f"amauat-transfer-{run_id}",
+        "transfer_name": f"amauat-idempotency-{run_id}",
+        "transfer_path": transfer_path,
+        "transfer_type": transfer_type,
+    }
+
+
+@when("the transfer is submitted twice with the same idempotency key")
+def step_impl(context):
+    transfer = context.current_transfer
+    context.idempotent_transfer_responses = [
+        utils.submit_idempotent_transfer(
+            context.api_clients_config,
+            transfer["transfer_path"],
+            transfer["transfer_name"],
+            transfer["idempotency_key"],
+            transfer_type=transfer["transfer_type"],
+        )
+        for _ in range(2)
+    ]
+
+
+@then("both transfer submissions are accepted with the same UUID")
+def step_impl(context):
+    transfer_uuids = []
+    for response in context.idempotent_transfer_responses:
+        assert not utils.is_invalid_api_response(response), (
+            f"Transfer submission returned an invalid response: {response}"
+        )
+        transfer_uuid = response.get("id")
+        try:
+            uuid.UUID(transfer_uuid)
+        except (AttributeError, TypeError, ValueError):
+            raise AssertionError(
+                f"Transfer submission returned an invalid UUID: {transfer_uuid}"
+            )
+        transfer_uuids.append(transfer_uuid)
+
+    assert transfer_uuids[0] == transfer_uuids[1], (
+        f"Idempotent transfer submissions returned different UUIDs: {transfer_uuids}"
+    )
+    context.current_transfer["transfer_uuid"] = transfer_uuids[0]
+
+
+@when("the idempotency key is reused with a different transfer name")
+def step_impl(context):
+    transfer = context.current_transfer
+    context.idempotency_conflict_response = utils.submit_idempotent_transfer(
+        context.api_clients_config,
+        transfer["transfer_path"],
+        f"{transfer['transfer_name']}-changed",
+        transfer["idempotency_key"],
+        transfer_type=transfer["transfer_type"],
+    )
+
+
+@then("the changed transfer submission is rejected with status {status_code:d}")
+def step_impl(context, status_code):
+    response = context.idempotency_conflict_response
+    assert isinstance(response, int), (
+        f"Changed transfer submission was unexpectedly accepted: {response}"
+    )
+    actual_status_code = getattr(response, "status_code", None)
+    assert actual_status_code == status_code, (
+        "Changed transfer submission returned status "
+        f"{actual_status_code} instead of {status_code}"
+    )
+    error_payload = getattr(response, "message", None)
+    assert isinstance(error_payload, dict) and error_payload.get("error") is True, (
+        f"Changed transfer submission returned an invalid error: {error_payload}"
+    )
+
+
+@then("the original idempotent transfer and ingest complete successfully")
+def step_impl(context):
+    transfer_response = utils.wait_for_transfer(
+        context.api_clients_config, context.current_transfer["transfer_uuid"]
+    )
+    assert transfer_response["status"] == "COMPLETE", (
+        f"Transfer did not complete successfully: {transfer_response}"
+    )
+
+    sip_uuid = transfer_response.get("sip_uuid")
+    assert sip_uuid, (
+        f"Completed transfer did not return a SIP UUID: {transfer_response}"
+    )
+    ingest_response = utils.wait_for_ingest(context.api_clients_config, sip_uuid)
+    assert ingest_response["status"] == "COMPLETE", (
+        f"Ingest did not complete successfully: {ingest_response}"
+    )
+    context.current_transfer["sip_uuid"] = sip_uuid
 
 
 @given("a processing configuration for metadata only reingests for uncompressed AIPs")
