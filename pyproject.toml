@@ -6,7 +6,7 @@ requires-python = ">=3.10"
 # project is not yet versioned. Using a placeholder for now.
 version = "0.0.0"
 dependencies = [
-  "amclient",
+  "amclient>=1.7.0",
   "behave",
   "lxml",
   "metsrw",

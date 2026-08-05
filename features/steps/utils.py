@@ -443,6 +443,26 @@ def start_transfer(
     return {"transfer_name": transfer_name, "transfer_uuid": response.get("id")}
 
 
+def submit_idempotent_transfer(
+    api_clients_config,
+    transfer_path,
+    transfer_name,
+    idempotency_key,
+    processing_config="automated",
+    transfer_type="standard",
+):
+    """Submit a keyed transfer once and preserve enhanced API errors."""
+    am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
+    am.transfer_source = return_default_ts_location(api_clients_config)
+    am.transfer_directory = transfer_path
+    am.transfer_name = transfer_name
+    am.transfer_type = transfer_type
+    am.processing_config = processing_config
+    am.idempotency_key = idempotency_key
+    am.enhanced_errors = True
+    return am.create_package()
+
+
 def check_unapproved_transfers_with_same_directory_name(
     api_clients_config, directory_name
 ):
