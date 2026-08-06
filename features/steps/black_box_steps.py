@@ -155,6 +155,20 @@ def step_impl(context):
     context.current_transfer["sip_uuid"] = sip_uuid
 
 
+@given('a "{transfer_type}" transfer-only transfer located in "{sample_transfer_path}"')
+def step_impl(context, transfer_type, sample_transfer_path):
+    if not getattr(context.config, "transfer_only_processing_config_ready", False):
+        context.am_user.api.install_transfer_only_processing_config(
+            utils.TRANSFER_ONLY_PROCESSING_CONFIG
+        )
+        context.config.transfer_only_processing_config_ready = True
+    context.current_transfer = utils.create_transfer_only_sample_transfer(
+        context.api_clients_config,
+        sample_transfer_path,
+        transfer_type=transfer_type,
+    )
+
+
 @given("a processing configuration for metadata only reingests for uncompressed AIPs")
 def step_impl(context):
     context.execute_steps(

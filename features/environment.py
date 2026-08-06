@@ -188,6 +188,9 @@ def before_scenario(context, scenario):
 
 def after_scenario(context, scenario):
     """Close all browser windows/Selenium drivers."""
+    transfer = getattr(context, "current_transfer", {})
+    if transfer.get("transfer_only") and transfer.get("status") == "USER_INPUT":
+        context.am_user.api.reject_transfer(transfer["transfer_uuid"])
     # In the following scenario, we've created a weird FPR rule. Here we put
     # things back as they were: make access .mov files normalize to .mp4
     if scenario.name == (
