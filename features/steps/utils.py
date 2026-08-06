@@ -22,7 +22,9 @@ from selenium.webdriver.support.ui import Select
 logger = logging.getLogger("amauat.steps.utils")
 
 TERMINAL_UNIT_STATUSES = ("COMPLETE", "FAILED")
+TRANSFER_ONLY_UNIT_STATUSES = ("USER_INPUT", "FAILED")
 FAST_UNIT_STATUS_POLL_ATTEMPTS = 3
+TRANSFER_ONLY_PROCESSING_CONFIG = "transfer_only"
 
 
 class ArchivematicaStepsError(Exception):
@@ -773,21 +775,26 @@ def start_sample_transfer(
         raise AssertionError(f"Error starting transfer: {err}")
 
 
-def _is_terminal_unit_status(response):
+def _is_terminal_unit_status(response, terminal_statuses=TERMINAL_UNIT_STATUSES):
     return (
         not is_invalid_api_response(response)
-        and response.get("status") in TERMINAL_UNIT_STATUSES
+        and response.get("status") in terminal_statuses
     )
 
 
-def _wait_for_unit_status(api_clients_config, unit_uuid, unit):
+def _wait_for_unit_status(
+    api_clients_config,
+    unit_uuid,
+    unit,
+    terminal_statuses=TERMINAL_UNIT_STATUSES,
+):
     # Probe a few times while the unit is expected to finish quickly. These calls are
     # deliberately best-effort: the status endpoint may not be ready immediately
     # after a unit is created.
     for _ in range(FAST_UNIT_STATUS_POLL_ATTEMPTS):
         try:
             response = _check_unit_status_once(api_clients_config, unit_uuid, unit)
-            if _is_terminal_unit_status(response):
+            if _is_terminal_unit_status(response, terminal_statuses):
                 return response
         except Exception:
             logger.debug(
@@ -802,14 +809,23 @@ def _wait_for_unit_status(api_clients_config, unit_uuid, unit):
     # retries while continuing to poll at the faster cadence.
     while True:
         response = check_unit_status(api_clients_config, unit_uuid, unit)
-        if _is_terminal_unit_status(response):
+        if _is_terminal_unit_status(response, terminal_statuses):
             return response
         time.sleep(environment.OPTIMISTIC_WAIT)
 
 
-def wait_for_transfer(api_clients_config, transfer_uuid):
+def wait_for_transfer(
+    api_clients_config,
+    transfer_uuid,
+    terminal_statuses=TERMINAL_UNIT_STATUSES,
+):
     try:
-        return _wait_for_unit_status(api_clients_config, transfer_uuid, "transfer")
+        return _wait_for_unit_status(
+            api_clients_config,
+            transfer_uuid,
+            "transfer",
+            terminal_statuses,
+        )
     except environment.EnvironmentError as err:
         raise AssertionError(
             f"Error checking transfer (uuid: {transfer_uuid}) status: {err}"
@@ -871,6 +887,31 @@ def create_sample_transfer(
         transfer["transfer_uuid"],
         transfer["extracted_aip_dir"],
     )
+    return transfer
+
+
+def create_transfer_only_sample_transfer(
+    api_clients_config, sample_transfer_path, transfer_type="standard"
+):
+    transfer = start_sample_transfer(
+        api_clients_config,
+        sample_transfer_path,
+        transfer_type=transfer_type,
+        processing_config=TRANSFER_ONLY_PROCESSING_CONFIG,
+    )
+    response = wait_for_transfer(
+        api_clients_config,
+        transfer["transfer_uuid"],
+        terminal_statuses=TRANSFER_ONLY_UNIT_STATUSES,
+    )
+    transfer["status"] = response["status"]
+    transfer["microservice"] = response["microservice"]
+    transfer["transfer_only"] = True
+    if response["status"] == "USER_INPUT":
+        assert response["microservice"] == "Create SIP(s)", (
+            "Transfer stopped at an unexpected decision point: "
+            f"{response['microservice']}"
+        )
     return transfer
 
 
