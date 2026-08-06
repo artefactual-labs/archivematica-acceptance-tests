@@ -315,17 +315,20 @@ def step_impl(context):
 use_step_matcher("parse")
 
 
+def _download_aip_pointer_file(context, aip_uuid):
+    expected_content = getattr(context.scenario, "new_key_fingerprint", None)
+    return context.am_user.api.download_aip_pointer_file(
+        aip_uuid,
+        context.am_user.browser.ss_api_key,
+        expected_content=expected_content,
+    )
+
+
 @when("the user downloads the AIP pointer file")
 def step_impl(context):
     uuid_val = utils.get_uuid_val(context, "sip")
-    # For some reason, it is necessary to pause a moment before downloading the
-    # AIP pointer file because otherwise, e.g., after a re-ingest, it can be
-    # out of date. See @reencrypt-different-key.
-    time.sleep(context.am_user.pessimistic_wait)
-    context.scenario.aip_pointer_path = app = (
-        context.am_user.api.download_aip_pointer_file(
-            uuid_val, context.am_user.browser.ss_api_key
-        )
+    context.scenario.aip_pointer_path = app = _download_aip_pointer_file(
+        context, uuid_val
     )
     logger.info("downloaded AIP pointer file for AIP %s to %s", uuid_val, app)
 
@@ -335,13 +338,10 @@ def step_impl(context, aip_description):
     aip_attr = utils.aip_descr_to_attr(aip_description)
     aip_ptr_attr = utils.aip_descr_to_ptr_attr(aip_description)
     aip_uuid = getattr(context.scenario, aip_attr)
-    time.sleep(context.am_user.pessimistic_wait)
     setattr(
         context.scenario,
         aip_ptr_attr,
-        context.am_user.api.download_aip_pointer_file(
-            aip_uuid, context.am_user.browser.ss_api_key
-        ),
+        _download_aip_pointer_file(context, aip_uuid),
     )
     logger.info(
         "downloaded AIP pointer file for %s AIP %s to %s",

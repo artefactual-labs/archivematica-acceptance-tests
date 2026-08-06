@@ -181,10 +181,14 @@ class ArchivematicaAPIAbility(base.Base):
                 )
                 raise ArchivematicaAPIAbilityError(f"Unable to download AIP {sip_uuid}")
 
-    def download_aip_pointer_file(self, sip_uuid, ss_api_key):
+    def download_aip_pointer_file(self, sip_uuid, ss_api_key, expected_content=None):
         """Use the AM SS API to download the completed AIP's pointer file.
         Calls http://localhost:8000/api/v2/file/<SIP-UUID>/pointer_file/\
                   ?username=<SS-USERNAME>&api_key=<SS-API-KEY>
+
+        If ``expected_content`` is provided, retry until the pointer file
+        contains it. This handles pointer files that are temporarily stale
+        after re-ingest.
         """
         payload = {"username": self.ss_username, "api_key": ss_api_key}
         url = f"{self.ss_url}api/v2/file/{sip_uuid}/pointer_file/"
@@ -196,7 +200,25 @@ class ArchivematicaAPIAbility(base.Base):
             r = requests.get(url, params=payload, stream=True)
             if r.ok:
                 _save_download(r, pointer_file_path)
-                return pointer_file_path
+                with open(pointer_file_path) as pointer_file:
+                    if (
+                        expected_content is None
+                        or expected_content in pointer_file.read()
+                    ):
+                        return pointer_file_path
+                if attempt < max_attempts:
+                    logger.warning(
+                        "Trying again to download AIP %s pointer file because"
+                        " it does not contain the expected content",
+                        sip_uuid,
+                    )
+                    attempt += 1
+                    time.sleep(self.optimistic_wait)
+                else:
+                    raise ArchivematicaAPIAbilityError(
+                        f"AIP {sip_uuid} pointer file does not contain the"
+                        " expected content"
+                    )
             elif r.status_code in (404, 500) and attempt < max_attempts:
                 logger.warning(
                     "Trying again to download AIP %s pointer file via GET"
