@@ -41,6 +41,7 @@ SS_API_CONFIG_KEY = "storage_service"
 TRANSFER_SOURCE_PATH = "vagrant/archivematica-sampledata/TestTransfers/acceptance-tests"
 HOME = ""
 DRIVER_NAME = "Chrome"
+BROWSER_REQUIRED_TAG = "requires-browser"
 AUTOMATION_TOOLS_PATH = "/etc/archivematica/automation-tools"
 # Set these constants if the AM client should be able to gain SSH access to the
 # server where AM is being served. This is needed in order to scp server files
@@ -158,7 +159,11 @@ def before_scenario(context, scenario):
     context.utils = utils
     if "driver_name" in userdata:
         context.am_user = get_am_user(userdata)
-        context.am_user.browser.set_up()
+        if (
+            "black-box" not in scenario.effective_tags
+            or BROWSER_REQUIRED_TAG in scenario.effective_tags
+        ):
+            context.am_user.browser.set_up()
     context.TRANSFER_SOURCE_PATH = userdata.get(
         "transfer_source_path", TRANSFER_SOURCE_PATH
     )
@@ -198,7 +203,10 @@ def after_scenario(context, scenario):
         " than that of the AIP on the second one."
     ):
         context.am_user.docker.recreate_archivematica(capture_output=True)
-    if getattr(context, "am_user", None) is not None:
+    if (
+        getattr(context, "am_user", None) is not None
+        and context.am_user.browser.driver is not None
+    ):
         context.am_user.browser.tear_down()
 
 
