@@ -21,6 +21,9 @@ from selenium.webdriver.support.ui import Select
 
 logger = logging.getLogger("amauat.steps.utils")
 
+TERMINAL_UNIT_STATUSES = ("COMPLETE", "FAILED")
+FAST_UNIT_STATUS_POLL_ATTEMPTS = 3
+
 
 class ArchivematicaStepsError(Exception):
     pass
@@ -534,15 +537,23 @@ def start_reingest(
     return reingest_uuid
 
 
+def _get_unit_status_endpoint(api_clients_config, unit_uuid, unit="transfer"):
+    am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
+    am.transfer_uuid = unit_uuid
+    am.sip_uuid = unit_uuid
+    return getattr(am, f"get_{unit}_status")
+
+
+def _check_unit_status_once(api_clients_config, unit_uuid, unit="transfer"):
+    return _get_unit_status_endpoint(api_clients_config, unit_uuid, unit)()
+
+
 def check_unit_status(api_clients_config, unit_uuid, unit="transfer"):
     """
     Get the status of a transfer or an ingest.
     """
-    am = configure_am_client(api_clients_config[AM_API_CONFIG_KEY])
-    am.transfer_uuid = unit_uuid
-    am.sip_uuid = unit_uuid
     return call_api_endpoint(
-        endpoint=getattr(am, f"get_{unit}_status"),
+        endpoint=_get_unit_status_endpoint(api_clients_config, unit_uuid, unit),
         warning_message="Cannot check unit status",
         error_message="Cannot check unit status",
     )
@@ -762,17 +773,43 @@ def start_sample_transfer(
         raise AssertionError(f"Error starting transfer: {err}")
 
 
+def _is_terminal_unit_status(response):
+    return (
+        not is_invalid_api_response(response)
+        and response.get("status") in TERMINAL_UNIT_STATUSES
+    )
+
+
+def _wait_for_unit_status(api_clients_config, unit_uuid, unit):
+    # Probe a few times while the unit is expected to finish quickly. These calls are
+    # deliberately best-effort: the status endpoint may not be ready immediately
+    # after a unit is created.
+    for _ in range(FAST_UNIT_STATUS_POLL_ATTEMPTS):
+        try:
+            response = _check_unit_status_once(api_clients_config, unit_uuid, unit)
+            if _is_terminal_unit_status(response):
+                return response
+        except Exception:
+            logger.debug(
+                "Ignoring an unsuccessful early %s status probe for %s",
+                unit,
+                unit_uuid,
+                exc_info=True,
+            )
+        time.sleep(environment.OPTIMISTIC_WAIT)
+
+    # From this point onward, retain the status endpoint's existing transient-error
+    # retries while continuing to poll at the faster cadence.
+    while True:
+        response = check_unit_status(api_clients_config, unit_uuid, unit)
+        if _is_terminal_unit_status(response):
+            return response
+        time.sleep(environment.OPTIMISTIC_WAIT)
+
+
 def wait_for_transfer(api_clients_config, transfer_uuid):
-    status = None
-    resp = None
     try:
-        while status not in ("COMPLETE", "FAILED"):
-            time.sleep(environment.MEDIUM_WAIT)
-            resp = check_unit_status(api_clients_config, transfer_uuid, "transfer")
-            if isinstance(resp, int) or resp is None:
-                continue
-            status = resp.get("status")
-        return resp
+        return _wait_for_unit_status(api_clients_config, transfer_uuid, "transfer")
     except environment.EnvironmentError as err:
         raise AssertionError(
             f"Error checking transfer (uuid: {transfer_uuid}) status: {err}"
@@ -780,16 +817,8 @@ def wait_for_transfer(api_clients_config, transfer_uuid):
 
 
 def wait_for_ingest(api_clients_config, sip_uuid):
-    status = None
-    resp = None
     try:
-        while status not in ("COMPLETE", "FAILED"):
-            time.sleep(environment.MEDIUM_WAIT)
-            resp = check_unit_status(api_clients_config, sip_uuid, unit="ingest")
-            if isinstance(resp, int) or resp is None:
-                continue
-            status = resp.get("status")
-        return resp
+        return _wait_for_unit_status(api_clients_config, sip_uuid, "ingest")
     except environment.EnvironmentError as err:
         raise AssertionError(f"Error checking ingest (uuid: {sip_uuid}) status: {err}")
 
