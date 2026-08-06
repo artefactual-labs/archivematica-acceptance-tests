@@ -363,7 +363,11 @@ def call_api_endpoint(
             if attempts == max_attempts:
                 raise environment.EnvironmentError(error_message)
             logger.warning(warning_message)
-            time.sleep(environment.OPTIMISTIC_WAIT * attempts)
+            retry_wait = min(
+                environment.MICRO_WAIT * 2 ** (attempts - 1),
+                environment.OPTIMISTIC_WAIT,
+            )
+            time.sleep(retry_wait)
     return response
 
 
