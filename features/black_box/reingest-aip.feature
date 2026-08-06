@@ -22,6 +22,7 @@ Feature: Alma wants to be able to re-ingest an AIP and have the reingest recorde
     And there is a current and a superseded techMD for each original object
     And there is a sourceMD containing a BagIt mdWrap in the reingested AIP METS
 
+  @requires-browser
   Scenario: Metadata only reingest without error
     Given a "standard" transfer type located in "SampleTransfers/DemoTransferCSV"
     And a processing configuration for metadata only reingests
@@ -37,6 +38,7 @@ Feature: Alma wants to be able to re-ingest an AIP and have the reingest recorde
     And the "metadata.csv" file is in the reingest metadata directory
     And every file in the reingested metadata.csv file has two dmdSecs with the original and updated metadata
 
+  @requires-browser
   Scenario: Partial reingest without error
     Given a "standard" transfer type located in "SampleTransfers/DemoTransferCSV"
     And a processing configuration for partial reingests
@@ -49,6 +51,7 @@ Feature: Alma wants to be able to re-ingest an AIP and have the reingest recorde
     And the DIP is downloaded
     And the DIP contains access copies for each original object in the transfer
 
+  @requires-browser
   Scenario: Multiple Re-ingest for uncompressed AIPs
     Given a "standard" transfer type located in "SampleTransfers/DemoTransferCSV"
     #
