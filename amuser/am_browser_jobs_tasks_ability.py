@@ -53,9 +53,18 @@ class ArchivematicaBrowserJobsTasksAbility(
         self.navigate(unit_url)
         ms_name, group_name = utils.micro_service2group(ms_name)
         logger.info("expecting job %s to be in group %s", ms_name, group_name)
+        self.wait_for_presence(f"#sip-row-{transfer_uuid}")
+        unit_row = self.driver.find_element(By.ID, f"sip-row-{transfer_uuid}")
+        unit_elem = unit_row.find_element(By.XPATH, "..")
+        unit_classes = unit_elem.get_attribute("class").split()
+        if "sip-expanded" not in unit_classes and not unit_elem.find_elements(
+            By.CSS_SELECTOR, "div.microservicegroup"
+        ):
+            unit_row.find_element(By.CSS_SELECTOR, ".sip-detail-directory").click()
         # In the Vue monitor, the job container may not exist in the DOM until
-        # the group is expanded (v-if). For compatibility, also support legacy
-        # markup where the container is the sibling after `.microservice-group`.
+        # the unit and group are expanded (v-if). For compatibility, also
+        # support legacy markup where the container is the sibling after
+        # `.microservice-group`.
         self.wait_for_transfer_micro_service_group(group_name, transfer_uuid)
         ms_group_elem = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid
@@ -203,7 +212,8 @@ class ArchivematicaBrowserJobsTasksAbility(
                         By.CSS_SELECTOR, "div.job-detail-currentstep span"
                     ).text.strip()
                     if job_output in job_outputs:
-                        return (span_elem.get_attribute("title").strip(), job_output)
+                        job_uuid = span_elem.get_attribute("title")
+                        return (job_uuid.strip() if job_uuid else None, job_output)
                     if level < (sys.getrecursionlimit() / 2):
                         # The job is taking a long time to complete. Half the
                         # amount of checking to avoid stack-overflow.
@@ -216,7 +226,11 @@ class ArchivematicaBrowserJobsTasksAbility(
                     level += 1
                     try:
                         return self.get_job_uuid(
-                            ms_name, group_name, transfer_uuid, level=level
+                            ms_name,
+                            group_name,
+                            transfer_uuid,
+                            job_outputs=job_outputs,
+                            level=level,
                         )
                     except RecursionError:
                         logger.error(
