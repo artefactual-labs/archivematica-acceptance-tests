@@ -55,10 +55,9 @@ an external server. Note that running all of the AMAUAT tests to completion will
 likely take more than one hour and will result in several transfers, SIPs, and
 AIPs being created in the AM instance that is being tested.
 
-The tests use the `Selenium WebDriver`_ to launch a web browser in order to
-interact with Archivematica's web interfaces. Therefore, you may need to
-install a web browser (Chrome or Firefox) and the appropriate Selenium drivers;
-see the `Browsers, drivers and displays`_ section for details.
+The tests use Playwright_ to interact with Archivematica's web interfaces in
+Chrome or Firefox. Browser drivers are not required; see `Browsers and
+headless mode`_ for installation details.
 
 
 Installation
@@ -89,6 +88,7 @@ read the `Detailed installation instructions`_ first.
     $ git clone https://github.com/artefactual-labs/archivematica-acceptance-tests.git
     $ cd archivematica-acceptance-tests
     $ make sync-runtime
+    $ make install-browsers
     $ make behave
 
 
@@ -101,16 +101,16 @@ To install these tests manually, first install uv using the
     $ git clone https://github.com/artefactual-labs/archivematica-acceptance-tests.git
     $ cd archivematica-acceptance-tests
 
-Since lxml_ is a dependency, you may need to install python3-dev. On Ubuntu
-14.04 with Python 3 the following command should work::
+On Ubuntu, install the system tools used by the browser and Python installers::
 
-    $ sudo apt-get install python3-dev
+    $ sudo apt-get install curl python3-dev unzip
 
 Finally, create the project environment and install its locked runtime
 dependencies. You can activate the environment if you want to invoke commands
 without the ``uv run`` prefix::
 
     $ make sync-runtime
+    $ make install-browsers
     $ source .venv/bin/activate
 
 
@@ -129,6 +129,8 @@ not maintained.
 The Makefile provides shortcuts for common workflows:
 
 - ``make sync-runtime`` installs only the dependencies needed to run the tests.
+- ``make install-browsers`` installs the pinned Chrome for Testing Stable build,
+  Playwright Chromium on Linux arm64, and Playwright's Firefox build.
 - ``make sync`` also installs development tools.
 - ``make lock-check`` verifies that ``uv.lock`` matches ``pyproject.toml``.
 - ``make lock`` refreshes the lockfile without upgrading existing versions,
@@ -184,52 +186,26 @@ requires setting the ``archivematica_src_install_acceptance_tests`` variable to
 vars-singlenode-qa.yml.
 
 
-Browsers, drivers and displays
+Browsers and headless mode
 --------------------------------------------------------------------------------
 
-A web browser (Firefox or Chrome) must be installed on the system where the
-tests are being run. On a typical desktop computer this is usually not a
-problem. However, on a development or CI server, this may require extra
-installation steps. You will need to consult the appropriate documentation for
-installing Firefox or Chrome on your particular platform.
+Run ``make install-browsers`` after syncing dependencies. It installs the
+project's pinned Chrome for Testing Stable build and the Firefox build matched
+to the locked Playwright release. Although regular Chrome Stable is available
+for Linux arm64, Chrome for Testing Stable does not publish a portable Linux
+arm64 artifact. The installer uses Playwright's matching Chromium build on
+that platform; other supported Linux and macOS platforms use the pinned Chrome
+for Testing Stable build.
 
-If you are using Chrome to run the tests, you will need to install the Selenium
-Chrome driver. Instructions for `installing the Selenium Chrome driver on
-Ubuntu 14.04`_ are copied below::
+Chrome is the default, with Chromium used on Linux arm64. Select Firefox with
+``-D browser_name=Firefox``. To use a Chrome executable installed elsewhere,
+pass ``-D chrome_executable_path=/absolute/path/to/chrome`` or set
+``CHROME_EXECUTABLE_PATH``.
 
-    wget -N http://chromedriver.storage.googleapis.com/2.26/chromedriver_linux64.zip
-    unzip chromedriver_linux64.zip
-    chmod +x chromedriver
-    sudo mv -f chromedriver /usr/local/share/chromedriver
-    sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
-    sudo ln -s /usr/local/share/chromedriver /usr/bin/chromedriver
-
-When the tests are running, they will open and close several browser windows.
-This can be annoying when you are trying to use your computer at the same time
-for other tasks. On the other hand, if you are running the tests on a virtual
-machine or a server, chances are that that machine will not have a display and
-you will require a *headless* display manager. The recommended way to run the
-tests headless is with `TightVNC`_. To install TightVNC on Ubuntu 14.04::
-
-    $ sudo apt-get update
-    $ sudo apt-get install -y tightvncserver
-
-Before running the tests, start the VNC server on display port 42 and tell the
-terminal session to use that display port::
-
-    $ tightvncserver -geometry 1920x1080 :42
-    $ export DISPLAY=:42
-
-Note that the first time you run this command, TightVNC server will ask you to
-provide a password so that you can connect to the server with a VNC viewer, if
-desired. If you do want to connect to the VNC session to see the tests running
-in real-time, use a VNC viewer to connect to display port 42 of the IP of the
-VM that is running the tests. As an example, if you are using the
-``xtightvncviewer`` application on Ubuntu (``sudo apt-get install
-xtightvncviewer``), you could run the following command to view the tests
-running on a local machine at IP ``192.168.168.192``::
-
-   $ xtightvncviewer 192.168.168.192:42
+Set ``HEADLESS=1`` when no display is available. Playwright provides headless
+operation directly, so a VNC or virtual-display server is not required. On a
+failed browser scenario, screenshots and Playwright traces are retained under
+``output/playwright/``.
 
 
 Installing Archivematica
@@ -270,7 +246,7 @@ an activated environment::
         -D am_version=1.7 \
         -D home=archivematica \
         -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests \
-        -D driver_name=Firefox \
+        -D browser_name=Firefox \
         -D am_url=http://127.0.0.1:62080/ \
         -D am_username=test \
         -D am_password=test \
@@ -304,7 +280,8 @@ The command given above is interpreted as follows.
     folder for all *relative* transfer source paths in the feature files
     should be
     ``archivematica/archivematica-sampledata/TestTransfers/acceptance-tests/``.
-  - The ``-D driver_name=Firefox`` flag tells Behave to use the Firefox browser.
+  - The ``-D browser_name=Firefox`` flag tells Behave to use Firefox instead of
+    the default Chrome browser.
   - Finally, the remaining user data flags provide Behave with the URLs and
     authentication details of particular AM and SS instances.
 
@@ -384,13 +361,11 @@ waiting too long for an event that will never happen, you can modify these
 .. _`Storage Service`: https://github.com/artefactual/archivematica-storage-service
 .. _behave: https://github.com/behave/behave
 .. _Gherkin: https://github.com/cucumber/cucumber/wiki/Gherkin
-.. _`Selenium WebDriver`: https://www.seleniumhq.org/projects/webdriver/
+.. _Playwright: https://playwright.dev/python/
 .. _Requests: http://docs.python-requests.org/en/master/
-.. _TightVNC: http://www.tightvnc.com/vncserver.1.php
 .. _`deploy-pub`: https://github.com/artefactual/deploy-pub.git
 .. _`Archivematica Docker Compose deployment method`: https://github.com/artefactual-labs/am/tree/master/compose
 .. _`am`: https://github.com/artefactual-labs/am/tree/master/compose
-.. _`installing the Selenium Chrome driver on Ubuntu 14.04`: https://christopher.su/2015/selenium-chromedriver-ubuntu/::
 .. _lxml: http://lxml.de/
 .. _`Docker Compose`: https://github.com/artefactual-labs/am/tree/master/compose
 .. _`Vagrant/Ansible`: https://github.com/artefactual/deploy-pub/tree/master/playbooks/archivematica-xenial

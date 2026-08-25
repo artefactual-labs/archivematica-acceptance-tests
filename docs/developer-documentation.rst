@@ -7,10 +7,10 @@ User Acceptance Tests (AMAUAT). This is technical documentation for those
 seeking to understand how these tests work and how to contribute to them.
 
 The Archivematica Automated User Acceptance Tests are high-level tests of the
-Archivematica application. The tests use the `Selenium WebDriver`_ to control a
-web-browser to do Archivematica set-up, perform user actions, and make
-assertions about the system's expected and desired behaviour. Behaviours are
-specified in human-readable Gherkin *feature* files.
+Archivematica application. The tests use Playwright_ to control Chrome
+or Firefox, perform user actions, and make assertions about the system's
+expected and desired behaviour. Behaviours are specified in human-readable
+Gherkin *feature* files.
 
 Gaining a thorough understanding of the tests requires understanding these three
 layers:
@@ -304,7 +304,7 @@ ones.
   class (which inherits from `amuser/base.py::Base <../amuser/base.py>`_) with
   the following instance attributes representing abilities:
 
-  - ``.browser``: the browser ability that uses Selenium to interact with
+  - ``.browser``: the browser ability that uses Playwright to interact with
     Archivematica via its web interfaces.
   - ``.ssh``: the SSH ability that spawns subprocesses to make ``scp`` or
     ``ssh`` calls.
@@ -322,7 +322,7 @@ ones.
 
 - `amuser/base.py <../amuser/base.py>`_: defines the ``Base`` class, which is a
   super-class of ``ArchivematicaUser`` as well as of all of the ability
-  classes, e.g., the ``ArchivematicaSeleniumAbility`` class that implements the
+  classes, e.g., the ``ArchivematicaPlaywrightAbility`` class that implements the
   browser ability.  The ``Base`` class does the following:
 
   - Initializes all of the URL getters as configured in
@@ -406,11 +406,10 @@ ones.
   search for rules, ensure that certain rules or commands exist, modify
   existing rules or commands, etc.
 
-- `amuser/selenium_ability.py <../amuser/selenium_ability.py>`_: defines the
-  ``ArchivematicaSeleniumAbility`` class which implements general browser
-  actions like navigating to a page or waiting for DOM elements to appear, or
-  Selenium-specific actions like instantiating a driver. All of the classes
-  that involve browser interaction sub-class ``ArchivematicaSeleniumAbility``.
+- `amuser/playwright_ability.py <../amuser/playwright_ability.py>`_: defines the
+  ``ArchivematicaPlaywrightAbility`` class, which owns the Playwright lifecycle,
+  browser contexts, navigation, synchronization, and failure artifacts. All
+  browser-interaction abilities inherit from this class.
 
 - `amuser/am_api_ability.py <../amuser/am_api_ability.py>`_: defines the
   ``ArchivematicaAPIAbility`` class which uses the Python ``requests`` library
@@ -464,7 +463,7 @@ Firefox web browser instead of the default Chrome::
 
     $ behave \
           -D am_url=http://my-am-instance.org/ \
-          -D driver_name=Firefox
+          -D browser_name=Firefox
 
 
 
@@ -557,7 +556,7 @@ Integration and Continuous Delivery (CI/CD) processes mature.
 .. _Archivematica: https://github.com/artefactual/archivematica
 .. _Behave: http://behave.readthedocs.io/en/latest/
 .. _Gherkin: https://github.com/cucumber/cucumber/wiki/Gherkin
-.. _`Selenium WebDriver`: https://www.seleniumhq.org/projects/webdriver/
+.. _Playwright: https://playwright.dev/python/
 .. _Requests: http://docs.python-requests.org/en/master/
 .. _TightVNC: http://www.tightvnc.com/vncserver.1.php
 .. _`deploy pub`: https://github.com/artefactual/deploy-pub.git
