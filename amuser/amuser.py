@@ -26,7 +26,7 @@ class ArchivematicaUser(base.Base):
     different abilities, or ways of interacting with Archivematica. Using
     composition, this Archivematica has the following types of abilities:
 
-        - browser abilities (via Selenium) accessed through ``self.browser``.
+        - browser abilities (via Playwright) accessed through ``self.browser``.
         - API abilities (via Requests) accessed through ``self.api``.
         - SSH abilities (via ssh, scp) accessed through ``self.ssh``.
         - METS (XML) abilities, accessed through ``self.mets``.

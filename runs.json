@@ -1,6 +1,6 @@
 [
     {
-        "behave_command": "behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=${AM_SS_API_KEY} -D home=archivematica -D driver_name=Firefox",
+        "behave_command": "behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=${AM_SS_API_KEY} -D home=archivematica -D browser_name=Firefox",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "qa/1.x",
@@ -15,10 +15,10 @@
         },
         "target_features": ["features/core/metadata-only-aip-reingest.feature"],
         "outcome": "fail",
-        "outcome_note": "Failed at step ``And the user initiates a metadata-only re-ingest on the AIP``, module am_browser_ability.py, line 148, in ``initiate_reingest`` with error `selenium.common.exceptions.NoSuchElementException: Message: Unable to locate element: div.alert-success`"
+        "outcome_note": "Failed at step ``And the user initiates a metadata-only re-ingest on the AIP``, module am_browser_ability.py, line 148, in ``initiate_reingest`` with error `browser automation timeout locating: div.alert-success`"
     },
     {
-        "behave_command": "behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox",
+        "behave_command": "behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D browser_name=Firefox",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "qa/1.x",
@@ -36,7 +36,7 @@
         "runtime": "7m18.599s"
     },
     {
-        "behave_command": "behave --tags=indexless --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox -D docker_compose_path=/path/to/dir/containing/docker/compose/file",
+        "behave_command": "behave --tags=indexless --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D browser_name=Firefox -D docker_compose_path=/path/to/dir/containing/docker/compose/file",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "origin/dev/issue-878-headless-into-am-1.7",
@@ -54,7 +54,7 @@
         "runtime": "5m29.640s"
     },
     {
-        "behave_command": "behave -v --tags=indexless --tags=deploy.method.ansible,same-aip,gui --no-skipped -D am_username=test -D am_password=testtest -D am_url=http://192.168.168.192/ -D am_version=1.7 -D ss_username=test -D ss_password=test -D ss_url=http://192.168.168.192:8000/ -D home=vagrant -D driver_name=Firefox -D server_user=vagrant -D server_password=vagrant",
+        "behave_command": "behave -v --tags=indexless --tags=deploy.method.ansible,same-aip,gui --no-skipped -D am_username=test -D am_password=testtest -D am_url=http://192.168.168.192/ -D am_version=1.7 -D ss_username=test -D ss_password=test -D ss_url=http://192.168.168.192:8000/ -D home=vagrant -D browser_name=Firefox -D server_user=vagrant -D server_password=vagrant",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "origin/origin/dev/issue-923-stop-using-disableElasticsearchIndexing",
@@ -70,7 +70,7 @@
         "runtime": "2m59.847s"
     },
     {
-        "behave_command": "behave -v --tags=indexless --tags=deploy.method.docker-compose,same-aip,gui --no-skipped -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox -D docker_compose_path=/Users/joeldunham/Documents/Artefactual/am/compose",
+        "behave_command": "behave -v --tags=indexless --tags=deploy.method.docker-compose,same-aip,gui --no-skipped -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D browser_name=Firefox -D docker_compose_path=/Users/joeldunham/Documents/Artefactual/am/compose",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "origin/origin/dev/issue-923-stop-using-disableElasticsearchIndexing",
@@ -86,7 +86,7 @@
         "runtime": "5m45.541s"
     },
     {
-        "behave_command": "behave --tags=ipc --tags=preservation --tags=nonmanual -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D driver_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
+        "behave_command": "behave --tags=ipc --tags=preservation --tags=nonmanual -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D browser_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "qa/1.x",
@@ -102,7 +102,7 @@
         "runtime": "4m55.099s"
     },
     {
-        "behave_command": "behave --tags=ipc --tags=access --tags=nonmanual -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D driver_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
+        "behave_command": "behave --tags=ipc --tags=access --tags=nonmanual -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D browser_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "qa/1.x",
@@ -118,7 +118,7 @@
         "runtime": "3m52.176s"
     },
     {
-        "behave_command": "behave --tags=ipc --tags=access --tags=manual -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D driver_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
+        "behave_command": "behave --tags=ipc --tags=access --tags=manual -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D browser_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "qa/1.x",
@@ -134,7 +134,7 @@
         "runtime": "3m40.135s"
     },
     {
-        "behave_command": "behave --tags=ipc --tags=preservation --tags=manual -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D driver_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
+        "behave_command": "behave --tags=ipc --tags=preservation --tags=manual -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D browser_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "qa/1.x",
@@ -150,7 +150,7 @@
         "runtime": "4m23.489s"
     },
     {
-        "behave_command": "behave --tags=ipc -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D driver_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
+        "behave_command": "behave --tags=ipc -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D browser_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "qa/1.x",
@@ -166,7 +166,7 @@
         "runtime": "16m6.161s"
     },
     {
-        "behave_command": "behave --tags=icc -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D driver_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
+        "behave_command": "behave --tags=icc -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D browser_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "qa/1.x",
@@ -182,7 +182,7 @@
         "runtime": "7m8.105s"
     },
     {
-        "behave_command": "behave --tags=tcc -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D driver_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
+        "behave_command": "behave --tags=tcc -D am_url=http://127.0.0.1:62080/ -D ss_url=http://127.0.0.1:62081/ -D am_username=test -D am_password=test -D ss_username=test -D ss_password=test --no-skipped -D browser_name=Firefox -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests -D am_version=1.7",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "qa/1.x",
@@ -198,7 +198,7 @@
         "runtime": "3m55.988s"
     },
     {
-        "behave_command": "behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D driver_name=Firefox",
+        "behave_command": "behave --tags=mo-aip-reingest --no-skipped -v -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_version=1.7 -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D ss_api_key=test -D home=archivematica -D browser_name=Firefox",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "stable/1.7.x",
@@ -212,7 +212,7 @@
         "runtime": "4m43.840s"
     },
     {
-        "behave_command": "behave --tags=aip-encrypt-mirror --no-skipped -D am_version=1.7 -D driver_name=Firefox -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D home=archivematica -D docker_compose_path=/abs/path/to/dir/containing/compose/file -v",
+        "behave_command": "behave --tags=aip-encrypt-mirror --no-skipped -D am_version=1.7 -D browser_name=Firefox -D am_username=test -D am_password=test -D am_url=http://127.0.0.1:62080/ -D am_api_key=test -D ss_username=test -D ss_password=test -D ss_url=http://127.0.0.1:62081/ -D home=archivematica -D docker_compose_path=/abs/path/to/dir/containing/compose/file -v",
         "environment": {
             "archivematica_version": "1.7.0",
             "archivematica_branch": "qa/1.x",

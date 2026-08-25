@@ -24,16 +24,29 @@ sync:  # Sync the project and development dependencies
 sync-runtime:  # Sync only the runtime dependencies
 	$(UV) sync --locked --no-dev
 
+.PHONY: install-browsers
+# install-deps installs OS libraries only. Playwright supplies Firefox, while
+# the project script supplies Chrome for Testing or the Linux arm64 fallback.
+install-browsers: sync-runtime  # Install browser dependencies and binaries
+	$(UV) run --locked --no-dev playwright install-deps chromium firefox
+	$(UV) run --locked --no-dev playwright install firefox
+	$(UV) run --locked --no-dev bash scripts/install-chrome.sh
+
 .PHONY: lint
 lint:  # Run all pre-commit checks
 	$(UV) run --locked pre-commit run --all-files --show-diff-on-failure
 
-.PHONY: unit-test
-unit-test:  # Run focused unit tests
-	$(UV) run --locked --no-dev python -m unittest discover -s tests
+.PHONY: unit unit-test
+unit-test: unit  # Keep the upstream unit-test target available
+unit:  # Run fast unit tests
+	PYTHONPATH=$(CURDIR)/features $(UV) run --locked python -m unittest discover -s tests -v
+
+.PHONY: browser-test
+browser-test:  # Check UI layouts with installed Chrome and Firefox
+	PYTHONPATH=$(CURDIR) $(UV) run --locked --no-dev python -m unittest discover -s browser_tests -v
 
 .PHONY: check
-check: lock-check lint unit-test  # Verify the lockfile and run all checks
+check: lock-check lint unit  # Verify the lockfile and run all checks
 
 .PHONY: behave
 behave:  # Run the acceptance tests; pass options with BEHAVE_ARGS

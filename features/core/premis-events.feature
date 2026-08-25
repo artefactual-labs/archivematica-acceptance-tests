@@ -15,7 +15,7 @@
 #          -D ss_url=http://127.0.0.1:62081/ \
 #          -D ss_api_key=test \
 #          -D home=archivematica \
-#          -D driver_name=Firefox
+#          -D browser_name=Firefox
 #
 @premis-events @am16
 Feature: PREMIS events are recorded correctly

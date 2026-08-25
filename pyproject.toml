@@ -12,7 +12,7 @@ dependencies = [
   "metsrw",
   "pexpect",
   "requests",
-  "selenium",
+  "playwright",
   "tenacity",
 ]
 

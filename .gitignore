@@ -17,6 +17,8 @@ test-files/
 __pycache__
 behave-tutorial/
 reports/
+output/playwright/
+.cache/chrome/
 data/
 *.log
 *~

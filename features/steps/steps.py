@@ -2,7 +2,6 @@
 
 import logging
 import os
-import time
 
 from behave import given
 from behave import then
@@ -259,7 +258,6 @@ def step_impl(context):
 
 @when("the user searches for the AIP UUID in the Storage Service")
 def step_impl(context):
-    time.sleep(context.am_user.optimistic_wait)
     the_aip_uuid = utils.get_uuid_val(context, "sip")
     context.scenario.aip_search_results = (
         context.am_user.browser.search_for_aip_in_storage_service(the_aip_uuid)

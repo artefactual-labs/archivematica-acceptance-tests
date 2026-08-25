@@ -10,7 +10,8 @@ DEFAULT_SS_PASSWORD = "test"
 DEFAULT_SS_URL = "http://192.168.168.192:8000/"
 DEFAULT_AM_API_KEY = None
 DEFAULT_SS_API_KEY = None
-DEFAULT_DRIVER_NAME = "Chrome"  # 'Firefox' should also work.
+DEFAULT_BROWSER_NAME = "Chrome"  # Firefox is also supported.
+DEFAULT_CHROME_EXECUTABLE_PATH = None
 DUMMY_VAL = "Archivematica Acceptance Test"
 METADATA_ATTRS = ("title", "creator")
 JOB_OUTPUTS_COMPLETE = ("Failed", "Completed successfully", "Awaiting decision")
@@ -21,33 +22,23 @@ PERM_DIR_NAME = "data"
 # CSS classes and selectors
 # =========================================================================
 
-# CSS class of the "Add" links in the AM file explorer.
-CLASS_ADD_TRANSFER_FOLDER = "backbone-file-explorer-directory_entry_actions"
 # CSS selector for the <div> holding an entire transfer.
 SELECTOR_TRANSFER_DIV = "div.sip"
 # CSS selector for the <div> holding the gear icon, the roport icon, etc.
 SELECTOR_TRANSFER_ACTIONS = "div.job-detail-actions"
-SELECTOR_INPUT_TRANSFER_NAME = 'input[ng-model="vm.transfer.name"]'
-SELECTOR_INPUT_TRANSFER_TYPE = 'select[ng-model="vm.transfer.type"]'
-SELECTOR_INPUT_TRANSFER_ACCESSION = 'input[ng-model="vm.transfer.accession"]'
-SELECTOR_DIV_TRANSFER_SOURCE_BROWSE = "div.transfer-tree-container"
-SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER = "button.pull-right[type=submit]"
-SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES = 'button[data-target="#transfer_browse_tree"]'
-SELECTOR_BUTTON_START_TRANSFER = 'button[ng-click="vm.transfer.start()"]'
+SELECTOR_INPUT_TRANSFER_NAME = "#transfer-name"
+SELECTOR_INPUT_TRANSFER_TYPE = "#transfer-type"
+SELECTOR_INPUT_TRANSFER_ACCESSION = "#transfer-accession"
+SELECTOR_DIV_TRANSFER_SOURCE_BROWSE = "#transfer-browser #file-browser"
+SELECTOR_BUTTON_ADD_DIR_TO_TRANSFER = "#transfer-browser .transfer-tree-add-btn"
+SELECTOR_BUTTON_BROWSE_TRANSFER_SOURCES = "#transfer-browser .btn-browse"
+SELECTOR_BUTTON_START_TRANSFER = (
+    "#transfer-browser-form button.btn-success:not(.dropdown-toggle)"
+)
 SELECTOR_SS_LOGIN_BUTTON = "input[value=login]"
 SELECTOR_SS_LOGIN_BUTTON_1_7 = 'input[value="Log in"]'
 SELECTOR_DFLT_SS_REG = "input[name=use_default]"
 SELECTOR_DFLT_SS_REG_1_7 = "input[type=submit]"
-
-
-# XPATHS
-# =========================================================================
-
-# This is used to join folder-matching XPaths. So that
-# 'vagrant/archivematica-sampledata' can be matched by getting an XPath
-# that matches each folder name and joins them according to the DOM
-# structure of the file browser.
-XPATH_TREEITEM_NEXT_SIBLING = "/following-sibling::treeitem/ul/li/"
 
 
 # UUIDs
@@ -343,13 +334,13 @@ QUICK_WAIT = WAIT_FACTOR * 0.5
 MICRO_WAIT = WAIT_FACTOR * 0.25
 
 # Use-case-specific maximum attempt counters
-MAX_CLICK_TRANSFER_DIRECTORY_ATTEMPTS = 5
-MAX_CLICK_AIP_DIRECTORY_ATTEMPTS = 5
 MAX_NAVIGATE_AIP_ARCHIVAL_STORAGE_ATTEMPTS = 10
 MAX_DOWNLOAD_AIP_ATTEMPTS = 20
 MAX_CHECK_AIP_STORED_ATTEMPTS = 60
-MAX_CHECK_METS_LOADED_ATTEMPTS = 60
 MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS = 120
 MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS = 1000
 MAX_CHECK_FOR_MS_VISIBILITY_ATTEMPTS = 1000
-MAX_CHECK_FOR_MS_GROUP_ATTEMPTS = 7200
+# Monitor groups should appear promptly, while running jobs may need longer.
+# Keep both waits below the acceptance-test CI step deadline by default.
+MAX_CHECK_FOR_MS_GROUP_ATTEMPTS = 300
+MAX_CHECK_JOB_STATUS_ATTEMPTS = 600

@@ -10,7 +10,7 @@
 #           -D ss_username=test \
 #           -D ss_password=test \
 #           --no-skipped \
-#           -D driver_name=Firefox \
+#           -D browser_name=Firefox \
 #           -D transfer_source_path=archivematica/archivematica-sampledata/TestTransfers/acceptance-tests \
 #           -D am_version=1.7 \
 #           -D docker_compose_path=/home/jdunham/Development/Archivematica/am/compose/ \
@@ -32,7 +32,7 @@
 #           -D am_password=test \
 #           -D ss_username=test \
 #           -D ss_password=test \
-#           -D driver_name=Firefox \
+#           -D browser_name=Firefox \
 #           -D am_version=1.7
 #     $ ./close_all_ingests.sh \
 #           -D am_url=http://127.0.0.1:62080/ \
@@ -41,7 +41,7 @@
 #           -D am_password=test \
 #           -D ss_username=test \
 #           -D ss_password=test \
-#           -D driver_name=Firefox \
+#           -D browser_name=Firefox \
 #           -D am_version=1.7
 
 @uuids-dirs

@@ -8,7 +8,7 @@
 #           --no-skipped \
 #           --no-logcapture \
 #           -D runtime_supplied_transfer_path='TestTransfers/small' \
-#           -D driver_name=Firefox \
+#           -D browser_name=Firefox \
 #           -D am_url=http://127.0.0.1:62080/ \
 #           -D am_password=test \
 #           -D am_version=1.7 \

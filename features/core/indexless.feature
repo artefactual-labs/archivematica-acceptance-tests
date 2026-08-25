@@ -14,7 +14,7 @@
 #           -D ss_url=http://127.0.0.1:62081/ \
 #           -D ss_api_key=test \
 #           -D home=archivematica \
-#           -D driver_name=Firefox \
+#           -D browser_name=Firefox \
 #           -D docker_compose_path=/path/to/dir/containing/docker/compose/file
 
 # To run this feature against an indexless Vagrant/Ansible (Ubuntu 14)
@@ -31,7 +31,7 @@
 #           -D ss_password=test \
 #           -D ss_url=http://192.168.168.192:8000/ \
 #           -D home=vagrant \
-#           -D driver_name=Firefox \
+#           -D browser_name=Firefox \
 #           -D server_user=vagrant \
 #           -D server_password=vagrant
 
@@ -49,7 +49,7 @@
 #           -D ss_password=test \
 #           -D ss_url=http://192.168.168.195:8000/ \
 #           -D home=ubuntu \
-#           -D driver_name=Firefox \
+#           -D browser_name=Firefox \
 #           -D server_user=vagrant \
 #           -D ssh_identity_file=/abs/path/to/ssh/private/key
 

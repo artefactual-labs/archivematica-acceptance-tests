@@ -8,7 +8,6 @@ from behave import given
 from behave import then
 from behave import when
 from lxml import etree
-from selenium.webdriver.common.by import By
 
 from features.steps import utils
 
@@ -285,7 +284,7 @@ def step_impl(context, tab_name):
     tab_name = tab_name.replace(" tab", "").strip().lower()
     msg1 = "Elasticsearch Indexing Disabled"
     msg2 = f"The {tab_name} tab is non-functional"
-    page_text = context.am_user.browser.driver.find_element(By.TAG_NAME, "body").text
+    page_text = context.am_user.browser.body_text()
     assert msg1 in page_text
     assert msg2 in page_text
 

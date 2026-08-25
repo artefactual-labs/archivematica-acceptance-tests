@@ -8,7 +8,7 @@
 #     $ behave --tags=aip-encrypt-mirror \
 #       --no-skipped \
 #       -D am_version=1.7 \
-#       -D driver_name=Firefox \
+#       -D browser_name=Firefox \
 #       -D server_user=archivematica
 #
 # How to run this test against a docker-compose deploy (see
@@ -17,7 +17,7 @@
 #     $ behave --tags=aip-encrypt-mirror \
 #       --no-skipped \
 #       -D am_version=1.7 \
-#       -D driver_name=Firefox \
+#       -D browser_name=Firefox \
 #       -D am_username=test \
 #       -D am_password=test \
 #       -D am_url=http://127.0.0.1:62080/ \

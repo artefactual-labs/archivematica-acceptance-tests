@@ -1,6 +1,7 @@
 """Utilities for AM User."""
 
 import logging
+import re
 import time
 
 import requests
@@ -9,6 +10,22 @@ from . import constants as c
 
 logger = logging.getLogger("amuser.utils")
 
+_MICROSERVICE_NAME_ALIASES = {
+    "approvenormalization(review)": "approvenormalization",
+    "approvenormalizationreview": "approvenormalization",
+    "storeaip(review)": "storeaip",
+    "storeaipreview": "storeaip",
+}
+
+_MICROSERVICE_NAME_VARIANTS = {
+    "approvenormalization": (
+        "Approve normalization",
+        "Approve normalization (review)",
+        "Approve normalization Review",
+    ),
+    "storeaip": ("Store AIP", "Store AIP (review)", "Store AIP Review"),
+}
+
 
 def squash(string_):
     """Simple function that makes it easy to compare two strings for
@@ -16,6 +33,32 @@ def squash(string_):
     differences.
     """
     return string_.strip().lower().replace(" ", "")
+
+
+def canonical_microservice_name(name):
+    """Return a stable name across processing-monitor label variants."""
+    squashed_name = squash(name)
+    return _MICROSERVICE_NAME_ALIASES.get(squashed_name, squashed_name)
+
+
+def microservice_names_match(first, second):
+    """Compare microservice names across supported Archivematica versions."""
+    return canonical_microservice_name(first) == canonical_microservice_name(second)
+
+
+def microservice_name_variants(name):
+    """Return processing-monitor labels equivalent to ``name``."""
+    canonical_name = canonical_microservice_name(name)
+    return _MICROSERVICE_NAME_VARIANTS.get(canonical_name, (name,))
+
+
+def microservice_name_pattern(name):
+    """Match a complete monitor label, allowing Vue's inline whitespace."""
+    variants = (
+        r"\s+".join(re.escape(word) for word in variant.split())
+        for variant in microservice_name_variants(name)
+    )
+    return re.compile(r"^\s*(?:" + "|".join(variants) + r")\s*$", re.IGNORECASE)
 
 
 def is_uuid(idfr):
