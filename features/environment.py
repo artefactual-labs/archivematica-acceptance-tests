@@ -42,6 +42,7 @@ TRANSFER_SOURCE_PATH = "vagrant/archivematica-sampledata/TestTransfers/acceptanc
 HOME = ""
 BROWSER_NAME = "Chrome"
 BROWSER_REQUIRED_TAG = "requires-browser"
+SUCCESSFUL_SCENARIO_STATUSES = frozenset(("passed", "skipped", "xfailed"))
 AUTOMATION_TOOLS_PATH = "/etc/archivematica/automation-tools"
 # Set these constants if the AM client should be able to gain SSH access to the
 # server where AM is being served. This is needed in order to scp server files
@@ -141,6 +142,15 @@ def before_all(context):
     formatter = logging.Formatter(logging_format)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
+    runtime_owner = get_am_user(dict(context.config.userdata))
+    context.playwright_runtime = runtime_owner.browser.create_playwright_runtime()
+
+
+def after_all(context):
+    """Close the Playwright process and shared browser for this Behave worker."""
+    runtime = getattr(context, "playwright_runtime", None)
+    if runtime is not None:
+        runtime.stop()
 
 
 def before_scenario(context, scenario):
@@ -149,7 +159,9 @@ def before_scenario(context, scenario):
     """
     userdata = context.config.userdata
     context.utils = utils
-    context.am_user = get_am_user(userdata)
+    am_user_config = dict(userdata)
+    am_user_config["playwright_runtime"] = context.playwright_runtime
+    context.am_user = get_am_user(am_user_config)
     if (
         "black-box" not in scenario.effective_tags
         or BROWSER_REQUIRED_TAG in scenario.effective_tags
@@ -178,39 +190,53 @@ def before_scenario(context, scenario):
 
 
 def after_scenario(context, scenario):
-    """Close the Playwright browser and retain artifacts after failures."""
-    transfer = getattr(context, "current_transfer", {})
-    if transfer.get("transfer_only") and transfer.get("status") == "USER_INPUT":
-        context.am_user.api.reject_transfer(transfer["transfer_uuid"])
-    # In the following scenario, we've created a weird FPR rule. Here we put
-    # things back as they were: make access .mov files normalize to .mp4
-    if scenario.name == (
-        "Isla wants to confirm that normalization to .mkv for access is successful"
-    ):
-        context.am_user.browser.change_normalization_rule_command(
-            "Access Generic MOV", "Transcoding to mp4 with ffmpeg"
-        )
-    if scenario.name == (
-        "Joel creates an AIP on an Archivematica instance that saves"
-        " stdout/err and on one that does not. He expects that the"
-        " processing time of the AIP on the first instance will be less"
-        " than that of the AIP on the second one."
-    ):
-        context.am_user.docker.recreate_archivematica(capture_output=True)
-    previous_replicators = getattr(
-        scenario, "previous_default_aip_storage_replicators", None
-    )
-    if previous_replicators is not None:
-        context.am_user.browser.set_default_aip_storage_replicators(
-            previous_replicators
-        )
+    """Restore scenario state and always close its Playwright context."""
+    am_user = getattr(context, "am_user", None)
+    if am_user is None:
+        return
+    browser = getattr(am_user, "browser", None)
+    status = getattr(scenario.status, "name", str(scenario.status)).casefold()
+    artifacts_captured = False
     if (
-        getattr(context, "am_user", None) is not None
-        and context.am_user.browser.page is not None
+        browser is not None
+        and browser.page is not None
+        and status not in SUCCESSFUL_SCENARIO_STATUSES
     ):
-        status = getattr(scenario.status, "name", str(scenario.status)).casefold()
-        artifact_name = scenario.name if status == "failed" else None
-        context.am_user.browser.tear_down(artifact_name=artifact_name)
+        browser.capture_failure_artifacts(scenario.name)
+        artifacts_captured = True
+    try:
+        transfer = getattr(context, "current_transfer", {})
+        if transfer.get("transfer_only") and transfer.get("status") == "USER_INPUT":
+            am_user.api.reject_transfer(transfer["transfer_uuid"])
+        # In the following scenario, we've created a weird FPR rule. Here we put
+        # things back as they were: make access .mov files normalize to .mp4
+        if scenario.name == (
+            "Isla wants to confirm that normalization to .mkv for access is successful"
+        ):
+            browser.change_normalization_rule_command(
+                "Access Generic MOV", "Transcoding to mp4 with ffmpeg"
+            )
+        if scenario.name == (
+            "Joel creates an AIP on an Archivematica instance that saves"
+            " stdout/err and on one that does not. He expects that the"
+            " processing time of the AIP on the first instance will be less"
+            " than that of the AIP on the second one."
+        ):
+            am_user.docker.recreate_archivematica(capture_output=True)
+        previous_replicators = getattr(
+            scenario, "previous_default_aip_storage_replicators", None
+        )
+        if previous_replicators is not None:
+            browser.set_default_aip_storage_replicators(previous_replicators)
+    except Exception:
+        if browser is not None and browser.page is not None and not artifacts_captured:
+            browser.capture_failure_artifacts(f"{scenario.name}-cleanup")
+        raise
+    finally:
+        if browser is not None and (
+            browser.page is not None or browser.browser_context is not None
+        ):
+            browser.tear_down()
 
 
 def _bool(value):

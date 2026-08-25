@@ -35,11 +35,7 @@ class ArchivematicaBrowserStorageServiceAbility(
     }
 
     def _first_ss_present_locator(self, selectors):
-        for selector in selectors:
-            locator = self.page.locator(selector)
-            if locator.count():
-                return locator.first
-        return None
+        return self.first_present_locator(selectors)
 
     def _find_ss_table_search_input(self):
         return self._first_ss_present_locator(
@@ -59,7 +55,13 @@ class ArchivematicaBrowserStorageServiceAbility(
         processing = self.page.locator("#DataTables_Table_0_processing")
         if processing.count():
             processing.wait_for(state="hidden")
-        if self.page.locator("table.ss-table-grid").count():
+        table = self._find_ss_table()
+        if table is None:
+            raise ArchivematicaBrowserStorageServiceAbilityError(
+                "Unable to locate Storage Service results table"
+            )
+        vue_table = self.page.locator("table.ss-table-grid")
+        if vue_table.count():
             self.wait_for_table_filter(
                 "table.ss-table-grid", search_term, ".ss-table-cell--empty"
             )

@@ -44,11 +44,7 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         ]
 
     def _first_present_locator(self, key):
-        for selector in self._ordered_selectors(key):
-            locator = self.page.locator(selector)
-            if locator.count():
-                return locator.first
-        return None
+        return self.first_present_locator(self._ordered_selectors(key))
 
     def _find_fpr_search_input(self):
         return self._first_present_locator("search_input")
@@ -69,9 +65,13 @@ class ArchivematicaBrowserPreservationPlanningAbility(
         )
 
     def _wait_for_fpr_search_results(self, search_term):
-        if self.page.locator(self.FPR_LAYOUT_SELECTORS["table"]["vue"]).count():
+        table = self._find_fpr_table()
+        if table is None:
+            raise AssertionError("Unable to find FPR results table")
+        vue_selector = self.FPR_LAYOUT_SELECTORS["table"]["vue"]
+        if self.page.locator(vue_selector).count():
             self.wait_for_table_filter(
-                self.FPR_LAYOUT_SELECTORS["table"]["vue"],
+                vue_selector,
                 search_term,
                 self.FPR_LAYOUT_SELECTORS["no_matches_alert"]["vue"],
             )

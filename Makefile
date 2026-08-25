@@ -36,8 +36,12 @@ install-browsers: sync-runtime  # Install browser dependencies and binaries
 lint:  # Run all pre-commit checks
 	$(UV) run --locked pre-commit run --all-files --show-diff-on-failure
 
+.PHONY: unit
+unit:  # Run fast unit tests
+	PYTHONPATH=$(CURDIR)/features $(UV) run --locked python -m unittest discover -s tests -v
+
 .PHONY: check
-check: lock-check lint  # Verify the lockfile and run all checks
+check: lock-check lint unit  # Verify the lockfile and run all checks
 
 .PHONY: behave
 behave:  # Run the acceptance tests; pass options with BEHAVE_ARGS
