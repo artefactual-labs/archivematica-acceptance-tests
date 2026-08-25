@@ -1,298 +1,213 @@
-"""Archivematica Browser Jobs & Tasks Ability"""
+"""Archivematica Browser Jobs & Tasks Ability."""
 
 import logging
-import sys
-import time
+import re
+from urllib.parse import urljoin
 
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
+from playwright.sync_api import expect
 
+from . import base
 from . import constants as c
-from . import selenium_ability
+from . import playwright_ability
 from . import utils
 
 logger = logging.getLogger("amuser.jobstasks")
 
 
-class ArchivematicaBrowserJobsTasksAbility(
-    selenium_ability.ArchivematicaSeleniumAbility
-):
-    """Archivematica Browser Jobs & Tasks Ability."""
+class ArchivematicaBrowserJobsTasksAbilityError(base.ArchivematicaUserError):
+    pass
 
-    @selenium_ability.recurse_on_stale
+
+class ArchivematicaBrowserJobsTasksAbility(
+    playwright_ability.ArchivematicaPlaywrightAbility
+):
+    """Inspect Archivematica jobs and their task output."""
+
+    @staticmethod
+    def _job_result_key(microservice_name, transfer_uuid):
+        return transfer_uuid, utils.canonical_microservice_name(microservice_name)
+
+    def remember_job_result(self, microservice_name, transfer_uuid, result):
+        """Retain a completed job that may leave the processing monitor."""
+        if not hasattr(self, "_completed_job_results"):
+            self._completed_job_results = {}
+        key = self._job_result_key(microservice_name, transfer_uuid)
+        self._completed_job_results[key] = result
+
+    def recalled_job_result(self, microservice_name, transfer_uuid):
+        """Return a previously observed completed job, when available."""
+        key = self._job_result_key(microservice_name, transfer_uuid)
+        return getattr(self, "_completed_job_results", {}).get(key)
+
+    @staticmethod
+    def _job_for_microservice(microservice_group, microservice_name):
+        variants = utils.microservice_name_variants(microservice_name)
+        name_pattern = re.compile(
+            r"^\s*(?:" + "|".join(re.escape(name) for name in variants) + r")\s*$",
+            re.IGNORECASE,
+        )
+        name = microservice_group.locator("div.job-detail-microservice span").filter(
+            has_text=name_pattern
+        )
+        if not name.count():
+            return None, None
+        name = name.first
+        job = name.locator(
+            "xpath=ancestor::div["
+            "contains(concat(' ', normalize-space(@class), ' '), ' job ')][1]"
+        )
+        return job, name
+
+    def _expand_microservice_group(self, microservice_group):
+        job_container = microservice_group.locator("div.job-container")
+        if job_container.count() == 0:
+            job_container = microservice_group.locator("div.microservice-group + div")
+        if job_container.locator("div.job").count():
+            return
+        heading = microservice_group.locator("div.microservice-group")
+        if heading.count():
+            # Floated job rows can overlap the heading, so dispatch its event
+            # directly instead of relying on pointer hit testing.
+            heading.first.dispatch_event("click")
+        else:
+            microservice_group.dispatch_event("click")
+        job_container.locator("div.job").first.wait_for(
+            state="attached", timeout=self._milliseconds(self.pessimistic_wait)
+        )
+
     def get_job_output(self, ms_name, transfer_uuid):
-        """Get the output---"Completed successfully", "Failed"---of the Job
-        model representing the execution of micro-service ``ms_name`` in
-        transfer ``transfer_uuid``.
-        """
+        """Return the current output for a transfer microservice job."""
         ms_name, group_name = utils.micro_service2group(ms_name)
-        ms_group_elem = self.get_transfer_micro_service_group_elem(
+        microservice_group = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid
         )
-        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
-            for span_elem in job_elem.find_elements(
-                By.CSS_SELECTOR, "div.job-detail-microservice span"
-            ):
-                if span_elem.text.strip() == ms_name:
-                    return job_elem.find_element(
-                        By.CSS_SELECTOR, "div.job-detail-currentstep span"
-                    ).text.strip()
-        return None
+        if not microservice_group:
+            return None
+        job, _ = self._job_for_microservice(microservice_group, ms_name)
+        if not job:
+            return None
+        return job.locator("div.job-detail-currentstep span").inner_text().strip()
 
     def expose_job(self, ms_name, transfer_uuid, unit_type="transfer"):
-        """Expose (i.e., click MS group and wait for appearance of) the job
-        representing the execution of the micro-service named ``ms_name`` on
-        the transfer/SIP with UUID ``transfer_uuid``.
-        """
-        logger.info("exposing job %s", ms_name)
-        # Navigate to the Transfers or Ingest tab, depending on ``unit_type``
-        # (if we're not there already)
+        """Expand and wait for a microservice job."""
+        logger.info("Exposing job %s", ms_name)
         unit_url = self.get_transfer_url()
         if unit_type != "transfer":
             unit_url = self.get_ingest_url()
-        self.navigate(unit_url)
+        # Lazy job groups are snapshots loaded when their unit is expanded.
+        # Refresh before expanding so a prior job lookup cannot leave us
+        # polling a stale snapshot for the next workflow step.
+        self.navigate(unit_url, reload=True)
         ms_name, group_name = utils.micro_service2group(ms_name)
-        logger.info("expecting job %s to be in group %s", ms_name, group_name)
         self.wait_for_presence(f"#sip-row-{transfer_uuid}")
-        unit_row = self.driver.find_element(By.ID, f"sip-row-{transfer_uuid}")
-        unit_elem = unit_row.find_element(By.XPATH, "..")
-        unit_classes = unit_elem.get_attribute("class").split()
-        if "sip-expanded" not in unit_classes and not unit_elem.find_elements(
-            By.CSS_SELECTOR, "div.microservicegroup"
+        unit_row = self.page.locator(f"#sip-row-{transfer_uuid}")
+        unit = unit_row.locator("xpath=..")
+        unit_classes = (unit.get_attribute("class") or "").split()
+        if (
+            "sip-expanded" not in unit_classes
+            and unit.locator("div.microservicegroup").count() == 0
         ):
-            unit_row.find_element(By.CSS_SELECTOR, ".sip-detail-directory").click()
-        # In the Vue monitor, the job container may not exist in the DOM until
-        # the unit and group are expanded (v-if). For compatibility, also
-        # support legacy markup where the container is the sibling after
-        # `.microservice-group`.
+            unit_row.locator(".sip-detail-directory").click()
         self.wait_for_transfer_micro_service_group(group_name, transfer_uuid)
-        ms_group_elem = self.get_transfer_micro_service_group_elem(
+        microservice_group = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid
         )
-        job_container_els = ms_group_elem.find_elements(
-            By.CSS_SELECTOR, "div.job-container"
-        )
-        if not job_container_els:
-            job_container_els = ms_group_elem.find_elements(
-                By.CSS_SELECTOR, "div.microservice-group + div"
-            )
-        is_visible = any(el.is_displayed() for el in job_container_els)
-        if not is_visible:
-            try:
-                ms_group_elem.find_element(
-                    By.CSS_SELECTOR, "div.microservice-group"
-                ).click()
-            except NoSuchElementException:
-                ms_group_elem.click()
+        self._expand_microservice_group(microservice_group)
         self.wait_for_microservice_visibility(ms_name, group_name, transfer_uuid)
-        logger.info("exposed job %s (%s)", ms_name, group_name)
+        logger.info("Exposed job %s (%s)", ms_name, group_name)
         return ms_name, group_name
 
     def parse_job(self, ms_name, transfer_uuid, unit_type="transfer"):
-        """Parse the job representing the execution of the micro-service named
-        ``ms_name`` on the transfer with UUID ``transfer_uuid``. Return a dict
-        containing the ``job_output`` (e.g., "Failed") and the parsed tasks
-        <table> as a dict with the following format::
-            >>> {
-                    '<task_uuid>': {
-                        'task_uuid': '...',
-                        'file_uuid': '...',
-                        'file_name': '...',
-                        'client': '...',
-                        'exit_code': '...',
-                        'command': '...',
-                        'arguments': [...],
-                        'stdout': '...',
-                        'stderr': '...'
-                    },
-                    '<task_uuid>': { ... }
-                }
-        """
-        ms_name, group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
-        # If we don't wait for a second here, then sometimes the tasks page
-        # returns incorrect data because (assumedly) the tasks haven't been
-        # written to disk correctly (?) What happens is that tasks will have an
-        # exit code of 'None' in the interface but when you look at them in the
-        # db, they have a sensible exit code.
-        # TODO: this doesn't solve the problem. Figure out why these strange
-        # exit codes sometimes show up.
-        time.sleep(self.optimistic_wait)
-        # Getting the Job UUID also means waiting for the job to terminate.
-        job_uuid, job_output = self.get_job_uuid(ms_name, group_name, transfer_uuid)
-        # Open the tasks in a new browser window with a new
-        # Selenium driver; then parse the table there.
+        """Return a job's completion output and parsed task records."""
+        ms_name, group_name = utils.micro_service2group(ms_name)
+        job_result = self.recalled_job_result(ms_name, transfer_uuid)
+        if job_result is None:
+            ms_name, group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
+            job_result = self.get_job_uuid(ms_name, group_name, transfer_uuid)
+        job_uuid, job_output = job_result
         table_dict = {"job_output": job_output, "tasks": {}}
-        tasks_url = self.get_tasks_url(job_uuid)
-        table_dict = self.parse_tasks_table(tasks_url, table_dict)
-        return table_dict
+        if not job_uuid:
+            return table_dict
+        return self.parse_tasks_table(self.get_tasks_url(job_uuid), table_dict)
 
     def parse_tasks_table(self, tasks_url, table_dict):
-        old_driver = self.driver
-        table_dict = self._parse_tasks_table_am_gte_1_7(tasks_url, table_dict)
-        self.driver = old_driver
+        """Parse every page of task output without replacing the main page."""
+        with self.temporary_page():
+            next_tasks_url = tasks_url
+            while next_tasks_url:
+                self.navigate(next_tasks_url)
+                self.wait_for_presence("article.task")
+                for task in self.page.locator("article.task").all():
+                    row = {
+                        "stdout": self._optional_text(task, ".panel-info pre"),
+                        "stderr": self._optional_text(task, ".panel-danger pre"),
+                        "command": task.locator("h3.panel-title.panel-title-simple")
+                        .inner_text()
+                        .strip(),
+                    }
+                    arguments = (
+                        task.locator("div.panel-primary div.shell-output pre")
+                        .inner_text()
+                        .strip()
+                    )
+                    row["arguments"] = utils.parse_task_arguments_to_list(arguments)
+                    for definition_list in task.locator("div.row dl").all():
+                        for term in definition_list.locator("dt").all():
+                            attr = term.inner_text().strip().lower().replace(" ", "_")
+                            value = term.locator("xpath=following-sibling::dd[1]")
+                            row[attr] = value.inner_text().strip()
+                    row["task_uuid"] = (
+                        task.locator("div.task-heading h4")
+                        .inner_text()
+                        .strip()
+                        .split()[1]
+                    )
+                    table_dict["tasks"][row["task_uuid"]] = row
+                next_button = self.page.get_by_role("link", name="Next page")
+                if not next_button.count():
+                    next_tasks_url = None
+                else:
+                    href = next_button.first.get_attribute("href")
+                    next_tasks_url = urljoin(self.am_url, href) if href else None
         return table_dict
 
-    def _parse_tasks_table_am_gte_1_7(self, tasks_url, table_dict):
-        """Parse all the Task <article> elements at ``task_url`` and return
-        them as a dict in ``table_dict``. Note: <table> elements are no longer
-        used in AM 1.7+ for this but we call the returned dict a ``table_dict``
-        anyway.
-        """
-        self.driver = self.get_driver()
-        if self.driver.current_url != tasks_url:
-            self.login()
-        self.driver.get(tasks_url)
-        self.wait_for_presence("article.task")
-        for task_art_elem in self.driver.find_elements(By.CSS_SELECTOR, "article.task"):
-            row_dict = {}
-            try:
-                row_dict["stdout"] = task_art_elem.find_element(
-                    By.CSS_SELECTOR, ".panel-info pre"
-                ).text.strip()
-            except NoSuchElementException:
-                row_dict["stdout"] = ""
-            try:
-                row_dict["stderr"] = task_art_elem.find_element(
-                    By.CSS_SELECTOR, ".panel-danger pre"
-                ).text.strip()
-            except NoSuchElementException:
-                row_dict["stderr"] = ""
-            row_dict["command"] = task_art_elem.find_element(
-                By.CSS_SELECTOR, "h3.panel-title.panel-title-simple"
-            ).text.strip()
-            arguments = task_art_elem.find_element(
-                By.CSS_SELECTOR, "div.panel-primary div.shell-output pre"
-            ).text.strip()
-            row_dict["arguments"] = utils.parse_task_arguments_to_list(arguments)
-            for dl_el in task_art_elem.find_elements(By.CSS_SELECTOR, "div.row dl"):
-                for el in dl_el.find_elements(By.CSS_SELECTOR, "*"):
-                    if el.tag_name == "dt":
-                        attr = el.text.strip().lower().replace(" ", "_")
-                    else:
-                        val = el.text.strip()
-                        row_dict[attr] = val
-            row_dict["task_uuid"] = (
-                task_art_elem.find_element(By.CSS_SELECTOR, "div.task-heading h4")
-                .text.strip()
-                .split()[1]
-            )
-            table_dict["tasks"][row_dict["task_uuid"]] = row_dict
-        next_tasks_url = None
-        for link_button in self.driver.find_elements(By.CSS_SELECTOR, "a.btn"):
-            if link_button.text.strip() == "Next page":
-                next_tasks_url = "{}{}".format(
-                    self.am_url, link_button.get_attribute("href")
-                )
-        self.driver.quit()
-        if next_tasks_url:
-            table_dict = self._parse_tasks_table_am_gte_1_7(next_tasks_url, table_dict)
-        return table_dict
+    @staticmethod
+    def _optional_text(container, selector):
+        element = container.locator(selector)
+        return element.first.inner_text().strip() if element.count() else ""
 
-    @selenium_ability.recurse_on_stale
     def get_job_uuid(
         self,
         ms_name,
         group_name,
         transfer_uuid,
         job_outputs=c.JOB_OUTPUTS_COMPLETE,
-        level=0,
     ):
-        """Get the UUID of the Job model representing the execution of
-        micro-service ``ms_name`` in transfer ``transfer_uuid``.
-        """
-        ms_group_elem = self.get_transfer_micro_service_group_elem(
+        """Wait for a job to finish, then return its UUID and output."""
+        max_attempts = int(self.max_check_job_status_attempts)
+        microservice_group = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid
         )
-        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
-            for span_elem in job_elem.find_elements(
-                By.CSS_SELECTOR, "div.job-detail-microservice span"
-            ):
-                if utils.squash(span_elem.text) == utils.squash(ms_name):
-                    job_output = job_elem.find_element(
-                        By.CSS_SELECTOR, "div.job-detail-currentstep span"
-                    ).text.strip()
-                    if job_output in job_outputs:
-                        job_uuid = span_elem.get_attribute("title")
-                        return (job_uuid.strip() if job_uuid else None, job_output)
-                    if level < (sys.getrecursionlimit() / 2):
-                        # The job is taking a long time to complete. Half the
-                        # amount of checking to avoid stack-overflow.
-                        logger.warning(
-                            f"Recursion limit close to being reached: level: {level} <= {sys.getrecursionlimit()}"
-                        )
-                        time.sleep(self.quick_wait)
-                    else:
-                        time.sleep(self.optimistic_wait)
-                    level += 1
-                    try:
-                        return self.get_job_uuid(
-                            ms_name,
-                            group_name,
-                            transfer_uuid,
-                            job_outputs=job_outputs,
-                            level=level,
-                        )
-                    except RecursionError:
-                        logger.error(
-                            "Recursion depth exceeded attempting to get job UUID, consider re-running the test"
-                        )
-        return None, None
-
-
-def process_task_header_row(row_elem, row_dict):
-    """Parse the text in the first tasks <tr>, the one "File UUID:"."""
-    for line in row_elem.find_element(By.TAG_NAME, "td").text.strip().split("\n"):
-        line = line.strip()
-        if line.startswith("("):
-            line = line[1:]
-        if line.endswith(")"):
-            line = line[:-1]
-        attr, val = (x.strip() for x in line.split(":"))
-        row_dict[attr.lower().replace(" ", "_")] = val
-    return row_dict
-
-
-def process_task_command_row(row_elem, row_dict):
-    """Parse the text in the second tasks <tr>, the one specifying command
-    and arguments.
-    """
-    command_text = row_elem.find_element(By.TAG_NAME, "td").text.strip().split(":")[1]
-    command, *arguments = command_text.split()
-    row_dict["command"] = command
-    arguments = " ".join(arguments)
-    row_dict["arguments"] = utils.parse_task_arguments_to_list(arguments)
-    return row_dict
-
-
-def process_task_stdout_row(row_elem, row_dict):
-    """Parse out the tasks's stdout from the <table>."""
-    row_dict["stdout"] = row_elem.find_element(By.TAG_NAME, "pre").text.strip()
-    return row_dict
-
-
-def process_task_stderr_row(row_elem, row_dict):
-    """Parse out the tasks's stderr from the <table>."""
-    row_dict["stderr"] = row_elem.find_element(By.TAG_NAME, "pre").text.strip()
-    return row_dict
-
-
-def get_tasks_row_type(row_elem):
-    """Induce the type of the row ``row_elem`` in the tasks table.
-    Note: tasks are represented as a table where blocks of adjacent rows
-    represent the outcome of a single task. All tasks appear to have
-    "header" and "command" rows, but not all have "sdtout" and "stderr(or)"
-    rows.
-    """
-    if row_elem.get_attribute("class").strip():
-        return "header"
-    try:
-        row_elem.find_element(By.CSS_SELECTOR, "td.stdout")
-        return "stdout"
-    except NoSuchElementException:
-        pass
-    try:
-        row_elem.find_element(By.CSS_SELECTOR, "td.stderror")
-        return "stderr"
-    except NoSuchElementException:
-        pass
-    return "command"
+        job, name = self._job_for_microservice(microservice_group, ms_name)
+        output = job.locator("div.job-detail-currentstep span")
+        output_pattern = re.compile(
+            r"^\s*(?:"
+            + "|".join(re.escape(job_output) for job_output in job_outputs)
+            + r")\s*$"
+        )
+        try:
+            expect(output).to_have_text(
+                output_pattern,
+                timeout=self._milliseconds(max_attempts * float(self.quick_wait)),
+            )
+        except AssertionError as exc:
+            last_output = output.inner_text().strip() if output.count() else None
+            expected_outputs = ", ".join(repr(value) for value in job_outputs)
+            raise ArchivematicaBrowserJobsTasksAbilityError(
+                f'Timed out waiting for job "{ms_name}" in group '
+                f'"{group_name}" for {transfer_uuid} after {max_attempts} '
+                f"attempts; last output was {last_output!r}; expected one of "
+                f"{expected_outputs}"
+            ) from exc
+        job_uuid = name.get_attribute("title")
+        return job_uuid.strip() if job_uuid else None, output.inner_text().strip()

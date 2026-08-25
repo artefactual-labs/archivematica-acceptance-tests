@@ -40,7 +40,7 @@ SS_API_CONFIG_KEY = "storage_service"
 # Path relative to /home where transfer sources live.
 TRANSFER_SOURCE_PATH = "vagrant/archivematica-sampledata/TestTransfers/acceptance-tests"
 HOME = ""
-DRIVER_NAME = "Chrome"
+BROWSER_NAME = "Chrome"
 BROWSER_REQUIRED_TAG = "requires-browser"
 AUTOMATION_TOOLS_PATH = "/etc/archivematica/automation-tools"
 # Set these constants if the AM client should be able to gain SSH access to the
@@ -54,15 +54,13 @@ SERVER_USER = "vagrant"
 SERVER_PASSWORD = "vagrant"
 
 # Use-case-specific maximum attempt counters
-MAX_CLICK_TRANSFER_DIRECTORY_ATTEMPTS = 5
-MAX_CLICK_AIP_DIRECTORY_ATTEMPTS = 5
 MAX_NAVIGATE_AIP_ARCHIVAL_STORAGE_ATTEMPTS = 10
 MAX_DOWNLOAD_AIP_ATTEMPTS = 20
 MAX_CHECK_AIP_STORED_ATTEMPTS = 60
-MAX_CHECK_METS_LOADED_ATTEMPTS = 60
 MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS = 120
 MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS = 1000
 MAX_CHECK_FOR_MS_GROUP_ATTEMPTS = 7200
+MAX_CHECK_JOB_STATUS_ATTEMPTS = 7200
 
 
 def get_am_user(userdata):
@@ -79,7 +77,10 @@ def get_am_user(userdata):
             "ss_password": userdata.get("ss_password", SS_PASSWORD),
             "ss_url": userdata.get("ss_url", SS_URL),
             "ss_api_key": userdata.get("ss_api_key", SS_API_KEY),
-            "driver_name": userdata.get("driver_name", DRIVER_NAME),
+            "browser_name": userdata.get(
+                "browser_name", userdata.get("driver_name", BROWSER_NAME)
+            ),
+            "chrome_executable_path": userdata.get("chrome_executable_path"),
             "ssh_accessible": _bool(userdata.get("ssh_accessible", SSH_ACCESSIBLE)),
             "ssh_requires_password": _bool(
                 userdata.get("ssh_requires_password", SSH_REQUIRES_PASSWORD)
@@ -99,13 +100,6 @@ def get_am_user(userdata):
             "quick_wait": userdata.get("quick_wait", QUICK_WAIT),
             "micro_wait": userdata.get("micro_wait", MICRO_WAIT),
             # User-customizable max attempt values:
-            "max_click_transfer_directory_attempts": userdata.get(
-                "max_click_transfer_directory_attempts",
-                MAX_CLICK_TRANSFER_DIRECTORY_ATTEMPTS,
-            ),
-            "max_click_aip_directory_attempts": userdata.get(
-                "max_click_aip_directory_attempts", MAX_CLICK_AIP_DIRECTORY_ATTEMPTS
-            ),
             "max_navigate_aip_archival_storage_attempts": userdata.get(
                 "max_navigate_aip_archival_storage_attempts",
                 MAX_NAVIGATE_AIP_ARCHIVAL_STORAGE_ATTEMPTS,
@@ -115,9 +109,6 @@ def get_am_user(userdata):
             ),
             "max_check_aip_stored_attempts": userdata.get(
                 "max_check_aip_stored_attempts", MAX_CHECK_AIP_STORED_ATTEMPTS
-            ),
-            "max_check_mets_loaded_attempts": userdata.get(
-                "max_check_mets_loaded_attempts", MAX_CHECK_METS_LOADED_ATTEMPTS
             ),
             "max_search_aip_archival_storage_attempts": userdata.get(
                 "max_search_aip_archival_storage_attempts",
@@ -129,6 +120,9 @@ def get_am_user(userdata):
             ),
             "max_check_for_ms_group_attempts": userdata.get(
                 "max_check_for_ms_group_attempts", MAX_CHECK_FOR_MS_GROUP_ATTEMPTS
+            ),
+            "max_check_job_status_attempts": userdata.get(
+                "max_check_job_status_attempts", MAX_CHECK_JOB_STATUS_ATTEMPTS
             ),
         }
     )
@@ -151,19 +145,16 @@ def before_all(context):
 
 def before_scenario(context, scenario):
     """Instantiate an ``ArchivematicaUser`` instance. The ``ArchivematicaUser``
-    instance creates many drivers/browsers. If we don't destroy then in between
-    scenarios, we end up with too many and it causes the tests to fail. That is
-    why we are using ``before_scenario`` here and not ``before_all``.
+    owns a fresh Playwright browser context for each browser scenario.
     """
     userdata = context.config.userdata
     context.utils = utils
-    if "driver_name" in userdata:
-        context.am_user = get_am_user(userdata)
-        if (
-            "black-box" not in scenario.effective_tags
-            or BROWSER_REQUIRED_TAG in scenario.effective_tags
-        ):
-            context.am_user.browser.set_up()
+    context.am_user = get_am_user(userdata)
+    if (
+        "black-box" not in scenario.effective_tags
+        or BROWSER_REQUIRED_TAG in scenario.effective_tags
+    ):
+        context.am_user.browser.set_up()
     context.TRANSFER_SOURCE_PATH = userdata.get(
         "transfer_source_path", TRANSFER_SOURCE_PATH
     )
@@ -187,7 +178,7 @@ def before_scenario(context, scenario):
 
 
 def after_scenario(context, scenario):
-    """Close all browser windows/Selenium drivers."""
+    """Close the Playwright browser and retain artifacts after failures."""
     transfer = getattr(context, "current_transfer", {})
     if transfer.get("transfer_only") and transfer.get("status") == "USER_INPUT":
         context.am_user.api.reject_transfer(transfer["transfer_uuid"])
@@ -206,11 +197,20 @@ def after_scenario(context, scenario):
         " than that of the AIP on the second one."
     ):
         context.am_user.docker.recreate_archivematica(capture_output=True)
+    previous_replicators = getattr(
+        scenario, "previous_default_aip_storage_replicators", None
+    )
+    if previous_replicators is not None:
+        context.am_user.browser.set_default_aip_storage_replicators(
+            previous_replicators
+        )
     if (
         getattr(context, "am_user", None) is not None
-        and context.am_user.browser.driver is not None
+        and context.am_user.browser.page is not None
     ):
-        context.am_user.browser.tear_down()
+        status = getattr(scenario.status, "name", str(scenario.status)).casefold()
+        artifact_name = scenario.name if status == "failed" else None
+        context.am_user.browser.tear_down(artifact_name=artifact_name)
 
 
 def _bool(value):

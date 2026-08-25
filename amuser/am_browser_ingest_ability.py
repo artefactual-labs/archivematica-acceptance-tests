@@ -1,23 +1,18 @@
-"""Archivematica Ingest Tab Ability"""
+"""Archivematica Ingest Tab Ability."""
 
 import logging
 import os
 import tempfile
-import time
 
 import tenacity
 from amclient import AMClient
 from lxml import etree
-from selenium.common.exceptions import MoveTargetOutOfBoundsException
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import expect
 
 from . import base
 from . import constants as c
-from . import selenium_ability
+from . import playwright_ability
 from . import utils
 
 
@@ -28,36 +23,25 @@ class ArchivematicaBrowserMETSAbilityError(base.ArchivematicaUserError):
 logger = logging.getLogger("amuser.ingest")
 
 
-class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAbility):
-    """Archivematica Browser Ingest Tab Ability."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.click_aip_directory_attempts = 0
+class ArchivematicaBrowserIngestAbility(
+    playwright_ability.ArchivematicaPlaywrightAbility
+):
+    """Interact with Archivematica's Ingest tab."""
 
     def remove_all_ingests(self):
         """Remove all ingests in the Ingest tab."""
         url = self.get_ingest_url()
-        self.driver.get(url)
-        if self.driver.current_url != url:
-            self.login()
-        self.driver.get(url)
-        self.wait_for_presence(c.SELECTOR_TRANSFER_DIV, 20)
-        while True:
-            top_transfer_elem = self.get_top_transfer()
-            if not top_transfer_elem:
-                break
-            self.remove_top_transfer(top_transfer_elem)
+        self.navigate(url)
+        try:
+            self.wait_for_presence(c.SELECTOR_TRANSFER_DIV, 20)
+        except PlaywrightTimeoutError:
+            return
+        while top_transfer := self.get_top_transfer():
+            self.remove_top_transfer(top_transfer)
 
     def get_sip_uuid(self, transfer_name):
         logger.info("Getting SIP UUID from transfer name %s", transfer_name)
-        self.driver.quit()
-        self.driver = self.get_driver()
-        ingest_url = self.get_ingest_url()
-        self.driver.get(ingest_url)
-        if self.driver.current_url != ingest_url:
-            self.login()
-        self.driver.get(ingest_url)
+        self.navigate(self.get_ingest_url(), reload=True)
         sip_uuid, _, _ = self.wait_for_transfer_to_appear(transfer_name)
         logger.info("Got SIP UUID %s", sip_uuid)
         return sip_uuid
@@ -86,7 +70,6 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
             relative_path=mets_path,
             saveas_filename=mets_tmp_file,
         ).extract_file()
-        mets = ""
         with open(mets_tmp_file) as mets_file:
             mets = mets_file.read()
         os.unlink(mets_tmp_file)
@@ -95,137 +78,80 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
         return mets
 
     def get_mets(self, transfer_name, sip_uuid=None, parse_xml=True):
-        """Return the METS file XML as an lxml instance or as a string if
-        ``parse_xml`` is set to ``False``.
-
-        WARNING: this only works if the processingMCP.xml config file is set to
-        *not* store the AIP.
-        """
+        """Return the METS XML from Archivematica's Review AIP interface."""
         if not sip_uuid:
             sip_uuid = self.get_sip_uuid(transfer_name)
-        ingest_url = self.get_ingest_url()
-        self.navigate(ingest_url)
-        # Wait for the "Store AIP" micro-service.
+        self.navigate(self.get_ingest_url())
         ms_name = utils.normalize_ms_name("Store AIP (review)", self.vn)
         self.expose_job(ms_name, sip_uuid, "ingest")
-        aip_preview_url = self.get_aip_preview_url(sip_uuid).format(
-            self.am_url, sip_uuid
-        )
-        self.navigate(aip_preview_url)
+        self.navigate(self.get_aip_preview_url(sip_uuid).format(self.am_url, sip_uuid))
         mets_path = f"storeAIP/{transfer_name}-{sip_uuid}/METS.{sip_uuid}.xml"
-        handles_before = self.driver.window_handles
-        self.navigate_to_aip_directory_and_click(mets_path)
-        self.wait_for_new_window(handles_before)
-        original_window_handle = self.driver.window_handles[0]
-        new_window_handle = self.driver.window_handles[1]
-        self.driver.switch_to.window(new_window_handle)
-        attempts = 0
-        while self.driver.current_url.strip() == "about:blank":
-            if attempts > self.max_check_mets_loaded_attempts:
-                msg = (
-                    f"Exceeded maximum allowable attempts ({self.max_check_mets_loaded_attempts}) for checking"
-                    " if the METS file has loaded."
+        with self.page.expect_popup(
+            timeout=self._milliseconds(self.apathetic_wait)
+        ) as popup_info:
+            self.navigate_to_aip_directory_and_click(mets_path)
+        popup = popup_info.value
+        try:
+            try:
+                expect(popup).not_to_have_url(
+                    "about:blank", timeout=self._milliseconds(self.nihilistic_wait)
                 )
+            except AssertionError as exc:
+                msg = "Timed out waiting for the METS file to load."
                 logger.warning(msg)
-                raise ArchivematicaBrowserMETSAbilityError(msg)
-            time.sleep(self.optimistic_wait)
-            attempts += 1
-        mets = self.driver.page_source
-        self.driver.switch_to.window(original_window_handle)
+                raise ArchivematicaBrowserMETSAbilityError(msg) from exc
+            mets = popup.content()
+        finally:
+            popup.close()
         if parse_xml:
             return etree.fromstring(mets.encode("utf8"))
         return mets
 
     def navigate_to_aip_directory_and_click(self, path):
-        """Click on the file at ``path`` in the "Review AIP" interface.
-        TODO: non-DRY given
-        ``navigate_to_transfer_directory_and_click``--fix if possible.
-        """
-        try:
-            self._navigate_to_aip_directory_and_click(path)
-        except (TimeoutException, MoveTargetOutOfBoundsException):
-            self.click_aip_directory_attempts += 1
-            if (
-                self.click_aip_directory_attempts
-                >= self.max_click_aip_directory_attempts
-            ):
-                logger.warning("Failed to navigate to aip directory %s", path)
-                self.click_aip_directory_attempts = 0
-                raise
-            else:
-                self.navigate_to_aip_directory_and_click(path)
-        else:
-            self.click_aip_directory_attempts = 0
+        """Open each directory in ``path`` and click the terminal file."""
+        self._navigate_to_aip_directory_and_click(path)
 
     def _navigate_to_aip_directory_and_click(self, path):
         self.cwd = ["explorer_var_archivematica_sharedDirectory_watchedDirectories"]
-        while path.startswith("/"):
-            path = path[1:]
-        while path.endswith("/"):
-            path = path[:-1]
-        path_parts = path.split("/")
+        path_parts = path.strip("/").split("/")
         if path_parts[-1].startswith("METS."):
             path_parts[-1] = f"METS__{path_parts[-1][5:]}"
-        for i, folder in enumerate(path_parts):
-            is_last = False
-            if i == len(path_parts) - 1:
-                is_last = True
+        self.page.locator("#explorer").wait_for(
+            state="attached", timeout=self._milliseconds(self.medium_wait)
+        )
+        for index, folder in enumerate(path_parts):
             self.cwd.append(folder)
             folder_id = "_".join(self.cwd)
-            block = WebDriverWait(self.driver, self.medium_wait)
-            block.until(EC.presence_of_element_located((By.ID, "explorer")))
-            if is_last:
+            if index == len(path_parts) - 1:
                 self.click_file_old_browser(folder_id)
-                # self.click_file(folder_id)
             else:
                 self.click_folder_old_browser(folder_id)
-                # self.click_folder(folder_id)
 
     def add_dummy_metadata(self, sip_uuid):
         self.navigate(self.get_ingest_url())
-        self.driver.find_element(By.ID, f"sip-row-{sip_uuid}").find_element(
-            By.CSS_SELECTOR, "a.btn_show_metadata"
-        ).click()
+        self.page.locator(f"#sip-row-{sip_uuid}").locator("a.btn_show_metadata").click()
         self.navigate(self.get_metadata_add_url(sip_uuid))
         for attr in self.metadata_attrs:
-            self.driver.find_element(By.ID, f"id_{attr}").send_keys(self.dummy_val)
-        try:
-            self.driver.find_element(By.CSS_SELECTOR, "input[value=Create]").click()
-        except NoSuchElementException:
-            # Should be a "Create" button but sometimes during development the
-            # metadata already exists so it is a "Save" button.
-            self.driver.find_element(By.CSS_SELECTOR, "input[value=Save]").click()
+            self.page.locator(f"#id_{attr}").fill(self.dummy_val)
+        submit = self.page.locator('input[value="Create"], input[value="Save"]')
+        submit.first.click()
 
     def parse_normalization_report(self, sip_uuid):
-        """Wait for the "Approve normalization" job to appear and then open the
-        normalization report, parse it and return a list of dicts.
-        """
-        report = []
-        self.driver.quit()
-        self.driver = self.get_driver()
-        url = self.get_ingest_url()
-        self.driver.get(url)
-        if self.driver.current_url != url:
-            self.login()
-        self.driver.get(url)
+        """Open and parse the normalization report into a list of mappings."""
+        self.navigate(self.get_ingest_url(), reload=True)
         ms_name = utils.normalize_ms_name("Approve normalization (review)", self.vn)
         self.expose_job(ms_name, sip_uuid, "sip")
-        nrmlztn_rprt_url = self.get_normalization_report_url(sip_uuid)
-        self.driver.get(nrmlztn_rprt_url)
-        if self.driver.current_url != nrmlztn_rprt_url:
-            self.login()
-        self.driver.get(nrmlztn_rprt_url)
-        self.wait_for_presence("table")
-        table_el = self.driver.find_element(By.CSS_SELECTOR, "table")
+        self.navigate(self.get_normalization_report_url(sip_uuid), reload=True)
+        table = self.page.locator("table")
+        table.wait_for(state="visible")
         keys = [
-            td_el.text.strip().lower().replace(" ", "_")
-            for td_el in table_el.find_element(
-                By.CSS_SELECTOR, "thead tr"
-            ).find_elements(By.CSS_SELECTOR, "th")
+            heading.inner_text().strip().lower().replace(" ", "_")
+            for heading in table.locator("thead tr th").all()
         ]
-        for tr_el in table_el.find_elements(By.CSS_SELECTOR, "tbody tr"):
+        report = []
+        for table_row in table.locator("tbody tr").all():
             row = {}
-            for index, td_el in enumerate(tr_el.find_elements(By.CSS_SELECTOR, "td")):
-                row[keys[index]] = td_el.text
+            for index, cell in enumerate(table_row.locator("td").all()):
+                row[keys[index]] = cell.inner_text()
             report.append(row)
         return report

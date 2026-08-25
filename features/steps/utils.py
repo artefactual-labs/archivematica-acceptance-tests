@@ -16,8 +16,6 @@ from amclient.amclient import AMClient
 from environment import AM_API_CONFIG_KEY
 from environment import SS_API_CONFIG_KEY
 from lxml import etree
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
 
 logger = logging.getLogger("amauat.steps.utils")
 
@@ -100,7 +98,7 @@ def get_mets_from_scenario(context, api=False):
 
     Given a parameter of True for the api parameter, then we will seek to
     retrieve the AIP METS from the AIP package itself. When that parameter is
-    False, we will seek to download it via the web-driver from the Store AIP
+    False, we will seek to download it via the browser from the Store AIP
     decision point on the ingest tab of Archivematica where the user has the
     opportunity to review the METS file from the browser window.
     """
@@ -1269,120 +1267,9 @@ def get_search_phrase_for_metadata_file(document, namespaces):
 def find_aip_by_transfer_metadata(
     browser, aip_uuid, search_phrase, expected_summary_message
 ):
-    expected_entries_match = re.search(
-        r"Showing \d+ to \d+ of (\d+) entries", expected_summary_message
+    return browser.find_aip_by_transfer_metadata(
+        aip_uuid, search_phrase, expected_summary_message
     )
-    assert expected_entries_match, (
-        f"Unexpected expected summary message format: {expected_summary_message!r}"
-    )
-    expected_entries = int(expected_entries_match.group(1))
-
-    browser.navigate(browser.get_archival_storage_url(), reload=True)
-
-    # Vue archival-storage UI.
-    if browser.driver.find_elements(By.CSS_SELECTOR, "#search_form .archival-row"):
-        browser.wait_for_presence("#search_form .archival-row")
-        rows = browser.driver.find_elements(
-            By.CSS_SELECTOR, "#search_form .archival-row"
-        )
-        first_row = rows[0]
-
-        first_query_input = first_row.find_element(
-            By.CSS_SELECTOR, "input.aip-search-query-input"
-        )
-        first_query_input.clear()
-        first_query_input.send_keys(aip_uuid)
-
-        first_row_selects = first_row.find_elements(By.CSS_SELECTOR, "select")
-        Select(first_row_selects[0]).select_by_value("AIPUUID")
-        Select(first_row_selects[1]).select_by_value("string")
-
-        if len(rows) < 2:
-            add_filter_btn = browser.driver.find_elements(
-                By.CSS_SELECTOR,
-                "#search_form .submit-actions-left button.btn.btn-default",
-            )[0]
-            add_filter_btn.click()
-
-        rows = browser.driver.find_elements(
-            By.CSS_SELECTOR, "#search_form .archival-row"
-        )
-        assert len(rows) >= 2, "Expected at least two archival storage search rows"
-        second_row = rows[-1]
-
-        second_query_input = second_row.find_element(
-            By.CSS_SELECTOR, "input.aip-search-query-input"
-        )
-        second_query_input.clear()
-        second_query_input.send_keys(f'"{search_phrase}"')
-
-        second_row_selects = second_row.find_elements(By.CSS_SELECTOR, "select")
-        Select(second_row_selects[0]).select_by_value("and")
-        Select(second_row_selects[1]).select_by_value("transferMetadata")
-        Select(second_row_selects[2]).select_by_value("string")
-
-        browser.driver.find_element(
-            By.CSS_SELECTOR, "#search_form button[type='submit']"
-        ).click()
-        time.sleep(browser.optimistic_wait)
-
-        matching_links = browser.driver.find_elements(
-            By.CSS_SELECTOR, f'a[href$="/archival-storage/{aip_uuid}/"]'
-        )
-        unique_aip_urls = {
-            link.get_attribute("href")
-            for link in matching_links
-            if link.get_attribute("href")
-        }
-        matches_count = len(unique_aip_urls)
-        raw_matches_count = len(matching_links)
-        result = matches_count == expected_entries
-        # This assertion allows tenacity to retry the call on error.
-        assert result, (
-            f"Search phrase: {search_phrase!r}, expected entries: {expected_entries!r}, "
-            f"got unique matches for AIP UUID {aip_uuid!r}: {matches_count!r} "
-            f"(raw matching links: {raw_matches_count!r})"
-        )
-        return result
-
-    # Legacy archival-storage UI.
-    # Set AIP UUID phrase to avoid clashes with other AMAUAT runs that
-    # used the same sample transfer paths.
-    browser.driver.find_element(
-        By.CSS_SELECTOR, 'input[title="search query"]'
-    ).send_keys(aip_uuid)
-    Select(
-        browser.driver.find_element(By.CSS_SELECTOR, 'select[title="field name"]')
-    ).select_by_visible_text("AIP UUID")
-    Select(
-        browser.driver.find_element(By.CSS_SELECTOR, 'select[title="query type"]')
-    ).select_by_visible_text("Phrase")
-    # Add new boolean criteria.
-    browser.driver.find_element(By.LINK_TEXT, "Add new").click()
-    Select(
-        browser.driver.find_element(By.CSS_SELECTOR, "select.search_op_selector")
-    ).select_by_visible_text("and")
-    # Set search term phrase.
-    browser.driver.find_elements(By.CSS_SELECTOR, 'input[title="search query"]')[
-        -1
-    ].send_keys(f'"{search_phrase}"')
-    Select(
-        browser.driver.find_elements(By.CSS_SELECTOR, 'select[title="field name"]')[-1]
-    ).select_by_visible_text("Transfer metadata")
-    Select(
-        browser.driver.find_elements(By.CSS_SELECTOR, 'select[title="query type"]')[-1]
-    ).select_by_visible_text("Phrase")
-    # Submit search and wait for expected result.
-    browser.driver.find_element(By.ID, "search_submit").click()
-    browser.wait_for_presence("#archival-storage-entries tbody tr")
-    summary_el = browser.driver.find_element(By.ID, "archival-storage-entries_info")
-    summary_text = summary_el.text.strip()
-    result = summary_text == expected_summary_message
-    # This assertion allows tenacity to retry the call on error.
-    assert result, (
-        f"Search phrase: {repr(search_phrase)}, expected summary message: {repr(expected_summary_message)}, got: {repr(summary_text)}"
-    )
-    return result
 
 
 def assert_equal_lxml_elements(a, b):

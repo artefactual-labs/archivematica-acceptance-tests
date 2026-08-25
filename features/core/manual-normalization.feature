@@ -12,7 +12,7 @@
 #           -D ss_url=http://127.0.0.1:62081/ \
 #           -D ss_api_key=test \
 #           -D home=archivematica \
-#           -D driver_name=Firefox \
+#           -D browser_name=Firefox \
 
 @man-norm
 Feature: Archivematica recognizes manually normalized files

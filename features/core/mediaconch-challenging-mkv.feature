@@ -15,7 +15,7 @@
 #           -D ss_password=test \
 #           -D ss_api_key=test \
 #           -D home=archivematica \
-#           -D driver_name=Firefox \
+#           -D browser_name=Firefox \
 #
 @mediaconch-challenging-mkv
 Feature: MediaConch validation handles challenging MKV files

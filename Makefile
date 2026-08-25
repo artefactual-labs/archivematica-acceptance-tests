@@ -24,6 +24,14 @@ sync:  # Sync the project and development dependencies
 sync-runtime:  # Sync only the runtime dependencies
 	$(UV) sync --locked --no-dev
 
+.PHONY: install-browsers
+# install-deps installs OS libraries only. Playwright supplies Firefox, while
+# the project script supplies Chrome for Testing or the Linux arm64 fallback.
+install-browsers: sync-runtime  # Install browser dependencies and binaries
+	$(UV) run --locked --no-dev playwright install-deps chromium firefox
+	$(UV) run --locked --no-dev playwright install firefox
+	$(UV) run --locked --no-dev bash scripts/install-chrome.sh
+
 .PHONY: lint
 lint:  # Run all pre-commit checks
 	$(UV) run --locked pre-commit run --all-files --show-diff-on-failure

@@ -41,7 +41,8 @@ class Base:
         ("ss_password", c.DEFAULT_SS_PASSWORD),
         ("ss_url", c.DEFAULT_SS_URL),
         ("ss_api_key", c.DEFAULT_SS_API_KEY),
-        ("driver_name", c.DEFAULT_DRIVER_NAME),
+        ("browser_name", c.DEFAULT_BROWSER_NAME),
+        ("chrome_executable_path", c.DEFAULT_CHROME_EXECUTABLE_PATH),
         ("ssh_accessible", None),
         ("ssh_requires_password", None),
         ("server_user", None),
@@ -54,17 +55,11 @@ class Base:
         ("quick_wait", c.QUICK_WAIT),
         ("micro_wait", c.MICRO_WAIT),
         (
-            "max_click_transfer_directory_attempts",
-            c.MAX_CLICK_TRANSFER_DIRECTORY_ATTEMPTS,
-        ),
-        ("max_click_aip_directory_attempts", c.MAX_CLICK_AIP_DIRECTORY_ATTEMPTS),
-        (
             "max_navigate_aip_archival_storage_attempts",
             c.MAX_NAVIGATE_AIP_ARCHIVAL_STORAGE_ATTEMPTS,
         ),
         ("max_download_aip_attempts", c.MAX_DOWNLOAD_AIP_ATTEMPTS),
         ("max_check_aip_stored_attempts", c.MAX_CHECK_AIP_STORED_ATTEMPTS),
-        ("max_check_mets_loaded_attempts", c.MAX_CHECK_METS_LOADED_ATTEMPTS),
         (
             "max_search_aip_archival_storage_attempts",
             c.MAX_SEARCH_AIP_ARCHIVAL_STORAGE_ATTEMPTS,
@@ -74,6 +69,7 @@ class Base:
             c.MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS,
         ),
         ("max_check_for_ms_group_attempts", c.MAX_CHECK_FOR_MS_GROUP_ATTEMPTS),
+        ("max_check_job_status_attempts", c.MAX_CHECK_JOB_STATUS_ATTEMPTS),
     )
 
     url_stdports_re = re.compile(r":(?:80|443)/?$")

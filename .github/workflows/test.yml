@@ -33,6 +33,19 @@ jobs:
           cache-dependency-glob: |
             uv.lock
           cache-suffix: "test-${{ matrix.python-version }}"
+      - name: "Install browser dependencies and binaries"
+        env:
+          UV_PYTHON: "${{ matrix.python-version }}"
+          CHROME_INSTALL_DIR: "${{ runner.temp }}/chrome"
+          PLAYWRIGHT_BROWSERS_PATH: "${{ runner.temp }}/playwright"
+        run: |
+          uv sync --locked --no-dev
+          # install-deps installs shared OS libraries, not browser binaries.
+          uv run --locked --no-dev playwright install-deps chromium firefox
+          # Firefox is managed by Playwright; Chrome for Testing is project-managed.
+          uv run --locked --no-dev playwright install firefox
+          echo "CHROME_EXECUTABLE_PATH=$(uv run --locked --no-dev bash scripts/install-chrome.sh)" >> "${GITHUB_ENV}"
+          echo "PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH}" >> "${GITHUB_ENV}"
       - name: "Run test"
         env:
           UV_PYTHON: "${{ matrix.python-version }}"

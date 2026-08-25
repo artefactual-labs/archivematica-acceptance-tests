@@ -1,22 +1,15 @@
 """Archivematica Browser Ability
 
 This module contains the ``ArchivematicaBrowserAbility`` class, which encodes
-the ability of an Archivematica user to use a browser to interact with
-Archivematica. This class provides an interface to Selenium for opening browser
-windows and interacting with Archivematica's GUIs.
+the ability of an Archivematica user to use Playwright to interact with
+Archivematica and the Storage Service.
 """
 
 import logging
-import time
+import re
 
 import requests
-from selenium.common.exceptions import ElementNotInteractableException
-from selenium.common.exceptions import ElementNotVisibleException
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.support.ui import WebDriverWait
+from playwright.sync_api import expect
 
 from . import am_browser_auth_ability as auth_abl
 from . import am_browser_preservation_planning_ability as pres_plan_abl
@@ -26,6 +19,9 @@ from . import base
 from . import constants as c
 
 logger = logging.getLogger("amuser.browser")
+
+PROCESSING_CONFIG_LOAD_ERROR = "Unable to load processing configuration page."
+PROCESSING_CONFIG_LOAD_ATTEMPTS = 3
 
 
 class ArchivematicaBrowserAbilityError(base.ArchivematicaUserError):
@@ -38,47 +34,50 @@ class ArchivematicaBrowserAbility(
     ss_abl.ArchivematicaBrowserStorageServiceAbility,
     pres_plan_abl.ArchivematicaBrowserPreservationPlanningAbility,
 ):
-    """Archivematica Browser Ability: the ability of an Archivematica user to
-    use a browser to interact with Archivematica. A class for using Selenium to
-    interact with a live Archivematica instance.
-    """
+    """Use Playwright to interact with live Archivematica services."""
 
     @property
     def ss_api_key(self):
         if not self._ss_api_key:
-            self.driver.get(self.get_ss_login_url())
-            self.driver.find_element(By.ID, "id_username").send_keys(self.ss_username)
-            self.driver.find_element(By.ID, "id_password").send_keys(self.ss_password)
-            self.driver.find_element(
-                By.CSS_SELECTOR, c.varvn("SELECTOR_SS_LOGIN_BUTTON", self.vn)
-            ).click()
-            self.driver.get(self.get_default_ss_user_edit_url())
-            block = WebDriverWait(self.driver, 20)
-            block.until(EC.presence_of_element_located((By.CSS_SELECTOR, "code")))
-            self._ss_api_key = self.driver.find_element(
-                By.TAG_NAME, "code"
-            ).text.strip()
+            self.page.goto(self.get_ss_login_url())
+            self.page.locator("#id_username").fill(self.ss_username)
+            self.page.locator("#id_password").fill(self.ss_password)
+            self.page.locator(c.varvn("SELECTOR_SS_LOGIN_BUTTON", self.vn)).click()
+            self.page.goto(self.get_default_ss_user_edit_url())
+            code = self.page.locator("code")
+            code.wait_for(state="attached", timeout=self._milliseconds(20))
+            self._ss_api_key = code.inner_text().strip()
         return self._ss_api_key
 
     def get_displayed_tabs(self):
-        ret = []
-        for li_el in self.driver.find_element(
-            By.CSS_SELECTOR, "ul.navbar-nav"
-        ).find_elements(By.TAG_NAME, "li"):
-            ret.append(li_el.text.strip().split("\n")[0])
-        return list(filter(None, ret))
+        tabs = [
+            item.inner_text().strip().split("\n")[0]
+            for item in self.page.locator("ul.navbar-nav li").all()
+        ]
+        return list(filter(None, tabs))
 
     def assert_sip_arrange_pane_not_displayed(self):
         for selector in ("form#search_form", "div#originals", "div#arrange"):
-            try:
-                self.driver.find_element(By.CSS_SELECTOR, selector)
-            except NoSuchElementException as exc:
-                assert f"Unable to locate element: {selector}" in str(exc)
-        assert self.driver.find_element(By.CSS_SELECTOR, "div#sip-container")
+            assert self.page.locator(selector).count() == 0
+        assert self.page.locator("div#sip-container").count()
 
     # ==========================================================================
     # Archival Storage Tab
     # ==========================================================================
+
+    def _submit_archival_storage_vue_search(self, aip_uuid):
+        """Submit a Vue archival-storage search and await its response."""
+        with self.page.expect_response(
+            lambda response: (
+                "/archival-storage/search/" in response.url and aip_uuid in response.url
+            ),
+            timeout=self._milliseconds(self.apathetic_wait),
+        ):
+            self.page.locator("#search_form button[type='submit']").click()
+        live_status = self.page.locator("p.sr-only[aria-live='polite']")
+        expect(live_status).not_to_have_text(
+            "Loading results", timeout=self._milliseconds(self.pessimistic_wait)
+        )
 
     def _search_archival_storage_vue(self, aip_uuid: str) -> bool | None:
         """Search Archival Storage through the Vue interface.
@@ -88,45 +87,24 @@ class ArchivematicaBrowserAbility(
         match is currently shown. It returns ``None`` when the Vue selectors
         are not present at all, which allows callers to try legacy selectors.
         """
-        query_input_els = self.driver.find_elements(
-            By.CSS_SELECTOR, "#search_form .aip-search-query-input"
-        )
-        if not query_input_els:
+        query_inputs = self.page.locator("#search_form .aip-search-query-input")
+        if not query_inputs.count():
             return None
 
-        query_input_el = query_input_els[0]
-        query_input_el.clear()
-        query_input_el.send_keys(aip_uuid)
-
-        field_select = Select(
-            self.driver.find_element(
-                By.CSS_SELECTOR, "#search_form .search-field-select"
-            )
-        )
-        try:
-            field_select.select_by_value("AIPUUID")
-        except NoSuchElementException:
-            field_select.select_by_visible_text("AIP UUID")
-
-        type_select = Select(
-            self.driver.find_element(
-                By.CSS_SELECTOR, "#search_form .search-type-select"
-            )
-        )
-        try:
-            type_select.select_by_value("string")
-        except NoSuchElementException:
-            type_select.select_by_visible_text("Phrase")
-
-        self.driver.find_element(
-            By.CSS_SELECTOR, "#search_form button[type='submit']"
-        ).click()
-        time.sleep(self.optimistic_wait)
-
+        query_inputs.first.fill(aip_uuid)
+        field_select = self.page.locator("#search_form .search-field-select")
+        if field_select.locator('option[value="AIPUUID"]').count():
+            field_select.select_option(value="AIPUUID")
+        else:
+            field_select.select_option(label="AIP UUID")
+        type_select = self.page.locator("#search_form .search-type-select")
+        if type_select.locator('option[value="string"]').count():
+            type_select.select_option(value="string")
+        else:
+            type_select.select_option(label="Phrase")
+        self._submit_archival_storage_vue_search(aip_uuid)
         return bool(
-            self.driver.find_elements(
-                By.CSS_SELECTOR, f'a[href$="/archival-storage/{aip_uuid}/"]'
-            )
+            self.page.locator(f'a[href$="/archival-storage/{aip_uuid}/"]').count()
         )
 
     def _search_archival_storage_legacy(self, aip_uuid: str) -> bool | None:
@@ -138,28 +116,18 @@ class ArchivematicaBrowserAbility(
         ``None`` when the legacy controls are missing, which signals that the
         UI likely uses a different layout.
         """
-        query_input_els = self.driver.find_elements(
-            By.CSS_SELECTOR, 'input[title="search query"]'
-        )
-        if not query_input_els:
+        query_inputs = self.page.locator('input[title="search query"]')
+        if not query_inputs.count():
             return None
 
-        query_input_el = query_input_els[0]
-        query_input_el.clear()
-        query_input_el.send_keys(aip_uuid)
-        Select(
-            self.driver.find_element(By.CSS_SELECTOR, 'select[title="field name"]')
-        ).select_by_visible_text("AIP UUID")
-        Select(
-            self.driver.find_element(By.CSS_SELECTOR, 'select[title="query type"]')
-        ).select_by_visible_text("Phrase")
-        self.driver.find_element(By.ID, "search_submit").click()
+        query_inputs.first.fill(aip_uuid)
+        self.page.locator('select[title="field name"]').select_option(label="AIP UUID")
+        self.page.locator('select[title="query type"]').select_option(label="Phrase")
+        self.page.locator("#search_submit").click()
         self.wait_for_presence("#archival-storage-entries_info")
 
-        summary_el = self.driver.find_element(By.ID, "archival-storage-entries_info")
-        found = summary_el.text.strip() != "Showing 0 to 0 of 0 entries"
-        if found:
-            time.sleep(self.optimistic_wait)
+        summary = self.page.locator("#archival-storage-entries_info")
+        found = summary.inner_text().strip() != "Showing 0 to 0 of 0 entries"
         return found
 
     def wait_for_aip_in_archival_storage(self, aip_uuid: str) -> None:
@@ -189,7 +157,84 @@ class ArchivematicaBrowserAbility(
             attempts += 1
             if attempts > max_attempts:
                 break
-            time.sleep(self.optimistic_wait)
+            self.wait(self.optimistic_wait)
+
+    def find_aip_by_transfer_metadata(
+        self, aip_uuid, search_phrase, expected_summary_message
+    ):
+        """Search archival storage by AIP UUID and transfer metadata."""
+        expected_match = re.search(
+            r"Showing \d+ to \d+ of (\d+) entries", expected_summary_message
+        )
+        assert expected_match, (
+            f"Unexpected expected summary format: {expected_summary_message!r}"
+        )
+        expected_entries = int(expected_match.group(1))
+        self.navigate(self.get_archival_storage_url(), reload=True)
+
+        rows = self.page.locator("#search_form .archival-row")
+        if rows.count():
+            first_row = rows.first
+            first_row.locator("input.aip-search-query-input").fill(aip_uuid)
+            first_selects = first_row.locator("select")
+            first_selects.nth(0).select_option(value="AIPUUID")
+            first_selects.nth(1).select_option(value="string")
+            if rows.count() < 2:
+                self.page.locator(
+                    "#search_form .submit-actions-left button.btn.btn-default"
+                ).first.click()
+            rows = self.page.locator("#search_form .archival-row")
+            rows.nth(1).wait_for(state="attached")
+            second_row = rows.last
+            second_row.locator("input.aip-search-query-input").fill(
+                f'"{search_phrase}"'
+            )
+            second_selects = second_row.locator("select")
+            second_selects.nth(0).select_option(value="and")
+            second_selects.nth(1).select_option(value="transferMetadata")
+            second_selects.nth(2).select_option(value="string")
+            self._submit_archival_storage_vue_search(aip_uuid)
+            matching_links = self.page.locator(
+                f'a[href$="/archival-storage/{aip_uuid}/"]'
+            )
+            unique_urls = {
+                href
+                for href in matching_links.evaluate_all(
+                    "links => links.map(link => link.href)"
+                )
+                if href
+            }
+            assert len(unique_urls) == expected_entries, (
+                f"Search phrase {search_phrase!r}: expected {expected_entries} "
+                f"entries for {aip_uuid}, got {len(unique_urls)}"
+            )
+            return True
+
+        queries = self.page.locator('input[title="search query"]')
+        queries.first.fill(aip_uuid)
+        self.page.locator('select[title="field name"]').first.select_option(
+            label="AIP UUID"
+        )
+        self.page.locator('select[title="query type"]').first.select_option(
+            label="Phrase"
+        )
+        self.page.get_by_role("link", name="Add new", exact=True).click()
+        self.page.locator("select.search_op_selector").select_option(label="and")
+        self.page.locator('input[title="search query"]').last.fill(f'"{search_phrase}"')
+        self.page.locator('select[title="field name"]').last.select_option(
+            label="Transfer metadata"
+        )
+        self.page.locator('select[title="query type"]').last.select_option(
+            label="Phrase"
+        )
+        self.page.locator("#search_submit").click()
+        self.wait_for_presence("#archival-storage-entries tbody tr")
+        summary = self.page.locator("#archival-storage-entries_info").inner_text()
+        assert summary.strip() == expected_summary_message, (
+            f"Search phrase {search_phrase!r}: expected "
+            f"{expected_summary_message!r}, got {summary.strip()!r}"
+        )
+        return True
 
     def request_aip_delete(self, aip_uuid):
         """Request the deletion of the AIP with UUID ``aip_uuid`` using the
@@ -198,22 +243,15 @@ class ArchivematicaBrowserAbility(
         self.navigate_to_aip_in_archival_storage(aip_uuid)
         delete_tab_selector = 'a[href="#tab-delete"]'
         self.wait_for_presence(delete_tab_selector, timeout=self.apathetic_wait)
-        while True:
-            try:
-                self.driver.find_element(By.ID, "id_delete-uuid").click()
-                break
-            except (ElementNotVisibleException, ElementNotInteractableException):
-                self.driver.find_element(By.CSS_SELECTOR, delete_tab_selector).click()
-                time.sleep(self.optimistic_wait)
-        self.driver.find_element(By.ID, "id_delete-uuid").send_keys(aip_uuid)
-        self.driver.find_element(By.ID, "id_delete-reason").send_keys("Cuz wanna")
-        self.driver.find_element(
-            By.CSS_SELECTOR, 'button[name="submit-delete-form"]'
-        ).click()
+        delete_uuid = self.page.locator("#id_delete-uuid")
+        if not delete_uuid.is_visible():
+            self.page.locator(delete_tab_selector).click()
+            delete_uuid.wait_for(state="visible")
+        delete_uuid.fill(aip_uuid)
+        self.page.locator("#id_delete-reason").fill("Cuz wanna")
+        self.page.locator('button[name="submit-delete-form"]').click()
         self.wait_for_visibility("div.alert-info")
-        alert_text = self.driver.find_element(
-            By.CSS_SELECTOR, "div.alert-info"
-        ).text.strip()
+        alert_text = self.page.locator("div.alert-info").inner_text().strip()
         assert alert_text == "Delete request created successfully."
 
     def navigate_to_aip_in_archival_storage(self, aip_uuid):
@@ -221,13 +259,7 @@ class ArchivematicaBrowserAbility(
         max_attempts = self.max_navigate_aip_archival_storage_attempts
         attempt = 0
         s = requests.session()
-        s.headers.update(
-            {
-                "User-Agent": "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML,"
-                " like Gecko) Chrome/44.0.2403.157 Safari/537.36"
-            }
-        )
-        for cookie in self.driver.get_cookies():
+        for cookie in self.browser_context.cookies():
             s.cookies.update({cookie["name"]: cookie["value"]})
         while True:
             if attempt > max_attempts:
@@ -248,7 +280,7 @@ class ArchivematicaBrowserAbility(
                 url,
             )
             attempt += 1
-            time.sleep(self.optimistic_wait)
+            self.wait(self.optimistic_wait)
         self.navigate(url, reload=True)
 
     def initiate_reingest(self, aip_uuid, reingest_type="metadata-only"):
@@ -264,21 +296,14 @@ class ArchivematicaBrowserAbility(
                 f"Unable to initiate a reingest of type {reingest_type} on AIP"
                 f" {aip_uuid}"
             )
-        while True:
-            type_input_el = self.driver.find_element(By.CSS_SELECTOR, type_selector)
-            if type_input_el.is_displayed():
-                break
-            else:
-                self.driver.find_element(By.CSS_SELECTOR, reingest_tab_selector).click()
-                time.sleep(self.optimistic_wait)
-        self.driver.find_element(By.CSS_SELECTOR, type_selector).click()
-        self.driver.find_element(
-            By.CSS_SELECTOR, "button[name=submit-reingest-form]"
-        ).click()
+        type_input = self.page.locator(type_selector)
+        if not type_input.is_visible():
+            self.page.locator(reingest_tab_selector).click()
+            type_input.wait_for(state="visible")
+        type_input.check()
+        self.page.locator("button[name=submit-reingest-form]").click()
         self.wait_for_visibility("div.alert-success")
-        alert_text = self.driver.find_element(
-            By.CSS_SELECTOR, "div.alert-success"
-        ).text.strip()
+        alert_text = self.page.locator("div.alert-success").inner_text().strip()
         assert alert_text.startswith(f"Package {aip_uuid} sent to pipeline")
         assert alert_text.endswith("for re-ingest")
 
@@ -288,13 +313,8 @@ class ArchivematicaBrowserAbility(
 
     def upload_policy(self, policy_path):
         self.navigate_to_policies()
-        self.driver.execute_script(
-            "document.getElementById('file').style.display='block'"
-        )
-        self.driver.find_element(By.CSS_SELECTOR, "input[name=file]").send_keys(
-            policy_path
-        )
-        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
+        self.page.locator("input[name=file]").set_input_files(policy_path)
+        self.page.locator("input[type=submit]").click()
 
     def navigate_to_policies(self):
         self.navigate(self.get_policies_url())
@@ -307,37 +327,26 @@ class ArchivematicaBrowserAbility(
         """
         self.navigate(self.get_handle_config_url())
         for key, val in kwargs.items():
-            dom_id = "id_" + key
-            input_el = self.driver.find_element(By.ID, dom_id)
-            if input_el.tag_name == "select":
-                Select(input_el).select_by_visible_text(val)
-            elif input_el.get_attribute("type") == "checkbox":
-                state = input_el.get_attribute("checked")
-                if (val is True and state != "true") or (
-                    val is False and state == "true"
-                ):
-                    input_el.click()
+            control = self.page.locator(f"#id_{key}")
+            tag_name = control.evaluate("element => element.tagName.toLowerCase()")
+            if tag_name == "select":
+                control.select_option(label=val)
+            elif control.get_attribute("type") == "checkbox":
+                control.set_checked(bool(val))
             else:
-                input_el.clear()
-                input_el.send_keys(val)
-        submit_button = self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]")
-        submit_button.click()
+                control.fill(str(val))
+        self.page.locator("input[type=submit]").click()
         self.wait_for_visibility("div.alert-info")
-        assert (
-            self.driver.find_element(By.CSS_SELECTOR, ".alert-info").text.strip()
-            == "Saved."
-        ), "Unable to confirm saving of Handle configuration"
+        assert self.page.locator(".alert-info").inner_text().strip() == "Saved.", (
+            "Unable to confirm saving of Handle configuration"
+        )
 
     def get_es_indexing_config_text(self):
         self.navigate(self.get_admin_general_url())
-        try:
-            el = self.driver.find_element(
-                By.CSS_SELECTOR, "p.es-indexing-configuration"
-            )
-        except NoSuchElementException:
+        indexing_configuration = self.page.locator("p.es-indexing-configuration")
+        if not indexing_configuration.count():
             return None
-        else:
-            return el.text
+        return indexing_configuration.inner_text()
 
     # =========================================================================
     # Processing Configuration
@@ -353,9 +362,29 @@ class ArchivematicaBrowserAbility(
         edit_default_processing_config_url = (
             self.get_edit_default_processing_config_url()
         )
-        if self.driver.current_url != edit_default_processing_config_url:
+        if self.page.url != edit_default_processing_config_url:
             self.navigate(edit_default_processing_config_url)
-        self.driver.find_element(By.CSS_SELECTOR, "input[value=Save]").click()
+        self.page.locator('input[value="Save"]').click()
+
+    def _get_processing_config_decision(self, decision_id):
+        """Return a decision field, retrying explicit configuration load errors."""
+        edit_url = self.get_edit_default_processing_config_url()
+        for attempt in range(1, PROCESSING_CONFIG_LOAD_ATTEMPTS + 1):
+            decision = self.page.locator(f'[id="{decision_id}"]')
+            if decision.count():
+                return decision
+            load_error = self.page.get_by_text(PROCESSING_CONFIG_LOAD_ERROR, exact=True)
+            if not load_error.count() or attempt == PROCESSING_CONFIG_LOAD_ATTEMPTS:
+                decision.wait_for(state="attached")
+                return decision
+            logger.warning(
+                "Retrying processing configuration page after load error (%d/%d)",
+                attempt,
+                PROCESSING_CONFIG_LOAD_ATTEMPTS,
+            )
+            self.page.goto(edit_url)
+
+        raise AssertionError("Unreachable processing configuration retry state")
 
     def get_processing_config_decision_options(self, **kwargs):
         """Return the options available for a given processing config decision
@@ -375,7 +404,7 @@ class ArchivematicaBrowserAbility(
         edit_default_processing_config_url = (
             self.get_edit_default_processing_config_url()
         )
-        if self.driver.current_url != edit_default_processing_config_url:
+        if self.page.url != edit_default_processing_config_url:
             self.navigate(edit_default_processing_config_url)
         # Get a decision_id value, something of the form 'id_<UUID>'
         if decision_id is None:
@@ -383,11 +412,13 @@ class ArchivematicaBrowserAbility(
         else:
             if not decision_id.startswith("id_"):
                 decision_id = "id_" + decision_id
-        decision_el = self.driver.find_element(By.ID, decision_id)
+        decision = self._get_processing_config_decision(decision_id)
         options = []
-        if decision_el.tag_name == "select":
-            for option_el in decision_el.find_elements(By.TAG_NAME, "option"):
-                options.append(option_el.text.strip())
+        if decision.evaluate("element => element.tagName.toLowerCase()") == "select":
+            options = [
+                option.inner_text().strip()
+                for option in decision.locator("option").all()
+            ]
         return options
 
     def set_processing_config_decision(self, **kwargs):
@@ -422,7 +453,7 @@ class ArchivematicaBrowserAbility(
         edit_default_processing_config_url = (
             self.get_edit_default_processing_config_url()
         )
-        if self.driver.current_url != edit_default_processing_config_url:
+        if self.page.url != edit_default_processing_config_url:
             self.navigate(edit_default_processing_config_url)
         # Get a decision_id value, something of the form 'id_<UUID>'
         if decision_id is None:
@@ -430,19 +461,16 @@ class ArchivematicaBrowserAbility(
         else:
             if not decision_id.startswith("id_"):
                 decision_id = "id_" + decision_id
-        decision_el = self.driver.find_element(By.ID, decision_id)
-        if decision_el.tag_name == "select":
-            decision_select = Select(decision_el)
+        decision = self._get_processing_config_decision(decision_id)
+        if decision.evaluate("element => element.tagName.toLowerCase()") == "select":
             if choice_value_attr is not None:
-                decision_select.select_by_value(choice_value_attr)
+                decision.select_option(value=choice_value_attr)
             elif choice_index is not None:
-                decision_select.select_by_index(choice_index)
+                decision.select_option(index=choice_index)
             else:
-                decision_select.select_by_visible_text(choice_value)
+                decision.select_option(label=choice_value)
         else:
-            # Assume it is <input[type=text]>
-            decision_el.clear()
-            decision_el.send_keys(choice_value)
+            decision.fill(choice_value)
 
     def ensure_default_processing_config_in_default_state(self):
         """Make sure that the default processing config is in its default
@@ -561,36 +589,29 @@ class ArchivematicaBrowserAbility(
         ss_api_key = self.ss_api_key
         self.create_first_user()
         self.wait_for_presence("#id_storage_service_apikey", 100)
-        self.driver.find_element(By.ID, "id_storage_service_apikey").send_keys(
-            ss_api_key
-        )
-        self.driver.find_element(
-            By.CSS_SELECTOR, c.varvn("SELECTOR_DFLT_SS_REG", self.vn)
-        ).click()
+        self.page.locator("#id_storage_service_apikey").fill(ss_api_key)
+        self.page.locator(c.varvn("SELECTOR_DFLT_SS_REG", self.vn)).click()
 
     def create_first_user(self):
         """Create a test user via the /installer/welcome/ page interface."""
-        self.driver.get(self.get_installer_welcome_url())
+        self.page.goto(self.get_installer_welcome_url())
         self.wait_for_presence("#id_org_name")
-        self.driver.find_element(By.ID, "id_org_name").send_keys(c.DEFAULT_AM_USERNAME)
-        self.driver.find_element(By.ID, "id_org_identifier").send_keys(
-            c.DEFAULT_AM_USERNAME
-        )
-        self.driver.find_element(By.ID, "id_username").send_keys(c.DEFAULT_AM_USERNAME)
-        self.driver.find_element(By.ID, "id_first_name").send_keys(
-            c.DEFAULT_AM_USERNAME
-        )
-        self.driver.find_element(By.ID, "id_last_name").send_keys(c.DEFAULT_AM_USERNAME)
-        self.driver.find_element(By.ID, "id_email").send_keys("test@gmail.com")
-        self.driver.find_element(By.ID, "id_password1").send_keys(c.DEFAULT_AM_PASSWORD)
-        self.driver.find_element(By.ID, "id_password2").send_keys(c.DEFAULT_AM_PASSWORD)
-        self.driver.find_element(By.TAG_NAME, "button").click()
-        continue_button_selector = "input[value=Continue]"
+        values = {
+            "id_org_name": c.DEFAULT_AM_USERNAME,
+            "id_org_identifier": c.DEFAULT_AM_USERNAME,
+            "id_username": c.DEFAULT_AM_USERNAME,
+            "id_first_name": c.DEFAULT_AM_USERNAME,
+            "id_last_name": c.DEFAULT_AM_USERNAME,
+            "id_email": "test@gmail.com",
+            "id_password1": c.DEFAULT_AM_PASSWORD,
+            "id_password2": c.DEFAULT_AM_PASSWORD,
+        }
+        for input_id, value in values.items():
+            self.page.locator(f"#{input_id}").fill(value)
+        self.page.locator("button").first.click()
+        continue_button_selector = 'input[value="Continue"]'
         self.wait_for_presence(continue_button_selector, 100)
-        continue_button_el = self.driver.find_element(
-            By.CSS_SELECTOR, continue_button_selector
-        )
-        continue_button_el.click()
+        self.page.locator(continue_button_selector).click()
 
 
 def _get_decision_id_from_label(decision_label):

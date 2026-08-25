@@ -26,7 +26,7 @@
 #           --tags=transfer.name.size-11M-files-10 \
 #           --no-skipped \
 #           --no-capture \
-#           -D driver_name=Firefox \
+#           -D browser_name=Firefox \
 #           -D am_url=http://127.0.0.1:62080/ \
 #           -D am_password=test \
 #           -D am_version=1.7 \

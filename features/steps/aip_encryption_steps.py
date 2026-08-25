@@ -68,8 +68,10 @@ def step_impl(context):
     in ``context.scenario.location_uuid``.
     """
     replicator_location_uuid = context.scenario.location_uuid
-    context.am_user.browser.add_replicator_to_default_aip_stor_loc(
-        replicator_location_uuid
+    context.scenario.previous_default_aip_storage_replicators = (
+        context.am_user.browser.add_replicator_to_default_aip_stor_loc(
+            replicator_location_uuid
+        )
     )
 
 

@@ -1,19 +1,15 @@
-"""Archivematica Transfer & Ingest Tabs Ability"""
+"""Archivematica Transfer & Ingest Tabs Ability."""
 
 import logging
-import sys
-import time
+import re
 
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from . import am_browser_file_explorer_ability as file_explorer_abl
 from . import am_browser_ingest_ability as ingest_abl
 from . import am_browser_jobs_tasks_ability as jobs_tasks_abl
 from . import am_browser_transfer_ability as transfer_abl
 from . import base
-from . import selenium_ability
 from . import utils
 
 logger = logging.getLogger("amuser.transferingest")
@@ -29,20 +25,17 @@ class ArchivematicaBrowserTransferIngestAbility(
     transfer_abl.ArchivematicaBrowserTransferAbility,
     ingest_abl.ArchivematicaBrowserIngestAbility,
 ):
-    """Archivematica Browser Transfer & Ingest Tabs Ability."""
+    """Interact with the Transfer and Ingest tabs."""
 
     def await_job_completion(self, ms_name, transfer_uuid, unit_type="transfer"):
-        """Wait for the job representing the execution of micro-service
-        ``ms_name`` on the unit with UUID ``transfer_uuid`` to complete.
-        """
+        """Wait for a unit's microservice job to complete."""
         ms_name, group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
-        job_uuid, job_output = self.get_job_uuid(ms_name, group_name, transfer_uuid)
-        return job_uuid, job_output
+        result = self.get_job_uuid(ms_name, group_name, transfer_uuid)
+        self.remember_job_result(ms_name, transfer_uuid, result)
+        return result
 
     def await_decision_point(self, ms_name, transfer_uuid, unit_type="transfer"):
-        """Wait for the decision point job for micro-service ``ms_name`` to
-        appear.
-        """
+        """Wait for a decision-point job to appear."""
         ms_name = utils.normalize_ms_name(ms_name, self.vn)
         logger.info(
             'Await decision point "%s" with unit %s of type %s',
@@ -51,184 +44,124 @@ class ArchivematicaBrowserTransferIngestAbility(
             unit_type,
         )
         ms_name, group_name = self.expose_job(ms_name, transfer_uuid, unit_type)
-        job_uuid, job_output = self.get_job_uuid(
-            ms_name, group_name, transfer_uuid, job_outputs=("Awaiting decision",)
+        return self.get_job_uuid(
+            ms_name,
+            group_name,
+            transfer_uuid,
+            job_outputs=("Awaiting decision",),
         )
-        return job_uuid, job_output
 
-    @selenium_ability.recurse_on_stale
     def make_choice(self, choice_text, decision_point, uuid_val, unit_type="transfer"):
-        """Make the choice matching the text ``choice_text`` at decision point
-        (i.e., microservice) job matching ``decision_point``.
-        """
+        """Choose an option at a microservice decision point."""
         decision_point = utils.normalize_ms_name(decision_point, self.vn)
         decision_point, group_name = self.expose_job(
             decision_point, uuid_val, unit_type=unit_type
         )
-        ms_group_elem = self.get_transfer_micro_service_group_elem(group_name, uuid_val)
-        action_div_el = None
-        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
-            for span_elem in job_elem.find_elements(
-                By.CSS_SELECTOR, "div.job-detail-microservice span"
-            ):
-                if utils.squash(span_elem.text) == utils.squash(decision_point):
-                    action_div_el = job_elem.find_element(
-                        By.CSS_SELECTOR, "div.job-detail-actions"
-                    )
-                    break
-            if action_div_el:
-                break
-        if action_div_el:
-            try:
-                select_el = action_div_el.find_element(By.CSS_SELECTOR, "select")
-            except NoSuchElementException:
-                time.sleep(self.quick_wait)
-                return self.make_choice(
-                    choice_text, decision_point, uuid_val, unit_type=unit_type
-                )
-            index = None
-            for i, option_el in enumerate(
-                select_el.find_elements(By.TAG_NAME, "option")
-            ):
-                if utils.squash(choice_text) in utils.squash(option_el.text):
-                    index = i
-            if index is not None:
-                Select(select_el).select_by_index(index)
-            else:
-                raise ArchivematicaBrowserTransferIngestAbilityError(
-                    f'Unable to select choice "{choice_text}"'
-                )
-        else:
+        microservice_group = self.get_transfer_micro_service_group_elem(
+            group_name, uuid_val
+        )
+        job, _ = self._job_for_microservice(microservice_group, decision_point)
+        if not job:
             raise ArchivematicaBrowserTransferIngestAbilityError(
                 f"Unable to find decision point {decision_point}"
             )
+        choices = job.locator("div.job-detail-actions select")
+        choices.wait_for(
+            state="attached", timeout=self._milliseconds(self.nihilistic_wait)
+        )
+        for index, option in enumerate(choices.locator("option").all()):
+            if utils.squash(choice_text) in utils.squash(option.inner_text()):
+                choices.select_option(index=index)
+                return
+        raise ArchivematicaBrowserTransferIngestAbilityError(
+            f'Unable to select choice "{choice_text}"'
+        )
 
     def assert_no_option(
         self, choice_text, decision_point, uuid_val, unit_type="transfer"
     ):
-        """Assert that the option ``choice_text`` is not available for
-        ``decision_point`` by attempting to make it and expecting an error with
-        the "Unable to select choice" error message.
-        """
+        """Assert that a choice is unavailable at a decision point."""
         try:
             self.make_choice(choice_text, decision_point, uuid_val, unit_type=unit_type)
         except ArchivematicaBrowserTransferIngestAbilityError as exc:
             assert f'Unable to select choice "{choice_text}"' == str(exc)
         else:
             raise AssertionError(
-                f'We were able to select choice "{choice_text}" at decision point "{decision_point}" even'
-                " though we expected this not to be possible."
+                f'We were able to select choice "{choice_text}" at decision point '
+                f'"{decision_point}" even though we expected this not to be possible.'
             )
 
-    @selenium_ability.recurse_on_stale
-    def wait_for_microservice_visibility(
-        self, ms_name, group_name, transfer_uuid, level=0
-    ):
-        """Wait until micro-service ``ms_name`` of transfer ``transfer_uuid``
-        is visible.
-        """
-        ms_group_elem = self.get_transfer_micro_service_group_elem(
+    def wait_for_microservice_visibility(self, ms_name, group_name, transfer_uuid):
+        """Wait until a transfer's named microservice is present."""
+        microservice_group = self._transfer_microservice_group_locator(
             group_name, transfer_uuid
         )
-        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
-            for span_elem in job_elem.find_elements(
-                By.CSS_SELECTOR, "div.job-detail-microservice span"
-            ):
-                if utils.squash(span_elem.text) == utils.squash(ms_name):
-                    return
-        if level < (sys.getrecursionlimit() / 2):
-            # The job is taking a long time to complete. Half the
-            # amount of checking to avoid stack-overflow.
-            logger.warning(
-                f"Recursion limit close to being reached: level: {level} <= {sys.getrecursionlimit()}"
-            )
-            time.sleep(self.micro_wait)
-        else:
-            time.sleep(self.quick_wait)
-        level += 1
+        variants = utils.microservice_name_variants(ms_name)
+        name_pattern = re.compile(
+            r"^\s*(?:" + "|".join(re.escape(name) for name in variants) + r")\s*$",
+            re.IGNORECASE,
+        )
+        name = microservice_group.locator("div.job-detail-microservice span").filter(
+            has_text=name_pattern
+        )
         try:
-            self.wait_for_microservice_visibility(ms_name, group_name, transfer_uuid)
-        except RecursionError:
-            logger.error(
-                "Recursion depth exceeded waiting for microservice visibility, consider re-running the test"
+            name.first.wait_for(
+                state="attached",
+                timeout=self._milliseconds(
+                    int(self.max_check_for_ms_group_attempts) * float(self.micro_wait)
+                ),
             )
+        except PlaywrightTimeoutError as exc:
+            raise ArchivematicaBrowserTransferIngestAbilityError(
+                f'Unable to find microservice "{ms_name}" in group '
+                f'"{group_name}" for {transfer_uuid}'
+            ) from exc
 
-    @selenium_ability.recurse_on_stale
     def click_show_tasks_button(self, ms_name, group_name, transfer_uuid):
-        """Click the gear icon that triggers the displaying of tasks in a new
-        tab.
-        Note: this is not currently being used because the strategy of just
-        generating the tasks URL and then opening it with a new Selenium web
-        driver seems to be easier than juggling multiple tabs.
-        """
-        ms_group_elem = self.get_transfer_micro_service_group_elem(
+        """Open the task list for a microservice job."""
+        microservice_group = self.get_transfer_micro_service_group_elem(
             group_name, transfer_uuid
         )
-        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
-            for span_elem in job_elem.find_elements(
-                By.CSS_SELECTOR, "div.job-detail-microservice span"
-            ):
-                if span_elem.text.strip() == ms_name:
-                    job_elem.find_element(
-                        By.CSS_SELECTOR, "div.job-detail-actions a.btn_show_tasks"
-                    ).click()
+        job, _ = self._job_for_microservice(microservice_group, ms_name)
+        if job:
+            job.locator("div.job-detail-actions a.btn_show_tasks").click()
 
     def wait_for_transfer_micro_service_group(self, group_name, transfer_uuid):
-        """Wait for the micro-service group with name ``group_name`` to appear
-        in the Transfer tab.
-        """
-        max_attempts = self.max_check_for_ms_group_attempts
-        attempts = 0
-        while True:
-            if attempts > max_attempts:
-                msg = (
-                    f"Exceeded maxumim allowable attempts ({max_attempts}) for checking"
-                    f" whether micro-service group {group_name} of transfer {transfer_uuid} is"
-                    " visible."
-                )
-                logger.warning(msg)
-                raise ArchivematicaBrowserTransferIngestAbilityError(msg)
-            ms_group_elem = self.get_transfer_micro_service_group_elem(
-                group_name, transfer_uuid
+        """Wait for a microservice group to appear."""
+        max_attempts = int(self.max_check_for_ms_group_attempts)
+        group = self._transfer_microservice_group_locator(group_name, transfer_uuid)
+        try:
+            group.wait_for(
+                state="attached",
+                timeout=self._milliseconds(max_attempts * float(self.quick_wait)),
             )
-            if ms_group_elem:
-                return
-            time.sleep(self.quick_wait)
-            attempts += 1
+        except PlaywrightTimeoutError as exc:
+            msg = (
+                f"Exceeded maximum allowable attempts ({max_attempts}) for "
+                f"checking whether microservice group {group_name} of "
+                f"transfer {transfer_uuid} is visible."
+            )
+            logger.warning(msg)
+            raise ArchivematicaBrowserTransferIngestAbilityError(msg) from exc
 
-    @selenium_ability.recurse_on_stale
+    def _transfer_microservice_group_locator(self, group_name, transfer_uuid):
+        transfer = self.page.locator(f'div.sip:has([id="sip-row-{transfer_uuid}"])')
+        prefix = "Micro-service" if self.vn == "1.6" else "Microservice"
+        expected_name = f"{prefix}: {group_name}"
+        name = transfer.locator("span.microservice-group-name").filter(
+            has_text=re.compile(rf"^\s*{re.escape(expected_name)}\s*$")
+        )
+        return name.first.locator(
+            "xpath=ancestor::div["
+            "contains(concat(' ', normalize-space(@class), ' '), "
+            "' microservicegroup ')][1]"
+        )
+
     def get_transfer_micro_service_group_elem(self, group_name, transfer_uuid):
-        """Get the DOM element (<div>) representing the micro-service group
-        with name ``group_name`` of the transfer with UUID ``transfer_uuid``.
-        """
-        transfer_div_elem = None
-        transfer_dom_id = f"sip-row-{transfer_uuid}"
-        for elem in self.driver.find_elements(By.CSS_SELECTOR, "div.sip"):
-            try:
-                elem.find_element(By.ID, transfer_dom_id)
-                transfer_div_elem = elem
-            except NoSuchElementException:
-                pass
-        if not transfer_div_elem:
+        """Return the locator for a transfer's named microservice group."""
+        transfer = self.page.locator(f'div.sip:has([id="sip-row-{transfer_uuid}"])')
+        if transfer.count() == 0:
             logger.warning("Unable to find Transfer %s.", transfer_uuid)
             return None
-        if self.vn == "1.6":
-            expected_name = f"Micro-service: {group_name}"
-        else:
-            expected_name = f"Microservice: {group_name}"
-        result = None
-        for ms_group_elem in transfer_div_elem.find_elements(
-            By.CSS_SELECTOR, "div.microservicegroup"
-        ):
-            name_elem_text = ms_group_elem.find_element(
-                By.CSS_SELECTOR, "span.microservice-group-name"
-            ).text.strip()
-            if name_elem_text == expected_name:
-                logger.info(
-                    'DOM name "%s" MATCHES expected name "%s"',
-                    name_elem_text,
-                    expected_name,
-                )
-                result = ms_group_elem
-                break
-        return result
+        group = self._transfer_microservice_group_locator(group_name, transfer_uuid)
+        return group if group.count() else None

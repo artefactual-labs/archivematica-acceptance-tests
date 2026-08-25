@@ -1,21 +1,16 @@
-"""Archivematica Browser Storage Service Ability"""
+"""Archivematica Browser Storage Service Ability."""
 
 import logging
 import pprint
-import time
-
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
+import re
 
 from . import base
-from . import selenium_ability
+from . import playwright_ability
 from . import utils
 
 logger = logging.getLogger("amuser.ss")
 
 
-# These correspond to the keys used in the key import test.
 GPG_KEYIDS_TO_IMPORT = {
     "AAC5E07B370A2D9A": "aadams-passphraseless.key",
     "0F86C799E5DEDE22": "bbingo-passphrased.key",
@@ -27,514 +22,418 @@ class ArchivematicaBrowserStorageServiceAbilityError(base.ArchivematicaUserError
 
 
 class ArchivematicaBrowserStorageServiceAbility(
-    selenium_ability.ArchivematicaSeleniumAbility
+    playwright_ability.ArchivematicaPlaywrightAbility
 ):
-    """Archivematica Browser Storage Service Ability: the ability of an
-    Archivematica user to use a browser to interact with the Archivematica
-    Storage Service.
-    """
+    """Interact with the Archivematica Storage Service UI."""
 
-    # Support both the legacy DataTables UI and the newer Vue-based table UI.
     SS_TABLE_LAYOUT_SELECTORS = {
         "search_input": (
             ".ss-table-search-input",
             "#DataTables_Table_0_filter input",
         ),
-        "table": (
-            "table.ss-table-grid",
-            "table#DataTables_Table_0",
-        ),
+        "table": ("table.ss-table-grid", "table#DataTables_Table_0"),
     }
 
-    def _first_ss_present_element(self, selectors):
+    def _first_ss_present_locator(self, selectors):
         for selector in selectors:
-            elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
-            if elements:
-                return elements[0]
+            locator = self.page.locator(selector)
+            if locator.count():
+                return locator.first
         return None
 
     def _find_ss_table_search_input(self):
-        return self._first_ss_present_element(
+        return self._first_ss_present_locator(
             self.SS_TABLE_LAYOUT_SELECTORS["search_input"]
         )
 
     def _find_ss_table(self):
-        return self._first_ss_present_element(self.SS_TABLE_LAYOUT_SELECTORS["table"])
+        return self._first_ss_present_locator(self.SS_TABLE_LAYOUT_SELECTORS["table"])
 
     def _search_ss_table(self, search_term):
-        search_el = self._find_ss_table_search_input()
-        if not search_el:
-            raise NoSuchElementException("Unable to locate SS table search input")
-        search_el.clear()
-        search_el.send_keys(search_term)
-        if self.driver.find_elements(By.CSS_SELECTOR, "#DataTables_Table_0_processing"):
-            self.wait_for_invisibility("#DataTables_Table_0_processing")
-        # Vue tables apply filtering after a short debounce.
-        time.sleep(max(0.3, self.optimistic_wait * 2))
+        search = self._find_ss_table_search_input()
+        if not search:
+            raise ArchivematicaBrowserStorageServiceAbilityError(
+                "Unable to locate Storage Service table search input"
+            )
+        search.fill(search_term)
+        processing = self.page.locator("#DataTables_Table_0_processing")
+        if processing.count():
+            processing.wait_for(state="hidden")
+        if self.page.locator("table.ss-table-grid").count():
+            self.wait_for_table_filter(
+                "table.ss-table-grid", search_term, ".ss-table-cell--empty"
+            )
+            return
+        self.wait_for_table_filter("table#DataTables_Table_0", search_term)
 
     def _get_ss_table_data_rows(self):
-        table_el = self._find_ss_table()
-        if not table_el:
+        table = self._find_ss_table()
+        if not table:
             return []
-
         rows = []
-        for row_el in table_el.find_elements(By.CSS_SELECTOR, "tbody tr"):
-            cells = row_el.find_elements(By.TAG_NAME, "td")
-            if not cells:
+        for row in table.locator("tbody tr").all():
+            cells = row.locator("td")
+            if not cells.count():
                 continue
-            row_text = row_el.text.strip()
-            if len(cells) == 1 and (
+            row_text = row.inner_text().strip()
+            if cells.count() == 1 and (
                 "No matching records found" in row_text
                 or row_text.startswith("No ")
                 or row_text == "Loading data from server"
             ):
                 continue
-            rows.append(row_el)
+            rows.append(row)
         return rows
 
     def approve_aip_delete_request(self, aip_uuid):
-        """Approve the deletion request of AIP with UUID ``aip_uuid`` via the
-        SS GUI.
-        """
+        """Approve an AIP deletion request through the Storage Service."""
         self.navigate(self.get_ss_package_delete_request_url())
         self._search_ss_table(aip_uuid)
-        matching_rows = []
-        for row_el in self._get_ss_table_data_rows():
-            if len(row_el.find_elements(By.TAG_NAME, "td")) == 7:
-                matching_rows.append(row_el)
+        matching_rows = [
+            row
+            for row in self._get_ss_table_data_rows()
+            if row.locator("td").count() == 7
+        ]
         if len(matching_rows) != 1:
             raise ArchivematicaBrowserStorageServiceAbilityError(
-                f"More than one delete request row {len(matching_rows)} matches AIP"
-                f" {aip_uuid}"
+                f"Expected one delete request for AIP {aip_uuid}, found "
+                f"{len(matching_rows)}"
             )
-        matching_rows[0].find_element(By.TAG_NAME, "textarea").send_keys("Cuz wanna")
-        approve_controls = matching_rows[0].find_elements(
-            By.CSS_SELECTOR, 'input[name="approve"], button, input[type="submit"]'
-        )
-        approve_control = None
-        for control in approve_controls:
-            control_label = (
-                control.get_attribute("value") or control.text or ""
-            ).strip()
-            if control_label.lower() == "approve":
-                approve_control = control
+        row = matching_rows[0]
+        row.locator("textarea").fill("Cuz wanna")
+        for control in row.locator(
+            'input[name="approve"], button, input[type="submit"]'
+        ).all():
+            label = (control.get_attribute("value") or control.inner_text()).strip()
+            if label.casefold() == "approve":
+                control.click()
                 break
-        if not approve_control:
+        else:
             raise ArchivematicaBrowserStorageServiceAbilityError(
                 "Unable to find approve control in package delete request row"
             )
-        approve_control.click()
-        assert self.driver.find_element(
-            By.CSS_SELECTOR, "div.alert-success"
-        ).text.strip() == ("Request approved: Package deleted successfully.")
+        assert self.page.locator("div.alert-success").inner_text().strip() == (
+            "Request approved: Package deleted successfully."
+        )
 
     def search_for_aip_in_storage_service(self, aip_uuid):
-        result = []
-        # XXX: make this max_attempts a constant and an amuser attribute
-        # like max_search_aip_archival_storage_attempts is
-        max_attempts = 3
-        attempts = 0
+        """Return package table rows matching an AIP UUID."""
         self.navigate(self.get_packages_url())
         self._search_ss_table(aip_uuid)
-        while True:
-            table_el = self._find_ss_table()
-            if not table_el:
-                break
-            result = []
-            keys = [
-                th_el.text.strip().lower().replace(" ", "_")
-                for th_el in table_el.find_elements(By.CSS_SELECTOR, "thead th")
-            ]
-            for row_el in table_el.find_elements(By.CSS_SELECTOR, "tbody tr"):
-                cell_els = row_el.find_elements(By.TAG_NAME, "td")
-                if len(cell_els) != len(keys):
-                    continue
-                row_dict = {}
-                for index, td_el in enumerate(cell_els):
-                    row_dict[keys[index]] = " ".join(td_el.text.strip().split())
-                result.append(row_dict)
-            # check if rows have been retrieved from the server yet
-            if result and result[0].get("uuid") == "Loading data from server":
-                attempts += 1
-                if attempts > max_attempts:
-                    break
-                time.sleep(self.optimistic_wait)
-            else:
-                time.sleep(
-                    self.optimistic_wait
-                )  # Sleep a little longer, for good measure
-                break
+        table = self._find_ss_table()
+        if not table:
+            return []
+        keys = [
+            heading.inner_text().strip().lower().replace(" ", "_")
+            for heading in table.locator("thead th").all()
+        ]
+        result = []
+        for row in self._get_ss_table_data_rows():
+            cells = row.locator("td").all()
+            if len(cells) != len(keys):
+                continue
+            result.append(
+                {
+                    keys[index]: " ".join(cell.inner_text().strip().split())
+                    for index, cell in enumerate(cells)
+                }
+            )
         return result
 
     def ensure_ss_space_exists(self, attributes):
-        """Ensure there is a Storage Service space with the attributes in the
-        ``attributes`` dict.
-        """
+        """Return an equivalent space UUID, creating the space if needed."""
         matching_space = self.search_for_ss_space(attributes)
         if matching_space:
             logger.info("matching space:\n%s", pprint.pformat(matching_space))
             return matching_space["uuid"]
-        logger.info("space with attributes %s does NOT exist", attributes)
         return self.create_ss_space(attributes)
 
     def search_for_ss_space(self, attributes):
-        """Return first SS space matching all attrs in ``attributes`` dict."""
-        for ex_space in self.get_existing_spaces():
-            match = True
-            for key, val in attributes.items():
-                if ex_space.get(key.lower()) != val:
-                    logger.info(
-                        "%s\ndoes NOT match\n%s", ex_space.get(key.lower()), val
-                    )
-                    match = False
-                    break
-            if match:
-                return ex_space
+        """Return the first Storage Service space matching all attributes."""
+        for existing_space in self.get_existing_spaces():
+            if all(
+                existing_space.get(key.lower()) == value
+                for key, value in attributes.items()
+            ):
+                return existing_space
         logger.info("No SS space matching attributes %s", pprint.pformat(attributes))
         return None
 
+    def _fill_labeled_form(self, containers, attributes, choose_pipeline=False):
+        for container in containers:
+            for label in container.locator("p label").all():
+                label_text = label.inner_text().strip().lower().replace(":", "")
+                input_id = label.get_attribute("for")
+                if not input_id:
+                    continue
+                control = self.page.locator(f'[id="{input_id}"]')
+                for key, value in attributes.items():
+                    if key.lower() != label_text:
+                        continue
+                    tag_name = control.evaluate(
+                        "element => element.tagName.toLowerCase()"
+                    )
+                    if tag_name == "select":
+                        control.select_option(label=value)
+                    else:
+                        control.fill(str(value))
+                if choose_pipeline and label_text == "pipeline":
+                    control.select_option(index=0)
+
     def create_ss_space(self, attributes):
-        """Create an AM SS Space using ``attributes``."""
+        """Create a Storage Service space."""
         if attributes.get("Access protocol") == "GPG encryption on Local Filesystem":
-            # Visiting this URL creates a default GPG key when there is none
             self.navigate(self.get_gpg_keys_url())
             if (
                 attributes.get("GnuPG Private Key")
                 == "Archivematica Storage Service GPG Key"
             ):
-                # Replace the name of the default GPG encryption key with its
-                # key ID, ignoring any keys imported in other tests.
                 key_ids = [
-                    a.text
-                    for a in self.driver.find_elements(
-                        By.CSS_SELECTOR, "tbody tr td:first-child a"
-                    )
-                    if a.text not in GPG_KEYIDS_TO_IMPORT
+                    anchor.inner_text()
+                    for anchor in self.page.locator("tbody tr td:first-child a").all()
+                    if anchor.inner_text() not in GPG_KEYIDS_TO_IMPORT
                 ]
                 assert key_ids
                 attributes["GnuPG Private Key"] = key_ids[0]
         self.navigate(self.get_spaces_create_url())
-        form_el = self.driver.find_element(
-            By.CSS_SELECTOR, 'form[action="/spaces/create/"]'
+        form = self.page.locator('form[action="/spaces/create/"]')
+        protocol = self.page.locator("#protocol_form")
+        self._fill_labeled_form((form, protocol), attributes)
+        self.page.locator("input[type=submit]").click()
+        success = self.page.locator("div.alert-success")
+        success.wait_for(
+            state="visible", timeout=self._milliseconds(self.nihilistic_wait)
         )
-        protocol_el = self.driver.find_element(By.ID, "protocol_form")
-        for parent in (form_el, protocol_el):
-            for p_el in parent.find_elements(By.TAG_NAME, "p"):
-                for el in p_el.find_elements(By.CSS_SELECTOR, "*"):
-                    if el.tag_name == "label":
-                        label_text = el.text.strip().lower().replace(":", "")
-                        for key, val in attributes.items():
-                            if key.lower() == label_text:
-                                input_id = el.get_attribute("for")
-                                input_el = self.driver.find_element(By.ID, input_id)
-                                if input_el.tag_name == "select":
-                                    Select(input_el).select_by_visible_text(val)
-                                else:
-                                    input_el.send_keys(val)
-        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
-        self.wait_for_presence("div.alert-success", self.nihilistic_wait)
-        assert (
-            self.driver.find_element(By.CSS_SELECTOR, "div.alert-success").text.strip()
-            == "Space saved."
+        assert success.inner_text().strip() == "Space saved."
+        return (
+            self.page.locator("h1")
+            .inner_text()
+            .strip()
+            .split()[0]
+            .replace('"', "")
+            .replace(":", "")
         )
-        header = self.driver.find_element(By.TAG_NAME, "h1").text.strip()
-        space_uuid = header.split()[0].replace('"', "").replace(":", "")
-        return space_uuid
 
     def create_ss_location(self, space_uuid, attributes):
-        """Create an AM SS Location, in Space with UUID ``space_uuid``, using
-        attributes ``attributes``.
-        """
+        """Create a Storage Service location in a space."""
         self.navigate(self.get_locations_create_url(space_uuid))
-        form_el = self.driver.find_element(
-            By.CSS_SELECTOR, f'form[action="/spaces/{space_uuid}/location_create/"]'
+        form = self.page.locator(
+            f'form[action="/spaces/{space_uuid}/location_create/"]'
         )
-        for p_el in form_el.find_elements(By.TAG_NAME, "p"):
-            for el in p_el.find_elements(By.CSS_SELECTOR, "*"):
-                if el.tag_name == "label":
-                    label_text = el.text.strip().lower().replace(":", "")
-                    for key, val in attributes.items():
-                        if key.lower() == label_text:
-                            input_id = el.get_attribute("for")
-                            input_el = self.driver.find_element(By.ID, input_id)
-                            if input_el.tag_name == "select":
-                                Select(input_el).select_by_visible_text(val)
-                            else:
-                                input_el.send_keys(val)
-                    # Here we just choose the first available pipeline for the
-                    # location. This is a hack but it's better than having a
-                    # pipeline-less location. WARNING/TODO: this will need to
-                    # be changed for setups with multiple pipelines.
-                    if label_text == "pipeline":
-                        input_id = el.get_attribute("for")
-                        select_el = self.driver.find_element(By.ID, input_id)
-                        select = Select(select_el)
-                        select.select_by_index(0)
-        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
-        header = self.driver.find_element(By.TAG_NAME, "h1").text.strip()
-        location_uuid = header.split()[0].replace('"', "").replace(":", "")
-        return location_uuid
+        self._fill_labeled_form((form,), attributes, choose_pipeline=True)
+        self.page.locator("input[type=submit]").click()
+        return (
+            self.page.locator("h1")
+            .inner_text()
+            .strip()
+            .split()[0]
+            .replace('"', "")
+            .replace(":", "")
+        )
+
+    @staticmethod
+    def _parse_definition_list(definition_list, ignored_values=()):
+        result = {}
+        last_key = None
+        for element in definition_list.locator("dt, dd").all():
+            text = element.inner_text().strip()
+            tag_name = element.evaluate("node => node.tagName.toLowerCase()")
+            if tag_name == "dt":
+                last_key = text.lower()
+            elif text not in ignored_values:
+                result[last_key] = text
+        return result
 
     def get_existing_spaces(self):
-        """Return a summary of the existing spaces in the AM SS as a list of
-        dicts.
-        """
-        existing_spaces = []
+        """Return summaries of all existing Storage Service spaces."""
         self.navigate(self.get_spaces_url())
-        space_urls = []
-        for div_el in self.driver.find_elements(By.CSS_SELECTOR, "div.space"):
-            space_detail_anchor = div_el.find_element(
-                By.XPATH, 'dl/dd/ul/li/a[text() = "View Details and Locations"]'
-            )
-            space_urls.append(space_detail_anchor.get_attribute("href"))
-        for space_url in space_urls:
+        space_urls = [
+            link.evaluate("element => element.href")
+            for link in self.page.get_by_role(
+                "link", name="View Details and Locations", exact=True
+            ).all()
+        ]
+        existing_spaces = []
+        for space_url in filter(None, space_urls):
             self.navigate(space_url)
-            space_uuid = space_url
-            if space_uuid.endswith("/"):
-                space_uuid = space_uuid[:-1]
-            space_uuid = space_uuid.split("/")[-1]
+            space_uuid = space_url.rstrip("/").split("/")[-1]
             space = {"uuid": space_uuid}
-            space_div_el = self.driver.find_element(By.CSS_SELECTOR, "div.space dl")
-            last_key = None
-            for el in space_div_el.find_elements(By.CSS_SELECTOR, "dt, dd"):
-                text = el.text.strip()
-                if el.tag_name == "dt":
-                    last_key = text.lower()
-                elif text != "Actions":
-                    space[last_key] = text
+            space.update(
+                self._parse_definition_list(
+                    self.page.locator("div.space dl"), ignored_values=("Actions",)
+                )
+            )
             existing_spaces.append(space)
         return existing_spaces
 
     def get_existing_locations(self, space_uuid):
-        """Return a summary of the existing locations in the space with UUID
-        ``space_uuid`` in the AM SS as a list of dicts.
-        """
-        existing_locations = []
+        """Return summaries of all locations in a Storage Service space."""
         self.navigate(self.get_space_url(space_uuid))
-        location_urls = {}
-        for tr_el in self.driver.find_elements(By.CSS_SELECTOR, "tbody tr"):
-            loc_uuid_td_el = tr_el.find_element(By.XPATH, "td[position()=5]")
-            loc_uuid = loc_uuid_td_el.text.strip()
-            location_urls[loc_uuid] = self.get_location_url(loc_uuid)
-        for loc_uuid, loc_url in location_urls.items():
-            self.navigate(loc_url)
-            location = {"uuid": loc_uuid}
-            loc_div_el = self.driver.find_element(By.CSS_SELECTOR, "div.location dl")
-            last_key = None
-            for el in loc_div_el.find_elements(By.CSS_SELECTOR, "dt, dd"):
-                text = el.text.strip()
-                if el.tag_name == "dt":
-                    last_key = text.lower()
-                elif text not in ("Space", "Actions"):
-                    location[last_key] = text
+        location_uuids = [
+            row.locator("td:nth-child(5)").inner_text().strip()
+            for row in self.page.locator("tbody tr").all()
+        ]
+        existing_locations = []
+        for location_uuid in location_uuids:
+            self.navigate(self.get_location_url(location_uuid))
+            location = {"uuid": location_uuid}
+            location.update(
+                self._parse_definition_list(
+                    self.page.locator("div.location dl"),
+                    ignored_values=("Space", "Actions"),
+                )
+            )
             existing_locations.append(location)
         return existing_locations
 
     def ensure_ss_location_exists(self, space_uuid, attributes):
-        """Ensure there is a Storage Service location within the space with
-        UUID ``space_uuid`` that has the attributes in the ``attributes`` dict.
-        Return that location's UUId.
-        """
-        existing_locations = self.get_existing_locations(space_uuid)
-        matching_loc = None
-        for ex_loc in existing_locations:
-            match = True
-            for key, val in attributes.items():
-                if ex_loc.get(key.lower()) != val:
-                    match = False
-                    break
-            if match:
-                matching_loc = ex_loc
-                break
-        if matching_loc:
-            loc_uuid = matching_loc["uuid"]
-        else:
-            logger.info("location with attributes %s does NOT exist", attributes)
-            loc_uuid = self.create_ss_location(space_uuid, attributes)
-        return loc_uuid
+        """Return an equivalent location UUID, creating it if needed."""
+        for location in self.get_existing_locations(space_uuid):
+            if all(
+                location.get(key.lower()) == value for key, value in attributes.items()
+            ):
+                return location["uuid"]
+        return self.create_ss_location(space_uuid, attributes)
 
-    def add_replicator_to_default_aip_stor_loc(self, replicator_location_uuid):
-        """Add the replicator location with UUID ``replicator_location_uuid``
-        to the set of replicators of the default AIP Storage location. Assumes
-        that the first location that matches the search term "Store AIP in
-        standard Archivematica Directory" is THE default AIP Storage location.
-        """
+    def _default_aip_storage_replicators(self):
+        """Open the default AIP location editor and return its replicator field."""
         self.navigate(self.get_locations_url())
         self._search_ss_table("Store AIP in standard Archivematica Directory")
-        row_els = self._get_ss_table_data_rows()
-        row_els = [
-            row_el
-            for row_el in row_els
-            if row_el.find_elements(By.XPATH, './/a[normalize-space() = "Edit"]')
-        ]
-        row_els = [
-            row_el
-            for row_el in row_els
-            if "store aip in standard archivematica directory" in row_el.text.lower()
+        rows = [
+            row
+            for row in self._get_ss_table_data_rows()
+            if row.get_by_role("link", name="Edit", exact=True).count()
+            and "store aip in standard archivematica directory"
+            in row.inner_text().lower()
         ]
         unencrypted_rows = [
-            row_el for row_el in row_els if "encrypted" not in row_el.text.lower()
+            row for row in rows if "encrypted" not in row.inner_text().lower()
         ]
         if unencrypted_rows:
-            row_els = unencrypted_rows
-        if len(row_els) > 1:
+            rows = unencrypted_rows
+        if len(rows) != 1:
             raise ArchivematicaBrowserStorageServiceAbilityError(
                 "Unable to find a unique default AIP storage location"
             )
-        if not row_els:
-            raise ArchivematicaBrowserStorageServiceAbilityError(
-                "Unable to find a default AIP storage location"
-            )
-        edit_links = row_els[0].find_elements(
-            By.XPATH, './/a[normalize-space() = "Edit"]'
+        rows[0].get_by_role("link", name="Edit", exact=True).click()
+        replicators = self.page.locator("select#id_replicators")
+        replicators.wait_for(state="visible")
+        return replicators
+
+    def add_replicator_to_default_aip_stor_loc(self, replicator_location_uuid):
+        """Add a replicator and return the previous replicator field values."""
+        replicators = self._default_aip_storage_replicators()
+        previous_values = replicators.locator("option:checked").evaluate_all(
+            "options => options.map(option => option.value)"
         )
-        if not edit_links:
-            raise ArchivematicaBrowserStorageServiceAbilityError(
-                "Unable to find an edit button/link for the default"
-                " AIP storage location"
-            )
-        edit_links[0].click()
-        self.wait_for_presence("select#id_replicators")
-        replicators_select_el = self.driver.find_element(
-            By.CSS_SELECTOR, "select#id_replicators"
+        for option in replicators.locator("option").all():
+            label = option.inner_text()
+            if replicator_location_uuid in label:
+                selected_values = [*previous_values, option.get_attribute("value")]
+                replicators.select_option(list(dict.fromkeys(selected_values)))
+                self.page.locator("input[type=submit]").click()
+                return previous_values
+        raise ArchivematicaBrowserStorageServiceAbilityError(
+            f"Unable to find replicator location {replicator_location_uuid}"
         )
-        replicators_select = Select(replicators_select_el)
-        found_replicator = False
-        for option in replicators_select.options:
-            if replicator_location_uuid in option.text:
-                replicators_select.select_by_visible_text(option.text)
-                found_replicator = True
-                break
-        if not found_replicator:
-            raise ArchivematicaBrowserStorageServiceAbilityError(
-                f"Unable to find replicator location {replicator_location_uuid} as a possible replicator"
-                " for the default AIP Storage"
-                " location"
+
+    def set_default_aip_storage_replicators(self, replicator_values):
+        """Replace the default AIP location's replicators with saved values."""
+        replicators = self._default_aip_storage_replicators()
+        available_values = set(
+            replicators.locator("option").evaluate_all(
+                "options => options.map(option => option.value)"
             )
-        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
+        )
+        missing_values = set(replicator_values) - available_values
+        if missing_values:
+            raise ArchivematicaBrowserStorageServiceAbilityError(
+                f"Unable to restore replicator locations {sorted(missing_values)}"
+            )
+        replicators.select_option(replicator_values)
+        self.page.locator("input[type=submit]").click()
 
     def import_gpg_key(self, key_path):
-        """Navigate to the GPG key import page and attempt to import the GPG
-        key whose private key ASCII armor is stored in the file at
-        ``key_path``. Return the alert message text displayed after the import
-        attempt.
-        """
+        """Import a GPG private key and return the resulting alert text."""
         self.navigate(self.get_import_gpg_key_url())
-        with open(key_path) as filei:
-            self.driver.find_element(By.ID, "id_ascii_armor").send_keys(filei.read())
-        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
-        self.wait_for_presence("div.alert", 20)
-        return self.driver.find_element(By.CSS_SELECTOR, "div.alert").text.strip()
+        with open(key_path) as key_input:
+            self.page.locator("#id_ascii_armor").fill(key_input.read())
+        self.page.locator("input[type=submit]").click()
+        alert = self.page.locator("div.alert")
+        alert.wait_for(state="visible", timeout=self._milliseconds(20))
+        return alert.inner_text().strip()
 
     def get_gpg_key_search_matches(self, search_string):
-        """Navigate to the GPG keys page and return the fingerprints of all
-        keys matching ``search_string``.
-        """
-        fingerprints = []
+        """Return fingerprints for GPG keys matching a search string."""
         self.navigate(self.get_gpg_keys_url())
         self._search_ss_table(search_string)
-        for row_el in self._get_ss_table_data_rows():
-            try:
-                fingerprints.append(
-                    row_el.find_elements(By.TAG_NAME, "td")[1].text.strip()
-                )
-            except IndexError:
-                pass
+        fingerprints = []
+        for row in self._get_ss_table_data_rows():
+            cells = row.locator("td")
+            if cells.count() > 1:
+                fingerprints.append(cells.nth(1).inner_text().strip())
         return fingerprints
 
     def delete_gpg_key(self, key_name):
-        """Navigate to the GPG keys page, search for a key matching
-        ``key_name``, and attempt to delete it. Returns a 2-tuple:
-        ``(succeeded, msg)`` where ``succeeded`` is a boolean and ``msg`` is a
-        string.
-        """
+        """Delete the uniquely matching GPG key."""
         self.navigate(self.get_gpg_keys_url())
         self._search_ss_table(key_name)
         matches = self._get_ss_table_data_rows()
-        try:
-            assert len(matches) == 1
-        except AssertionError:
-            logger.info(
-                'Unable to delete GPG key with name "%s" because there'
-                " are %s keys matching that name",
-                key_name,
-                len(matches),
+        assert len(matches) == 1, (
+            f'Unable to delete GPG key "{key_name}": found {len(matches)} matches'
+        )
+        delete_link = matches[0].get_by_role("link", name="Delete", exact=True)
+        if not delete_link.count():
+            raise ArchivematicaBrowserStorageServiceAbilityError(
+                f'Unable to locate Delete action for key "{key_name}"'
             )
-            raise
-        else:
-            delete_links = matches[0].find_elements(
-                By.XPATH, './/a[normalize-space() = "Delete"]'
-            )
-            if not delete_links:
-                raise NoSuchElementException(
-                    f'Unable to locate "Delete" action for key "{key_name}"'
-                )
-            delete_links[0].click()
-        try:
-            delete_controls = self.driver.find_elements(
-                By.CSS_SELECTOR, 'input[value="Delete"], button'
-            )
-            clicked = False
-            for control in delete_controls:
-                label = (control.get_attribute("value") or control.text or "").strip()
-                if label == "Delete":
-                    control.click()
-                    clicked = True
-                    break
-            if not clicked:
-                raise NoSuchElementException(
-                    'Unable to locate confirmation "Delete" button'
-                )
-            try:
-                return (
-                    True,
-                    self.driver.find_element(
-                        By.CSS_SELECTOR, "div.alert-success"
-                    ).text.strip(),
-                )
-            except NoSuchElementException:
-                return False, "unknown"
-        except NoSuchElementException:
-            return (
-                False,
-                self.driver.find_element(
-                    By.CSS_SELECTOR, "div.alert-error"
-                ).text.strip(),
-            )
+        delete_link.click()
+        delete_control = self.page.locator('input[value="Delete"]')
+        if not delete_control.count():
+            delete_control = self.page.get_by_role("button", name="Delete", exact=True)
+        if not delete_control.count():
+            error = self.page.locator("div.alert-error")
+            return False, error.inner_text().strip()
+        delete_control.first.click()
+        alert = self.page.locator("div.alert-success, div.alert-error")
+        alert.first.wait_for(state="visible")
+        class_name = alert.first.get_attribute("class") or ""
+        return "alert-success" in class_name, alert.first.inner_text().strip()
 
     def create_new_gpg_key(self):
-        """Create a new GPG key with a unique name."""
+        """Create a GPG key with a unique name."""
         self.navigate(self.get_create_gpg_key_url())
         new_key_name = f"GPGKey {utils.unixtimestamp()}"
-        new_key_email = "{}@example.com".format(new_key_name.lower().replace(" ", ""))
-        self.driver.find_element(By.ID, "id_name_real").send_keys(new_key_name)
-        self.driver.find_element(By.ID, "id_name_email").send_keys(new_key_email)
-        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
-        self.wait_for_presence("div.alert-success", self.nihilistic_wait)
-        alert_text = self.driver.find_element(By.CSS_SELECTOR, "div.alert-success").text
-        new_key_fingerprint = alert_text.split()[2]
-        new_key_id = self.driver.find_elements(By.CSS_SELECTOR, "dd")[1].text
+        new_key_email = f"{new_key_name.lower().replace(' ', '')}@example.com"
+        self.page.locator("#id_name_real").fill(new_key_name)
+        self.page.locator("#id_name_email").fill(new_key_email)
+        self.page.locator("input[type=submit]").click()
+        success = self.page.locator("div.alert-success").filter(
+            has_text=re.compile(r"New key \S+ created\.")
+        )
+        success.first.wait_for(
+            state="visible", timeout=self._milliseconds(self.nihilistic_wait)
+        )
+        new_key_fingerprint = success.first.inner_text().split()[2]
+        new_key_id = self.page.locator("dd").nth(1).inner_text()
         return new_key_name, new_key_email, new_key_fingerprint, new_key_id
 
     def change_encrypted_space_key(self, space_uuid, new_key_repr=None):
-        """Edit the existing space with UUID ``space_uuid`` and set its GPG key
-        to the existing one matching ``new_key_repr``, if provided, or else to
-        any other key.
-        """
+        """Change the key associated with an encrypted space."""
         self.navigate(self.get_space_edit_url(space_uuid))
-        select = Select(self.driver.find_element(By.ID, "id_protocol-key"))
+        key_select = self.page.locator("#id_protocol-key")
         if new_key_repr:
-            select.select_by_visible_text(new_key_repr)
+            key_select.select_option(label=new_key_repr)
         else:
-            currently_selected = select.first_selected_option.text
-            for option in select.options:
-                if option.text != currently_selected:
-                    select.select_by_visible_text(option.text)
+            current_label = key_select.locator("option:checked").inner_text()
+            for option in key_select.locator("option").all():
+                label = option.inner_text()
+                if label != current_label:
+                    key_select.select_option(label=label)
                     break
-        self.driver.find_element(By.CSS_SELECTOR, "input[type=submit]").click()
-        # Nihilistic wait is the only value working on Docker at present... and
-        # may still need to be longer. Wait needed to accumulate GPG entropy.
-        self.wait_for_presence("div.alert-success", self.nihilistic_wait)
-        assert self.driver.find_element(
-            By.CSS_SELECTOR, "div.alert-success"
-        ).text.strip() == ("Space saved.")
+        self.page.locator("input[type=submit]").click()
+        success = self.page.locator("div.alert-success")
+        success.wait_for(
+            state="visible", timeout=self._milliseconds(self.nihilistic_wait)
+        )
+        assert success.inner_text().strip() == "Space saved."
