@@ -73,6 +73,10 @@ class Base:
             "max_check_transfer_appeared_attempts",
             c.MAX_CHECK_TRANSFER_APPEARED_ATTEMPTS,
         ),
+        (
+            "max_check_for_ms_visibility_attempts",
+            c.MAX_CHECK_FOR_MS_VISIBILITY_ATTEMPTS,
+        ),
         ("max_check_for_ms_group_attempts", c.MAX_CHECK_FOR_MS_GROUP_ATTEMPTS),
     )
 
