@@ -1,7 +1,6 @@
 """Archivematica Transfer & Ingest Tabs Ability"""
 
 import logging
-import sys
 import time
 
 from selenium.common.exceptions import NoSuchElementException
@@ -121,37 +120,31 @@ class ArchivematicaBrowserTransferIngestAbility(
             )
 
     @selenium_ability.recurse_on_stale
-    def wait_for_microservice_visibility(
-        self, ms_name, group_name, transfer_uuid, level=0
-    ):
+    def wait_for_microservice_visibility(self, ms_name, group_name, transfer_uuid):
         """Wait until micro-service ``ms_name`` of transfer ``transfer_uuid``
         is visible.
         """
-        ms_group_elem = self.get_transfer_micro_service_group_elem(
-            group_name, transfer_uuid
+        max_attempts = self.max_check_for_ms_visibility_attempts
+        for attempt in range(max_attempts):
+            ms_group_elem = self.get_transfer_micro_service_group_elem(
+                group_name, transfer_uuid
+            )
+            for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
+                for span_elem in job_elem.find_elements(
+                    By.CSS_SELECTOR, "div.job-detail-microservice > span[title]"
+                ):
+                    if utils.squash(span_elem.text) == utils.squash(ms_name):
+                        return
+            if attempt == max_attempts - 1:
+                break
+            if attempt < (max_attempts / 2):
+                time.sleep(self.micro_wait)
+            else:
+                time.sleep(self.quick_wait)
+        raise ArchivematicaBrowserTransferIngestAbilityError(
+            f'Unable to find microservice "{ms_name}" in group "{group_name}" '
+            f"for {transfer_uuid} after {max_attempts} attempts"
         )
-        for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
-            for span_elem in job_elem.find_elements(
-                By.CSS_SELECTOR, "div.job-detail-microservice > span[title]"
-            ):
-                if utils.squash(span_elem.text) == utils.squash(ms_name):
-                    return
-        if level < (sys.getrecursionlimit() / 2):
-            # The job is taking a long time to complete. Half the
-            # amount of checking to avoid stack-overflow.
-            logger.warning(
-                f"Recursion limit close to being reached: level: {level} <= {sys.getrecursionlimit()}"
-            )
-            time.sleep(self.micro_wait)
-        else:
-            time.sleep(self.quick_wait)
-        level += 1
-        try:
-            self.wait_for_microservice_visibility(ms_name, group_name, transfer_uuid)
-        except RecursionError:
-            logger.error(
-                "Recursion depth exceeded waiting for microservice visibility, consider re-running the test"
-            )
 
     @selenium_ability.recurse_on_stale
     def click_show_tasks_button(self, ms_name, group_name, transfer_uuid):

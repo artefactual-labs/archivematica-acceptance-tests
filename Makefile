@@ -28,8 +28,12 @@ sync-runtime:  # Sync only the runtime dependencies
 lint:  # Run all pre-commit checks
 	$(UV) run --locked pre-commit run --all-files --show-diff-on-failure
 
+.PHONY: unit-test
+unit-test:  # Run focused unit tests
+	$(UV) run --locked --no-dev python -m unittest discover -s tests
+
 .PHONY: check
-check: lock-check lint  # Verify the lockfile and run all checks
+check: lock-check lint unit-test  # Verify the lockfile and run all checks
 
 .PHONY: behave
 behave:  # Run the acceptance tests; pass options with BEHAVE_ARGS
