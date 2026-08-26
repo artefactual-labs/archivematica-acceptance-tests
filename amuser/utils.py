@@ -43,20 +43,12 @@ def is_hdl(idfr, entity_type, accession_no=None):
     return is_uuid(pid)
 
 
-def normalize_ms_name(ms_name, vn):
-    """Normalize the microservice name. This allows for different AM versions
-    to use different names for the same microservice, without us having to
-    change a whole bunch of feature files to accommodate such changes.
-    """
-    new_ms_name = ms_name
-    if ms_name == "Approve normalization (review)" and vn != "1.6":
-        new_ms_name = "Approve normalization Review"
-    elif ms_name == "Store AIP (review)" and vn != "1.6":
-        new_ms_name = "Store AIP Review"
-    elif ms_name == "Store AIP Review" and vn == "1.6":
-        new_ms_name = "Store AIP (review)"
-    elif ms_name == "Approve normalization Review" and vn == "1.6":
-        new_ms_name = "Approve normalization (review)"
+def normalize_ms_name(ms_name):
+    """Normalize feature wording to current processing-monitor job titles."""
+    new_ms_name = {
+        "Approve normalization (review)": "Approve normalization",
+        "Store AIP (review)": "Store AIP",
+    }.get(ms_name, ms_name)
     if ms_name != new_ms_name:
         logger.info('Treating microservice "%s" as "%s"', ms_name, new_ms_name)
     return new_ms_name

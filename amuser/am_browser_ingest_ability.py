@@ -106,7 +106,7 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
         ingest_url = self.get_ingest_url()
         self.navigate(ingest_url)
         # Wait for the "Store AIP" micro-service.
-        ms_name = utils.normalize_ms_name("Store AIP (review)", self.vn)
+        ms_name = utils.normalize_ms_name("Store AIP (review)")
         self.expose_job(ms_name, sip_uuid, "ingest")
         aip_preview_url = self.get_aip_preview_url(sip_uuid).format(
             self.am_url, sip_uuid
@@ -208,7 +208,7 @@ class ArchivematicaBrowserIngestAbility(selenium_ability.ArchivematicaSeleniumAb
         if self.driver.current_url != url:
             self.login()
         self.driver.get(url)
-        ms_name = utils.normalize_ms_name("Approve normalization (review)", self.vn)
+        ms_name = utils.normalize_ms_name("Approve normalization (review)")
         self.expose_job(ms_name, sip_uuid, "sip")
         nrmlztn_rprt_url = self.get_normalization_report_url(sip_uuid)
         self.driver.get(nrmlztn_rprt_url)

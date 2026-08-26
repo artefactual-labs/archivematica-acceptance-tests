@@ -31,9 +31,9 @@ class ArchivematicaBrowserJobsTasksAbility(
         )
         for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
             for span_elem in job_elem.find_elements(
-                By.CSS_SELECTOR, "div.job-detail-microservice span"
+                By.CSS_SELECTOR, "div.job-detail-microservice > span[title]"
             ):
-                if span_elem.text.strip() == ms_name:
+                if utils.squash(span_elem.text) == utils.squash(ms_name):
                     return job_elem.find_element(
                         By.CSS_SELECTOR, "div.job-detail-currentstep span"
                     ).text.strip()
@@ -205,7 +205,7 @@ class ArchivematicaBrowserJobsTasksAbility(
         )
         for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
             for span_elem in job_elem.find_elements(
-                By.CSS_SELECTOR, "div.job-detail-microservice span"
+                By.CSS_SELECTOR, "div.job-detail-microservice > span[title]"
             ):
                 if utils.squash(span_elem.text) == utils.squash(ms_name):
                     job_output = job_elem.find_element(
