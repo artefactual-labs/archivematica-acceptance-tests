@@ -43,7 +43,7 @@ class ArchivematicaBrowserTransferIngestAbility(
         """Wait for the decision point job for micro-service ``ms_name`` to
         appear.
         """
-        ms_name = utils.normalize_ms_name(ms_name, self.vn)
+        ms_name = utils.normalize_ms_name(ms_name)
         logger.info(
             'Await decision point "%s" with unit %s of type %s',
             ms_name,
@@ -61,7 +61,7 @@ class ArchivematicaBrowserTransferIngestAbility(
         """Make the choice matching the text ``choice_text`` at decision point
         (i.e., microservice) job matching ``decision_point``.
         """
-        decision_point = utils.normalize_ms_name(decision_point, self.vn)
+        decision_point = utils.normalize_ms_name(decision_point)
         decision_point, group_name = self.expose_job(
             decision_point, uuid_val, unit_type=unit_type
         )
@@ -69,7 +69,7 @@ class ArchivematicaBrowserTransferIngestAbility(
         action_div_el = None
         for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
             for span_elem in job_elem.find_elements(
-                By.CSS_SELECTOR, "div.job-detail-microservice span"
+                By.CSS_SELECTOR, "div.job-detail-microservice > span[title]"
             ):
                 if utils.squash(span_elem.text) == utils.squash(decision_point):
                     action_div_el = job_elem.find_element(
@@ -132,7 +132,7 @@ class ArchivematicaBrowserTransferIngestAbility(
         )
         for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
             for span_elem in job_elem.find_elements(
-                By.CSS_SELECTOR, "div.job-detail-microservice span"
+                By.CSS_SELECTOR, "div.job-detail-microservice > span[title]"
             ):
                 if utils.squash(span_elem.text) == utils.squash(ms_name):
                     return
@@ -166,9 +166,9 @@ class ArchivematicaBrowserTransferIngestAbility(
         )
         for job_elem in ms_group_elem.find_elements(By.CSS_SELECTOR, "div.job"):
             for span_elem in job_elem.find_elements(
-                By.CSS_SELECTOR, "div.job-detail-microservice span"
+                By.CSS_SELECTOR, "div.job-detail-microservice > span[title]"
             ):
-                if span_elem.text.strip() == ms_name:
+                if utils.squash(span_elem.text) == utils.squash(ms_name):
                     job_elem.find_element(
                         By.CSS_SELECTOR, "div.job-detail-actions a.btn_show_tasks"
                     ).click()
