@@ -3,7 +3,10 @@
   <description>Attempt to re-implement the NYULibraries_MKVFFV1.xsl policy file of MediaConch XML v. 0.1 as a v. 0.3 .xml policy</description>
   <rule name="General Format equals Matroska" value="Format" tracktype="General" occurrence="*" operator="=">Matroska</rule>
   <rule name="Video Format is FFV1" value="Format" tracktype="Video" occurrence="*" operator="=">FFV1</rule>
-  <rule name="Video CodecID equals FFV1" value="CodecID" tracktype="Video" occurrence="*" operator="=">V_MS/VFW/FOURCC / FFV1</rule>
+  <policy type="or" name="Video CodecID equals FFV1">
+    <rule name="Video CodecID equals V_FFV1" value="CodecID" tracktype="Video" occurrence="*" operator="=">V_FFV1</rule>
+    <rule name="Video CodecID equals V_MS/VFW/FOURCC / FFV1" value="CodecID" tracktype="Video" occurrence="*" operator="=">V_MS/VFW/FOURCC / FFV1</rule>
+  </policy>
   <rule name="Video Width equals 720 (pixels)" value="Width" tracktype="Video" occurrence="*" operator="=">720</rule>
   <rule name="Video Height equals 486 (pixels)" value="Height" tracktype="Video" occurrence="*" operator="=">486</rule>
   <rule name="Video DisplayAspectRatio equals 4:3 (1.333)" value="DisplayAspectRatio" tracktype="Video" occurrence="*" operator="=">1.333</rule>
