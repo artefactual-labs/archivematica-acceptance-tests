@@ -8,6 +8,7 @@ contents of their AIPs without relying on user interface interactions.
 import os
 import pathlib
 import uuid
+from collections import Counter
 
 import environment
 import metsrw
@@ -833,6 +834,68 @@ def step_impl(context, expected_entries_count):
     )
     error = f"Expected objects with rightsMD sections: {expected_entries_count} is incorrect: {len(rights_linking_ids)}"
     assert len(rights_linking_ids) == expected_entries_count, error
+
+
+@then('the original object "{filepath}" in the AIP METS has the following rights')
+def step_impl(context, filepath):
+    mets = metsrw.METSDocument.fromfile(context.current_transfer["aip_mets_location"])
+    original_files = [
+        entry
+        for entry in mets.all_files()
+        if entry.use == "original"
+        and utils.get_path_before_filename_change(
+            entry, transfer_contains_objects_dir=True
+        )
+        == filepath
+    ]
+    assert len(original_files) == 1, f"Expected one original object at {filepath}"
+    entry = original_files[0]
+    namespaces = context.mets_nsmap
+    file_element = mets.tree.find(
+        f'mets:fileSec/mets:fileGrp[@USE="original"]/mets:file[@ID="file-{entry.file_uuid}"]',
+        namespaces=namespaces,
+    )
+    assert file_element is not None, f"No fileSec entry for {filepath}"
+    statements = []
+    for amdsec_id in file_element.get("ADMID", "").split():
+        statements.extend(
+            mets.tree.findall(
+                f'mets:amdSec[@ID="{amdsec_id}"]/mets:rightsMD/mets:mdWrap/'
+                "mets:xmlData/premis:rightsStatement",
+                namespaces=namespaces,
+            )
+        )
+    actual = []
+    for statement in statements:
+        linking_ids = statement.findall(
+            "premis:linkingObjectIdentifier/premis:linkingObjectIdentifierValue",
+            namespaces=namespaces,
+        )
+        assert [item.text for item in linking_ids] == [entry.file_uuid], (
+            f"Rights statement does not link to {filepath}"
+        )
+        grants = statement.findall("premis:rightsGranted", namespaces=namespaces)
+        assert len(grants) == 1, (
+            f"Expected one rights grant per statement for {filepath}"
+        )
+        actual.append(
+            (
+                statement.findtext("premis:rightsBasis", namespaces=namespaces),
+                grants[0].findtext("premis:act", namespaces=namespaces),
+                grants[0].findtext("premis:restriction", namespaces=namespaces),
+                statement.findtext(
+                    "premis:licenseInformation/premis:licenseTerms",
+                    namespaces=namespaces,
+                ),
+            )
+        )
+    expected = [
+        (row["basis"], row["act"], row["restriction"], row["terms"])
+        for row in context.table
+    ]
+    assert Counter(actual) == Counter(expected), (
+        f"Expected rights for {filepath}: {expected}, found: {actual}"
+    )
 
 
 @then("there are {expected_entries_count:d} PREMIS:RIGHTS entries")

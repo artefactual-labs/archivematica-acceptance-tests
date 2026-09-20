@@ -18,3 +18,32 @@ Feature: Alma wants to ensure the AIP METS contains metadata from description an
       | SampleTransfers/DemoTransferCSV | 7                     | 1               | 2                            | 8                    | 1                          |
       | SampleTransfers/CSVmultiLevel   | 4                     | 1               | 0                            | 0                    | 0                          |
       | TestTransfers/rightsTransfer    | 0                     | 0               | 2                            | 4                    | 0                          |
+
+  @transfer-rights
+  Scenario: Transfer rights are listed for each original object in the AIP METS
+    Given a "standard" transfer type located in "TestTransfers/rightsTransferGlobal"
+    When the AIP is downloaded
+    Then the AIP METS can be accessed and parsed by mets-reader-writer
+    And there are 2 objects in the AIP METS with a rightsMD section containing PREMIS:RIGHTS
+    And there are 2 PREMIS:RIGHTS entries
+    And the original object "objects/first.txt" in the AIP METS has the following rights
+      | basis   | act | restriction | terms                   |
+      | License | use | Allow       | Transfer license terms. |
+    And the original object "objects/nested/second.txt" in the AIP METS has the following rights
+      | basis   | act | restriction | terms                   |
+      | License | use | Allow       | Transfer license terms. |
+
+  @transfer-rights
+  Scenario: Transfer and file rights are listed together without duplicate transfer rights in the AIP METS
+    Given a "standard" transfer type located in "TestTransfers/rightsTransferMixed"
+    When the AIP is downloaded
+    Then the AIP METS can be accessed and parsed by mets-reader-writer
+    And there are 2 objects in the AIP METS with a rightsMD section containing PREMIS:RIGHTS
+    And there are 3 PREMIS:RIGHTS entries
+    And the original object "objects/first.txt" in the AIP METS has the following rights
+      | basis   | act | restriction | terms                          |
+      | License | use | Allow       | Transfer license terms.        |
+      | License | use | Allow       | Additional file license terms. |
+    And the original object "objects/nested/second.txt" in the AIP METS has the following rights
+      | basis   | act | restriction | terms                   |
+      | License | use | Allow       | Transfer license terms. |
