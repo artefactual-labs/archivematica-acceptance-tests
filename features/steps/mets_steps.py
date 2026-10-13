@@ -101,7 +101,7 @@ def step_impl(context):
         ".//mets:dmdSec/mets:mdWrap/mets:xmlData/dcterms:dublincore",
         context.am_user.mets.mets_nsmap,
     )
-    assert dublincore_el
+    assert dublincore_el is not None
     for attr in context.am_user.browser.metadata_attrs:
         dc_el = dublincore_el.find(f"dc:{attr}", context.am_user.mets.mets_nsmap)
         assert dc_el is not None
