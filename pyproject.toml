@@ -1,7 +1,7 @@
 [project]
 name = "archivematica-acceptance-tests"
 description = "Archivematica Automated User Acceptance Tests (AMAUAT)"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 # The project.version field is required in pyproject.toml files, even if this
 # project is not yet versioned. Using a placeholder for now.
 version = "0.0.0"

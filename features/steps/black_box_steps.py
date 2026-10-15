@@ -1570,7 +1570,7 @@ def step(context):
             continue
         xpointer_dmdsec_id, dc_dmdsec_id = dmdsec_ids
         pointer = tree.find(
-            f'//mets:dmdSec[@ID="{xpointer_dmdsec_id}"]/mets:mdRef',
+            f'.//mets:dmdSec[@ID="{xpointer_dmdsec_id}"]/mets:mdRef',
             namespaces=context.mets_nsmap,
         )
         if pointer is None:
@@ -1605,7 +1605,7 @@ def step(context):
         if errors:
             continue
         identifier = tree.find(
-            f'//mets:dmdSec[@ID="{dc_dmdsec_id}"]/mets:mdWrap[@MDTYPE="DC"]'
+            f'.//mets:dmdSec[@ID="{dc_dmdsec_id}"]/mets:mdWrap[@MDTYPE="DC"]'
             "/mets:xmlData/dcterms:dublincore/dc:identifier",
             namespaces=context.mets_nsmap,
         )
@@ -1614,7 +1614,7 @@ def step(context):
                 f'Could not find dc:identifier element in dmdSec with ID="{dc_dmdsec_id}"'
             )
         terms = tree.find(
-            f'//mets:dmdSec[@ID="{dc_dmdsec_id}"]/mets:mdWrap[@MDTYPE="DC"]'
+            f'.//mets:dmdSec[@ID="{dc_dmdsec_id}"]/mets:mdWrap[@MDTYPE="DC"]'
             "/mets:xmlData/dcterms:dublincore/dcterms:isPartOf",
             namespaces=context.mets_nsmap,
         )
@@ -1645,7 +1645,7 @@ def step(context):
             continue
         xpointer_dmdsec_id = amdsec_ids[0]
         pointer = tree.find(
-            f'//mets:amdSec[@ID="{xpointer_dmdsec_id}"]/mets:rightsMD/mets:mdRef',
+            f'.//mets:amdSec[@ID="{xpointer_dmdsec_id}"]/mets:rightsMD/mets:mdRef',
             namespaces=context.mets_nsmap,
         )
         if pointer is None:
