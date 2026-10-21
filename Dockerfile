@@ -2,8 +2,8 @@ ARG TARGET=archivematica-acceptance-tests
 
 ARG UBUNTU_VERSION=26.04
 # Pin the Docker tool image independently for reproducible builds.
-ARG UV_VERSION=0.12.13
-ARG UV_DIGEST=sha256:b485bd65cc2cf1c9a93b3554012c9c3778cf7b1b5fd3d3096ce9e1226c97e1e6
+ARG UV_VERSION=0.13.4
+ARG UV_DIGEST=sha256:9f130421e930bfbdc563c00740466603f8723158e90297d07957c2294640262b
 ARG PYTHON_INSTALL_DIR=/python
 
 FROM ghcr.io/astral-sh/uv:${UV_VERSION}@${UV_DIGEST} AS uv
