@@ -1215,6 +1215,20 @@ def extract_document_text(doc):
         return ""
 
 
+def get_dmdsec_group_id(
+    tree: etree._ElementTree, dmdsec_id: str, nsmap: dict[str, str]
+) -> str | None:
+    """Return the GROUPID attribute of the dmdSec with the given ID.
+
+    The attribute is read from the METS tree itself, so an absent attribute is
+    reported as None instead of the empty string that metsrw gives it.
+    """
+    dmdsec = tree.find(f'mets:dmdSec[@ID="{dmdsec_id}"]', namespaces=nsmap)
+    if dmdsec is None:
+        raise ValueError(f"No dmdSec with ID {dmdsec_id} in the METS")
+    return dmdsec.get("GROUPID")
+
+
 def is_metadata_validation_event(event_detail):
     return (
         set(event_detail.keys())
