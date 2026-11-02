@@ -16,6 +16,7 @@ from behave import given
 from behave import then
 from behave import use_step_matcher
 from behave import when
+from behave.runner import Context
 from lxml import etree
 
 from features.steps import utils
@@ -1111,7 +1112,7 @@ def step_impl(context, dmdsec_status):
     "two dmdSecs with the same GROUPID, one with the original XML content which "
     "has been superseded by a new one that contains the updated XML content"
 )
-def step_impl(context):
+def step_impl(context: Context) -> None:
     expected_dmdsec_status = ("original-superseded", "update")
     expected_mdwrap_mdtype = ("OTHER",)
     assert context.current_transfer["source_metadata_files"], (
@@ -1140,6 +1141,10 @@ def step_impl(context):
         "Could not find any of the original metadata XML files in the reingested "
         "source-metadata.csv file"
     )
+    original_rows = {
+        (row["original_filename"], row["type_id"]): row
+        for row in context.current_transfer["source_metadata_files"]
+    }
     errors = []
     dmdsec_error_template = (
         'Expected one dmdSec for filename "{}" with STATUS="{}" containing a '
@@ -1171,17 +1176,66 @@ def step_impl(context):
         if row_errors:
             errors.extend(row_errors)
             continue
-        group_ids = {dmdsec.group_id for dmdsec in dmdsecs_by_status.values()}
-        if len(group_ids) != 1:
+        group_ids: dict[str, str] = {}
+        missing_group_ids: list[str] = []
+        for status, dmdsec in dmdsecs_by_status.items():
+            group_id = utils.get_dmdsec_group_id(
+                reingest_mets.tree, dmdsec.id_string, context.mets_nsmap
+            )
+            if group_id:
+                group_ids[status] = group_id
+            else:
+                missing_group_ids.append(status)
+        if missing_group_ids:
             errors.append(
-                'Expected the {} dmdSecs for filename "{}" to have the same '
-                "GROUPID attribute but got {}".format(
-                    " and ".join(expected_dmdsec_status),
+                'Expected the {} {} for filename "{}" with OTHERMDTYPE="{}" ({}) to '
+                "have a non-empty GROUPID attribute".format(
+                    " and ".join(missing_group_ids),
+                    "dmdSec" if len(missing_group_ids) == 1 else "dmdSecs",
                     row["original_filename"],
-                    " and ".join(group_ids),
+                    row["type_id"],
+                    row["metadata_filename"],
                 )
             )
-            continue
+        elif len(set(group_ids.values())) != 1:
+            errors.append(
+                'Expected the {} dmdSecs for filename "{}" with OTHERMDTYPE="{}" ({}) '
+                "to have the same GROUPID attribute but got {}".format(
+                    " and ".join(expected_dmdsec_status),
+                    row["original_filename"],
+                    row["type_id"],
+                    row["metadata_filename"],
+                    " and ".join(
+                        f'{status}="{group_id}"'
+                        for status, group_id in group_ids.items()
+                    ),
+                )
+            )
+        original_row = original_rows.get((row["original_filename"], row["type_id"]))
+        if original_row is None:
+            errors.append(
+                'Could not find a row for filename "{}" with type "{}" in the '
+                "original source-metadata.csv file".format(
+                    row["original_filename"], row["type_id"]
+                )
+            )
+        else:
+            superseded_dmdsec = dmdsecs_by_status["original-superseded"]
+            superseded_text = utils.extract_document_text(
+                superseded_dmdsec.contents.document
+            )
+            original_file_text = utils.extract_document_text(original_row["document"])
+            if (
+                not superseded_text
+                or not original_file_text
+                or superseded_text != original_file_text
+            ):
+                errors.append(
+                    'Wrapped text of the original-superseded mdWrap[OTHERMDTYPE="{}"] '
+                    'does not match the text of the original metadata XML file "{}"'.format(
+                        row["type_id"], original_row["metadata_filename"]
+                    )
+                )
         update_dmdsec = dmdsecs_by_status["update"]
         mdwrap_text = utils.extract_document_text(update_dmdsec.contents.document)
         metadata_file_text = utils.extract_document_text(row["document"])
@@ -1191,8 +1245,8 @@ def step_impl(context):
             or mdwrap_text != metadata_file_text
         ):
             errors.append(
-                'Wrapped text of mdWrap[OTHERMDTYPE="{}"] does not match the text '
-                'of the updated metadata XML file "{}"'.format(
+                'Wrapped text of the update mdWrap[OTHERMDTYPE="{}"] does not match '
+                'the text of the updated metadata XML file "{}"'.format(
                     row["type_id"], row["metadata_filename"]
                 )
             )
